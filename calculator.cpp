@@ -5,22 +5,17 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 
 #include <boost/algorithm/string.hpp>
+#include <boost/multiprecision/number.hpp>
 #include <calculator.hpp>
+#include <cmath>
 #include <string>
 
 calculator::calculator()
 {
     // set up the grammar?
+    make_grammar();
     // add all the functions
-    _operations["debug"] = [this]() -> bool { return debug(); };
-    _operations["base"] = [this]() -> bool { return base(); };
-    _operations["fixed_bits"] = [this]() -> bool { return fixed_bits(); };
-    _operations["precision"] = [this]() -> bool { return precision(); };
-    _operations["unsigned"] = [this]() -> bool { return unsigned_mode(); };
-    _operations["+"] = [this]() -> bool { return add(); };
-    _operations["-"] = [this]() -> bool { return subtract(); };
-    _operations["*"] = [this]() -> bool { return multiply(); };
-    _operations["/"] = [this]() -> bool { return divide(); };
+    make_functions();
 }
 
 bool calculator::run_one(const std::string& expr)
@@ -35,12 +30,18 @@ bool calculator::run_one(const std::string& expr)
     if (expr.find("(") != std::string::npos)
     {
         std::cerr << "mpc(\"" << expr << "\")\n";
+#ifndef TEST_BASIC_TYPES
         e.value = mpc(expr);
+#endif
     }
     else if (expr.find(".") != std::string::npos)
     {
         std::cerr << "mpf(\"" << expr << "\")\n";
+#ifndef TEST_BASIC_TYPES
         e.value = mpf(expr);
+#else
+        e.value = std::stod(expr);
+#endif
     }
     else if (expr.find("/") != std::string::npos)
     {
@@ -52,12 +53,18 @@ bool calculator::run_one(const std::string& expr)
         if (_fixed_bits)
         {
             std::cerr << "make_fixed(mpz(\"" << expr << "\"))\n";
+#ifndef TEST_BASIC_TYPES
             e.value = make_fixed(mpz(expr), _fixed_bits, _is_signed);
+#endif
         }
         else
         {
             std::cerr << "mpz(\"" << expr << "\")\n";
+#ifndef TEST_BASIC_TYPES
             e.value = mpz(expr);
+#else
+            e.value = std::stoi(expr);
+#endif
         }
     }
     e.base = _base;
@@ -205,26 +212,91 @@ void calculator::show_stack()
     }
 }
 
-bool calculator::add()
+void calculator::make_grammar()
 {
-    return two_arg_op(
-        [](const auto& a, const auto& b) -> numeric { return a + b; });
 }
 
-bool calculator::subtract()
+void calculator::make_functions()
 {
-    return two_arg_op(
-        [](const auto& a, const auto& b) -> numeric { return a - b; });
-}
-
-bool calculator::multiply()
-{
-    return two_arg_op(
-        [](const auto& a, const auto& b) -> numeric { return a * b; });
-}
-
-bool calculator::divide()
-{
-    return two_arg_op(
-        [](const auto& a, const auto& b) -> numeric { return a / b; });
+    _operations["debug"] = [this]() -> bool { return debug(); };
+    _operations["base"] = [this]() -> bool { return base(); };
+    _operations["fixed_bits"] = [this]() -> bool { return fixed_bits(); };
+    _operations["precision"] = [this]() -> bool { return precision(); };
+    _operations["unsigned"] = [this]() -> bool { return unsigned_mode(); };
+    _operations["drop"] = [this]() -> bool {
+        if (_stack.size() < 1)
+        {
+            return false;
+        }
+        stack_entry a = _stack.front();
+        _stack.pop_front();
+        return true;
+    };
+    _operations["swap"] = [this]() -> bool {
+        if (_stack.size() < 2)
+        {
+            return false;
+        }
+        stack_entry& a = _stack.front();
+        _stack.pop_front();
+        stack_entry& b = _stack.front();
+        _stack.pop_front();
+        _stack.push_front(std::move(a));
+        _stack.push_front(std::move(b));
+        return true;
+    };
+    _operations["+"] = [this]() -> bool {
+        return two_arg_op([](const auto& a, const auto& b) { return a + b; });
+    };
+    _operations["-"] = [this]() -> bool {
+        return two_arg_op([](const auto& a, const auto& b) { return a - b; });
+    };
+    _operations["*"] = [this]() -> bool {
+        return two_arg_op([](const auto& a, const auto& b) { return a * b; });
+    };
+    _operations["/"] = [this]() -> bool {
+        return two_arg_op([](const auto& a, const auto& b) { return a / b; });
+    };
+    _operations["sqrt"] = [this]() -> bool {
+        return one_arg_op_limited<mpz, mpf, mpc>(
+            [](const auto& a) { return sqrt(a); });
+    };
+    _operations["e"] = [this]() -> bool {
+        stack_entry e(boost::math::constants::e<mpf>(), _base, _fixed_bits,
+                      _precision, _is_signed);
+        _stack.push_front(std::move(e));
+        return true;
+    };
+    _operations["pi"] = [this]() -> bool {
+        stack_entry e(boost::math::constants::pi<mpf>(), _base, _fixed_bits,
+                      _precision, _is_signed);
+        _stack.push_front(std::move(e));
+        return true;
+    };
+    _operations["%"] = [this]() -> bool {
+        return two_arg_op_limited<mpz>(
+            [](const auto& a, const auto& b) { return a % b; });
+    };
+    _operations["&"] = [this]() -> bool {
+        return two_arg_op_limited<mpz>(
+            [](const auto& a, const auto& b) { return a & b; });
+    };
+    _operations["|"] = [this]() -> bool {
+        return two_arg_op_limited<mpz>(
+            [](const auto& a, const auto& b) { return a | b; });
+    };
+    _operations["^"] = [this]() -> bool {
+        return two_arg_op_limited<mpf, mpc>(
+            [](const auto& a, const auto& b) { return pow(a, b); });
+    };
+    _operations["xor"] = [this]() -> bool {
+        return two_arg_op_limited<mpz>(
+            [](const auto& a, const auto& b) { return a ^ b; });
+    };
+    _operations["neg"] = [this]() -> bool {
+        return one_arg_op([](const auto& a) { return -a; });
+    };
+    _operations["~"] = [this]() -> bool {
+        return one_arg_op_limited<mpz>([](const auto& a) { return ~a; });
+    };
 }
