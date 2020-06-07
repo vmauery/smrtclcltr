@@ -27,45 +27,53 @@ bool calculator::run_one(const std::string& expr)
     }
     // not a function
     stack_entry e;
-    if (expr.find("(") != std::string::npos)
+    try
     {
-        std::cerr << "mpc(\"" << expr << "\")\n";
-#ifndef TEST_BASIC_TYPES
-        e.value = mpc(expr);
-#endif
-    }
-    else if (expr.find(".") != std::string::npos)
-    {
-        std::cerr << "mpf(\"" << expr << "\")\n";
-#ifndef TEST_BASIC_TYPES
-        e.value = mpf(expr);
-#else
-        e.value = std::stod(expr);
-#endif
-    }
-    else if (expr.find("/") != std::string::npos)
-    {
-        std::cerr << "mpq(\"" << expr << "\")\n";
-        e.value = mpq(expr);
-    }
-    else
-    {
-        if (_fixed_bits)
+        if (expr.find("(") != std::string::npos)
         {
-            std::cerr << "make_fixed(mpz(\"" << expr << "\"))\n";
+            // std::cerr << "mpc(\"" << expr << "\")\n";
 #ifndef TEST_BASIC_TYPES
-            e.value = make_fixed(mpz(expr), _fixed_bits, _is_signed);
+            e.value = mpc(expr);
 #endif
+        }
+        else if (expr.find(".") != std::string::npos)
+        {
+            // std::cerr << "mpf(\"" << expr << "\")\n";
+#ifndef TEST_BASIC_TYPES
+            e.value = mpf(expr);
+#else
+            e.value = std::stod(expr);
+#endif
+        }
+        else if (expr.find("/") != std::string::npos)
+        {
+            // std::cerr << "mpq(\"" << expr << "\")\n";
+            e.value = mpq(expr);
         }
         else
         {
-            std::cerr << "mpz(\"" << expr << "\")\n";
+            if (_fixed_bits)
+            {
+                // std::cerr << "make_fixed(mpz(\"" << expr << "\"))\n";
 #ifndef TEST_BASIC_TYPES
-            e.value = mpz(expr);
-#else
-            e.value = std::stoi(expr);
+                e.value = make_fixed(mpz(expr), _fixed_bits, _is_signed);
 #endif
+            }
+            else
+            {
+                // std::cerr << "mpz(\"" << expr << "\")\n";
+#ifndef TEST_BASIC_TYPES
+                e.value = mpz(expr);
+#else
+                e.value = std::stoi(expr);
+#endif
+            }
         }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "bad expression '" << expr << "'\n";
+        return false;
     }
     e.base = _base;
     e.precision = _precision;
@@ -81,10 +89,10 @@ std::string calculator::get_next_token()
     if (current_line.size() == 0)
     {
         std::string input;
-        std::cerr << "<waiting for input>\n";
+        // std::cerr << "<waiting for input>\n";
         if (!std::getline(std::cin, input))
         {
-            std::cerr << "end of input\n";
+            // std::cerr << "end of input\n";
             _running = false;
             return "";
         }
@@ -93,7 +101,7 @@ std::string calculator::get_next_token()
     }
     std::string next = current_line.front();
     current_line.pop_front();
-    std::cerr << "next token is :'" << next << "'\n";
+    // std::cerr << "next token is :'" << next << "'\n";
     return next;
 }
 
@@ -237,9 +245,9 @@ void calculator::make_functions()
         {
             return false;
         }
-        stack_entry& a = _stack.front();
+        stack_entry a = _stack.front();
         _stack.pop_front();
-        stack_entry& b = _stack.front();
+        stack_entry b = _stack.front();
         _stack.pop_front();
         _stack.push_front(std::move(a));
         _stack.push_front(std::move(b));
@@ -255,11 +263,39 @@ void calculator::make_functions()
         return two_arg_op([](const auto& a, const auto& b) { return a * b; });
     };
     _operations["/"] = [this]() -> bool {
-        return two_arg_op([](const auto& a, const auto& b) { return a / b; });
+        return two_arg_conv_op(
+            [](const auto& a, const auto& b) { return a / b; },
+            std::tuple<mpz>{}, std::tuple<mpq>{}, std::tuple<mpq, mpf, mpc>{});
     };
     _operations["sqrt"] = [this]() -> bool {
-        return one_arg_op_limited<mpz, mpf, mpc>(
-            [](const auto& a) { return sqrt(a); });
+        return one_arg_conv_op(
+            [](const auto& a) -> numeric {
+                if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                {
+                    return sqrt(a);
+                }
+                else
+                {
+                    if (a >= mpz(0))
+                    {
+                        return sqrt(mpf{a});
+                    }
+                    else
+                    {
+                        return sqrt(mpc{a});
+                    }
+                }
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    };
+    _operations["sin"] = [this]() -> bool {
+        return one_arg_conv_op(
+            [](const auto& a) -> numeric {
+                return boost::multiprecision::sin(a);
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
     };
     _operations["e"] = [this]() -> bool {
         stack_entry e(boost::math::constants::e<mpf>(), _base, _fixed_bits,
@@ -273,30 +309,32 @@ void calculator::make_functions()
         _stack.push_front(std::move(e));
         return true;
     };
-    _operations["%"] = [this]() -> bool {
-        return two_arg_op_limited<mpz>(
-            [](const auto& a, const auto& b) { return a % b; });
-    };
-    _operations["&"] = [this]() -> bool {
-        return two_arg_op_limited<mpz>(
-            [](const auto& a, const auto& b) { return a & b; });
-    };
-    _operations["|"] = [this]() -> bool {
-        return two_arg_op_limited<mpz>(
-            [](const auto& a, const auto& b) { return a | b; });
-    };
-    _operations["^"] = [this]() -> bool {
-        return two_arg_op_limited<mpf, mpc>(
-            [](const auto& a, const auto& b) { return pow(a, b); });
-    };
-    _operations["xor"] = [this]() -> bool {
-        return two_arg_op_limited<mpz>(
-            [](const auto& a, const auto& b) { return a ^ b; });
-    };
     _operations["neg"] = [this]() -> bool {
         return one_arg_op([](const auto& a) { return -a; });
     };
+    _operations["%"] = [this]() -> bool {
+        return two_arg_limited_op<mpz>(
+            [](const auto& a, const auto& b) { return a % b; });
+    };
+    _operations["&"] = [this]() -> bool {
+        return two_arg_limited_op<mpz>(
+            [](const auto& a, const auto& b) { return a & b; });
+    };
+    _operations["|"] = [this]() -> bool {
+        return two_arg_limited_op<mpz>(
+            [](const auto& a, const auto& b) { return a | b; });
+    };
+    _operations["xor"] = [this]() -> bool {
+        return two_arg_limited_op<mpz>(
+            [](const auto& a, const auto& b) { return a ^ b; });
+    };
     _operations["~"] = [this]() -> bool {
-        return one_arg_op_limited<mpz>([](const auto& a) { return ~a; });
+        return one_arg_limited_op<mpz>([](const auto& a) { return ~a; });
+    };
+    _operations["^"] = [this]() -> bool {
+        return two_arg_conv_op(
+            [](const auto& a, const auto& b) { return pow(a, b); },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
     };
 }

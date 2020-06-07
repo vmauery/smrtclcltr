@@ -55,12 +55,15 @@ using mpq = boost::multiprecision::cpp_rational;
 
 #else /* USE_GMP */
 
-using mpz = boost::multiprecision::number<boost::multiprecision::gmp_int>;
-using mpf = boost::multiprecision::number<boost::multiprecision::gmp_float<0>>;
-using mpc =
-    boost::multiprecision::number<boost::multiprecision::complex_adaptor<
-        boost::multiprecision::gmp_float<0>>>;
-using mpq = boost::multiprecision::number<boost::multiprecision::gmp_rational>;
+using mpz = boost::multiprecision::number<boost::multiprecision::gmp_int,
+                                          boost::multiprecision::et_off>;
+using mpf = boost::multiprecision::number<boost::multiprecision::gmp_float<0>,
+                                          boost::multiprecision::et_off>;
+using mpc = boost::multiprecision::number<
+    boost::multiprecision::complex_adaptor<boost::multiprecision::gmp_float<0>>,
+    boost::multiprecision::et_off>;
+using mpq = boost::multiprecision::number<boost::multiprecision::gmp_rational,
+                                          boost::multiprecision::et_off>;
 
 #endif // CPP / GMP
 
@@ -243,8 +246,6 @@ struct ratio
 
 using numeric = std::variant<mpz, mpf, mpc, mpq>;
 
-#define TEMPLATE_OPERATE 1
-#ifdef TEMPLATE_OPERATE
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa, const mpz& bb)
 {
@@ -263,7 +264,7 @@ numeric operate(const Fn& fn, const mpz& aa, const mpf& bb)
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa, const mpc& bb)
 {
-    return mpc(fn(mpc(aa), bb));
+    return fn(mpc(aa), bb);
 }
 
 // mpq
@@ -285,7 +286,7 @@ numeric operate(const Fn& fn, const mpq& aa, const mpf& bb)
 template <typename Fn>
 numeric operate(const Fn& fn, const mpq& aa, const mpc& bb)
 {
-    return mpc(fn(mpc(aa), bb));
+    return fn(mpc(aa), bb);
 }
 
 // mpf
@@ -307,158 +308,51 @@ numeric operate(const Fn& fn, const mpf& aa, const mpf& bb)
 template <typename Fn>
 numeric operate(const Fn& fn, const mpf& aa, const mpc& bb)
 {
-    return mpc(fn(mpc(aa), bb));
+    return fn(mpc(aa), bb);
 }
 
 // mpc
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa, const mpz& bb)
 {
-    return mpc(fn(aa, mpc(bb)));
+    return fn(aa, mpc(bb));
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa, const mpq& bb)
 {
-    return mpc(fn(aa, mpc(bb)));
+    return fn(aa, mpc(bb));
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa, const mpf& bb)
 {
-    return mpc(fn(aa, mpc(bb)));
+    return fn(aa, mpc(bb));
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa, const mpc& bb)
 {
-    return mpc(fn(aa, bb));
+    return fn(aa, bb);
 }
 
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa)
 {
-    return mpc(fn(aa));
+    return fn(aa);
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpq& aa)
 {
-    return mpc(fn(aa));
+    return fn(aa);
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpf& aa)
 {
-    return mpc(fn(aa));
+    return fn(aa);
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa)
 {
-    return mpc(fn(aa));
+    return fn(aa);
 }
-
-#else
-
-template <class... Ts>
-struct overload : Ts...
-{
-    using Ts::operator()...;
-};
-template <class... Ts>
-overload(Ts...) -> overload<Ts...>;
-
-// Fn is something like this:
-// [](const auto& a) { return sqrt(a); });
-template <typename Fn>
-numeric operate_native(const Fn& fn, const numeric& a)
-{
-    // mpq is the only one that does not play nicely with mpf or mpc
-    // mpz < mpq < mpf < mpc
-    return std::visit(
-        overload{
-            [&fn](const mpz& aa) -> numeric { return mpc(fn(aa)); },
-            [&fn](const mpq& aa) -> numeric { return mpc(fn(aa)); },
-            [&fn](const mpf& aa) -> numeric { return mpc(fn(aa)); },
-            [&fn](const mpc& aa) -> numeric { return mpc(fn(aa)); },
-        },
-        a);
-}
-
-template <typename Fn>
-numeric operate_reduced(const Fn& fn, const numeric& a)
-{
-    // mpq is the only one that does not play nicely with mpf or mpc
-    // mpz < mpq < mpf < mpc
-    return std::visit(
-        overload{
-            [&fn](const mpc& aa) -> numeric { return mpc(fn(aa)); },
-            [&fn](const auto& aa) -> numeric { return mpc(fn(mpf(aa))); },
-        },
-        a);
-}
-
-// Fn is something like this:
-// [](const auto& a, const auto& b) -> numeric { return a + b; });
-template <typename Fn>
-numeric operate(const Fn& fn, const numeric& a, const numeric& b)
-{
-    // mpq is the only one that does not play nicely with mpf or mpc
-    // mpz < mpq < mpf < mpc
-    return std::visit(overload{
-                          [&fn](const mpz& aa, const mpz& bb) -> numeric {
-                              return mpz(fn(aa, bb));
-                          },
-                          [&fn](const mpz& aa, const mpq& bb) -> numeric {
-                              return mpq(fn(mpq(aa), bb));
-                          },
-                          [&fn](const mpz& aa, const mpf& bb) -> numeric {
-                              return mpf(fn(mpf(aa), bb));
-                          },
-                          [&fn](const mpz& aa, const mpc& bb) -> numeric {
-                              return mpc(fn(mpc(mpf(aa)), bb));
-                          },
-
-                          // mpq
-                          [&fn](const mpq& aa, const mpz& bb) -> numeric {
-                              return mpq(fn(aa, mpq(bb)));
-                          },
-                          [&fn](const mpq& aa, const mpq& bb) -> numeric {
-                              return mpq(fn(aa, bb));
-                          },
-                          [&fn](const mpq& aa, const mpf& bb) -> numeric {
-                              return mpf(fn(mpf(aa), bb));
-                          },
-                          [&fn](const mpq& aa, const mpc& bb) -> numeric {
-                              return mpc(fn(mpc(mpf(aa)), bb));
-                          },
-
-                          // mpf
-                          [&fn](const mpf& aa, const mpz& bb) -> numeric {
-                              return mpf(fn(aa, mpf(bb)));
-                          },
-                          [&fn](const mpf& aa, const mpq& bb) -> numeric {
-                              return mpf(fn(aa, mpf(bb)));
-                          },
-                          [&fn](const mpf& aa, const mpf& bb) -> numeric {
-                              return mpf(fn(aa, bb));
-                          },
-                          [&fn](const mpf& aa, const mpc& bb) -> numeric {
-                              return mpc(fn(mpc(aa), bb));
-                          },
-
-                          // mpc
-                          [&fn](const mpc& aa, const mpz& bb) -> numeric {
-                              return mpc(fn(aa, mpc(mpf(bb))));
-                          },
-                          [&fn](const mpc& aa, const mpq& bb) -> numeric {
-                              return mpc(fn(aa, mpc(mpf(bb))));
-                          },
-                          [&fn](const mpc& aa, const mpf& bb) -> numeric {
-                              return mpc(fn(aa, mpc(bb)));
-                          },
-                          [&fn](const mpc& aa, const mpc& bb) -> numeric {
-                              return mpc(fn(aa, bb));
-                          },
-                      },
-                      a, b);
-}
-#endif // TEMPLATE_OPERATE
 
 std::ostream& operator<<(std::ostream& out, const numeric& n);
 

@@ -42,7 +42,6 @@ template <typename Vin, typename Vout>
 struct reduce
 {
     constexpr static size_t A_size = std::variant_size<Vin>::value;
-    constexpr static size_t SA_size = std::variant_size<Vout>::value;
 
     Vin& _vin;
     Vout& _vout;
@@ -95,6 +94,49 @@ struct stack_entry
     bool is_signed;
 };
 
+template <typename TypeOut, typename TypeIn>
+TypeOut coerce_variant(const TypeIn& in)
+{
+    return TypeOut(in);
+}
+
+template <std::size_t N, class... Args>
+using list_type_t = std::tuple_element_t<N, std::tuple<Args...>>;
+
+template <typename... I>
+struct conversion
+{
+    static void op(numeric&)
+    {
+    }
+};
+
+template <typename... Ti, typename... To>
+struct conversion<std::tuple<Ti...>, std::tuple<To...>>
+{
+    constexpr static size_t I_size = sizeof...(Ti);
+
+    static void op(numeric&, std::integral_constant<size_t, I_size>)
+    {
+    }
+    template <size_t I>
+    static void op(numeric& v, std::integral_constant<size_t, I>)
+    {
+        if (std::holds_alternative<list_type_t<I, Ti...>>(v))
+        {
+            v = coerce_variant<list_type_t<I, To...>>(
+                std::get<list_type_t<I, Ti...>>(v));
+        }
+        op(v, std::integral_constant<size_t, I + 1>());
+    }
+    static void op(numeric& v)
+    {
+        static_assert(I_size >= 1);
+        static_assert(sizeof...(Ti) == sizeof...(To));
+        op(v, std::integral_constant<size_t, 0>());
+    }
+};
+
 class calculator
 {
   public:
@@ -126,8 +168,36 @@ class calculator
         return true;
     }
 
+    template <typename Fn, typename... Itypes, typename... Otypes,
+              typename... Ltypes>
+    bool one_arg_conv_op(const Fn& fn, const std::tuple<Itypes...>& /* in */,
+                         const std::tuple<Otypes...>& /* out */,
+                         const std::tuple<Ltypes...>& /*limit*/)
+    {
+        if (_stack.size() < 1)
+        {
+            return false;
+        }
+        stack_entry a = _stack.front();
+        numeric& ca = a.value;
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
+        std::variant<Ltypes...> lca;
+        if (!reduce(ca, lca)())
+        {
+            std::cerr << "wtf, we converted and now it doesn't reduce? Eat "
+                         "shit c++.\n";
+            return false;
+        }
+        _stack.pop_front();
+        numeric cv =
+            std::visit([&fn](const auto& a) { return operate(fn, a); }, lca);
+        _stack.emplace_front(std::move(cv), _base, _fixed_bits, _precision,
+                             _is_signed);
+        return true;
+    }
+
     template <typename... AllowedTypes, typename Fn>
-    bool one_arg_op_limited(const Fn& fn)
+    bool one_arg_limited_op(const Fn& fn)
     {
         if (_stack.size() < 1)
         {
@@ -158,10 +228,11 @@ class calculator
         {
             return false;
         }
-        stack_entry a = _stack[0];
-        stack_entry b = _stack[1];
+        stack_entry a = _stack[1];
+        stack_entry b = _stack[0];
         _stack.pop_front();
         _stack.pop_front();
+
         numeric cv = std::visit(
             [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
             a.value, b.value);
@@ -170,16 +241,52 @@ class calculator
         return true;
     }
 
+    template <typename Fn, typename... Itypes, typename... Otypes,
+              typename... Ltypes>
+    bool two_arg_conv_op(const Fn& fn, const std::tuple<Itypes...>& /* in */,
+                         const std::tuple<Otypes...>& /* out */,
+                         const std::tuple<Ltypes...>& /*limit*/)
+    {
+        if (_stack.size() < 2)
+        {
+            return false;
+        }
+        stack_entry a = _stack[1];
+        stack_entry b = _stack[0];
+
+        numeric& ca = a.value;
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
+        numeric& cb = b.value;
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cb);
+        std::variant<Ltypes...> lca;
+        std::variant<Ltypes...> lcb;
+        if (!reduce(ca, lca)() || !reduce(cb, lcb)())
+        {
+            std::cerr << "wtf, we converted and now it doesn't reduce? Eat "
+                         "shit c++.\n";
+            return false;
+        }
+        _stack.pop_front();
+        _stack.pop_front();
+
+        numeric cv = std::visit(
+            [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
+            lca, lcb);
+        _stack.emplace_front(std::move(cv), _base, _fixed_bits, _precision,
+                             _is_signed);
+        return true;
+    }
+
     template <typename... AllowedTypes, typename Fn>
-    bool two_arg_op_limited(const Fn& fn)
+    bool two_arg_limited_op(const Fn& fn)
     {
         if (_stack.size() < 2)
         {
             return false;
         }
 
-        stack_entry a = _stack[0];
-        stack_entry b = _stack[1];
+        stack_entry a = _stack[1];
+        stack_entry b = _stack[0];
 
         if (!variant_holds_type<AllowedTypes...>(a.value) ||
             !variant_holds_type<AllowedTypes...>(b.value))
