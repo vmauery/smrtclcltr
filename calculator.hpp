@@ -310,11 +310,19 @@ class calculator
         return true;
     }
 
+    enum class e_angle_mode
+    {
+        rad,
+        deg,
+        grad
+    };
+
     bool debug();
     bool base();
     bool fixed_bits();
     bool precision();
     bool unsigned_mode();
+    bool angle_mode(e_angle_mode);
 
     bool _debug = false;
     bool _running = true;
@@ -322,6 +330,7 @@ class calculator
     int _fixed_bits = 0;
     bool _is_signed = true;
     int _precision = 8;
+    e_angle_mode _angle_mode = e_angle_mode::rad;
     std::deque<stack_entry> _stack;
     std::map<std::string, std::function<bool()>> _operations;
 };

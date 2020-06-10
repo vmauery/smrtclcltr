@@ -138,6 +138,12 @@ bool calculator::unsigned_mode()
     return true;
 }
 
+bool calculator::angle_mode(e_angle_mode mode)
+{
+    _angle_mode = mode;
+    return true;
+}
+
 bool calculator::base()
 {
     stack_entry e = _stack.front();
@@ -231,6 +237,15 @@ void calculator::make_functions()
     _operations["fixed_bits"] = [this]() -> bool { return fixed_bits(); };
     _operations["precision"] = [this]() -> bool { return precision(); };
     _operations["unsigned"] = [this]() -> bool { return unsigned_mode(); };
+    _operations["rad"] = [this]() -> bool {
+        return angle_mode(e_angle_mode::rad);
+    };
+    _operations["deg"] = [this]() -> bool {
+        return angle_mode(e_angle_mode::deg);
+    };
+    _operations["grad"] = [this]() -> bool {
+        return angle_mode(e_angle_mode::grad);
+    };
     _operations["drop"] = [this]() -> bool {
         if (_stack.size() < 1)
         {
@@ -291,8 +306,17 @@ void calculator::make_functions()
     };
     _operations["sin"] = [this]() -> bool {
         return one_arg_conv_op(
-            [](const auto& a) -> numeric {
-                return boost::multiprecision::sin(a);
+            [this](const auto& a) -> numeric {
+                auto b{a};
+                if (_angle_mode == e_angle_mode::deg)
+                {
+                    b *= boost::math::constants::pi<mpf>() / 180;
+                }
+                else if (_angle_mode == e_angle_mode::grad)
+                {
+                    b *= boost::math::constants::pi<mpf>() / 50;
+                }
+                return boost::multiprecision::sin(b);
             },
             std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
             std::tuple<mpf, mpc>{});
