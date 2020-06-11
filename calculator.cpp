@@ -374,6 +374,12 @@ void Calculator::make_functions()
     _operations["asin"] = functions::asin;
     _operations["acos"] = functions::acos;
     _operations["atan"] = functions::atan;
+    _operations["sinn"] = functions::sinh;
+    _operations["cosh"] = functions::cosh;
+    _operations["tanh"] = functions::tanh;
+    _operations["asinh"] = functions::asinh;
+    _operations["acosh"] = functions::acosh;
+    _operations["atanh"] = functions::atanh;
     _operations["log"] = functions::log;
     _operations["ln"] = functions::ln;
     _operations["!"] = functions::factorial;
