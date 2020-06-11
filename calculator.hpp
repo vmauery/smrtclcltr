@@ -310,6 +310,35 @@ class calculator
         return true;
     }
 
+    template <typename Fn>
+    auto scaled_trig_op(auto a, const Fn& fn)
+    {
+        if (_angle_mode == e_angle_mode::deg)
+        {
+            a *= boost::math::constants::pi<mpf>() / 180;
+        }
+        else if (_angle_mode == e_angle_mode::grad)
+        {
+            a *= boost::math::constants::pi<mpf>() / 50;
+        }
+        return fn(a);
+    }
+
+    template <typename Fn>
+    auto scaled_trig_op_inv(const auto& a, const Fn& fn)
+    {
+        auto b = fn(a);
+        if (_angle_mode == e_angle_mode::deg)
+        {
+            b *= 180 / boost::math::constants::pi<mpf>();
+        }
+        else if (_angle_mode == e_angle_mode::grad)
+        {
+            b *= 50 / boost::math::constants::pi<mpf>();
+        }
+        return b;
+    }
+
     enum class e_angle_mode
     {
         rad,

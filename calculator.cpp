@@ -307,16 +307,50 @@ void calculator::make_functions()
     _operations["sin"] = [this]() -> bool {
         return one_arg_conv_op(
             [this](const auto& a) -> numeric {
-                auto b{a};
-                if (_angle_mode == e_angle_mode::deg)
-                {
-                    b *= boost::math::constants::pi<mpf>() / 180;
-                }
-                else if (_angle_mode == e_angle_mode::grad)
-                {
-                    b *= boost::math::constants::pi<mpf>() / 50;
-                }
-                return boost::multiprecision::sin(b);
+                return scaled_trig_op(a, [](const auto& a) { return sin(a); });
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    };
+    _operations["cos"] = [this]() -> bool {
+        return one_arg_conv_op(
+            [this](const auto& a) -> numeric {
+                return scaled_trig_op(a, [](const auto& a) { return cos(a); });
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    };
+    _operations["tan"] = [this]() -> bool {
+        return one_arg_conv_op(
+            [this](const auto& a) -> numeric {
+                return scaled_trig_op(a, [](const auto& a) { return tan(a); });
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    };
+    _operations["asin"] = [this]() -> bool {
+        return one_arg_conv_op(
+            [this](const auto& a) -> numeric {
+                return scaled_trig_op_inv(
+                    a, [](const auto& a) { return asin(a); });
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    };
+    _operations["acos"] = [this]() -> bool {
+        return one_arg_conv_op(
+            [this](const auto& a) -> numeric {
+                return scaled_trig_op_inv(
+                    a, [](const auto& a) { return acos(a); });
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    };
+    _operations["atan"] = [this]() -> bool {
+        return one_arg_conv_op(
+            [this](const auto& a) -> numeric {
+                return scaled_trig_op_inv(
+                    a, [](const auto& a) { return atan(a); });
             },
             std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
             std::tuple<mpf, mpc>{});
