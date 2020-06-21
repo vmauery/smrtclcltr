@@ -27,7 +27,7 @@ template <typename... Ttypes, typename... Vtypes>
 bool variant_holds_type(const std::variant<Vtypes...>& v)
 {
     return const_or(std::holds_alternative<Ttypes>(v)...);
-};
+}
 
 template <typename T, typename Vtype>
 struct variant_has_member;

@@ -11,61 +11,67 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <iostream>
 #include <variant>
 
-// #define TEST_BASIC_TYPES 1
+#if (USE_BOOST_CPP_BACKEND || USE_GMP_BACKEND)
 
-#ifndef TEST_BASIC_TYPES
-
-// #define USE_BOOST_CPP 1
-
-#ifdef USE_BOOST_CPP
+#ifdef USE_BOOST_CPP_BACKEND
 #include <boost/serialization/nvp.hpp>
 // stay
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/multiprecision/cpp_complex.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
-#else
+#else // USE_GMP_BACKEND
 #include <boost/multiprecision/gmp.hpp>
 #endif
 #include <boost/multiprecision/complex_adaptor.hpp>
 #include <boost/multiprecision/number.hpp>
 
-#ifdef USE_BOOST_CPP
+#ifdef USE_BOOST_CPP_BACKEND
 static constexpr size_t max_digits = 1000;
 static constexpr int32_t exp_min = -262142;
 static constexpr int32_t exp_max = 262143;
+static constexpr size_t min_int_bits = 128;
+static constexpr size_t max_int_bits = 0;
 
 using exp_type = std::decay<decltype(exp_max)>::type;
 
-using mpz = boost::multiprecision::cpp_int;
+using int_backend = boost::multiprecision::cpp_int_backend<
+    min_int_bits, max_int_bits, boost::multiprecision::signed_magnitude,
+    boost::multiprecision::unchecked>;
 
-using mpf = boost::multiprecision::number<
-    boost::multiprecision::backends::cpp_bin_float<
-        max_digits, boost::multiprecision::backends::digit_base_10, void,
-        exp_type, exp_min, exp_max>,
-    boost::multiprecision::et_on>;
+using float_backend = boost::multiprecision::backends::cpp_bin_float<
+    max_digits, boost::multiprecision::backends::digit_base_10, void, exp_type,
+    exp_min, exp_max>;
 
-using mpc = boost::multiprecision::number<
-    boost::multiprecision::backends::complex_adaptor<
-        boost::multiprecision::cpp_bin_float<
-            max_digits, boost::multiprecision::backends::digit_base_10, void,
-            exp_type, exp_min, exp_max>>,
-    boost::multiprecision::et_on>;
+using complex_backend =
+    boost::multiprecision::backends::complex_adaptor<float_backend>;
 
-using mpq = boost::multiprecision::cpp_rational;
+using rational_backend =
+    boost::multiprecision::backends::rational_adaptor<int_backend>;
 
-#else /* USE_GMP */
+#else /* USE_GMP_BACKEND */
 
-using mpz = boost::multiprecision::number<boost::multiprecision::gmp_int,
-                                          boost::multiprecision::et_off>;
-using mpf = boost::multiprecision::number<boost::multiprecision::gmp_float<0>,
-                                          boost::multiprecision::et_off>;
-using mpc = boost::multiprecision::number<
-    boost::multiprecision::complex_adaptor<boost::multiprecision::gmp_float<0>>,
-    boost::multiprecision::et_off>;
-using mpq = boost::multiprecision::number<boost::multiprecision::gmp_rational,
-                                          boost::multiprecision::et_off>;
+using int_backend = boost::multiprecision::gmp_int;
+
+using float_backend = boost::multiprecision::gmp_float<0>;
+
+using complex_backend =
+    boost::multiprecision::complex_adaptor<boost::multiprecision::gmp_float<0>>;
+
+using rational_backend = boost::multiprecision::gmp_rational;
 
 #endif // CPP / GMP
+
+using mpz =
+    boost::multiprecision::number<int_backend, boost::multiprecision::et_off>;
+
+using mpf =
+    boost::multiprecision::number<float_backend, boost::multiprecision::et_off>;
+
+using mpc = boost::multiprecision::number<complex_backend,
+                                          boost::multiprecision::et_off>;
+
+using mpq = boost::multiprecision::number<rational_backend,
+                                          boost::multiprecision::et_off>;
 
 #else // basic types
 
@@ -243,6 +249,26 @@ struct ratio
 #endif // TEST_BASIC_TYPES
 
 // using date = std::chrono::system_clock::time_point;
+namespace util
+{
+
+template <typename From, typename To>
+class implicit
+{
+    using success = char;
+    using dummy = long double;
+    static success test(To);
+    static dummy test(...);
+    static From f();
+
+  public:
+    static constexpr bool exists = sizeof(test(f())) == sizeof(success);
+};
+
+} // namespace util
+
+static constexpr bool has_mpz_to_mpc = util::implicit<mpz, mpc>::exists;
+static constexpr bool has_mpq_to_mpc = util::implicit<mpq, mpc>::exists;
 
 using numeric = std::variant<mpz, mpf, mpc, mpq>;
 
@@ -264,7 +290,14 @@ numeric operate(const Fn& fn, const mpz& aa, const mpf& bb)
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa, const mpc& bb)
 {
-    return fn(mpc(aa), bb);
+    if constexpr (has_mpz_to_mpc)
+    {
+        return fn(mpc(aa), bb);
+    }
+    else
+    {
+        return fn(mpc(mpf(aa)), bb);
+    }
 }
 
 // mpq
@@ -286,7 +319,14 @@ numeric operate(const Fn& fn, const mpq& aa, const mpf& bb)
 template <typename Fn>
 numeric operate(const Fn& fn, const mpq& aa, const mpc& bb)
 {
-    return fn(mpc(aa), bb);
+    if constexpr (has_mpq_to_mpc)
+    {
+        return fn(mpc(aa), bb);
+    }
+    else
+    {
+        return fn(mpc(mpf(aa)), bb);
+    }
 }
 
 // mpf
@@ -315,12 +355,26 @@ numeric operate(const Fn& fn, const mpf& aa, const mpc& bb)
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa, const mpz& bb)
 {
-    return fn(aa, mpc(bb));
+    if constexpr (has_mpz_to_mpc)
+    {
+        return fn(aa, mpc(bb));
+    }
+    else
+    {
+        return fn(aa, mpc(mpf(bb)));
+    }
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa, const mpq& bb)
 {
-    return fn(aa, mpc(bb));
+    if constexpr (has_mpq_to_mpc)
+    {
+        return fn(aa, mpc(bb));
+    }
+    else
+    {
+        return fn(aa, mpc(mpf(bb)));
+    }
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa, const mpf& bb)

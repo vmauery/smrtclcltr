@@ -291,7 +291,7 @@ void calculator::make_functions()
                 }
                 else
                 {
-                    if (a >= mpz(0))
+                    if (a >= decltype(a)(0))
                     {
                         return sqrt(mpf{a});
                     }
