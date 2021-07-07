@@ -176,7 +176,6 @@ bool calculator::base()
     mpz* v = std::get_if<mpz>(&e.value);
     if (v)
     {
-        _stack.pop_front();
         auto iv = static_cast<int>(*v);
         switch (iv)
         {
@@ -184,6 +183,7 @@ bool calculator::base()
             case 8:
             case 10:
             case 16:
+                _stack.pop_front();
                 _base = iv;
                 return true;
         }
