@@ -505,6 +505,71 @@ void calculator::make_functions()
                 std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
                 std::tuple<mpf, mpc>{});
         }};
+    _operations["log"] = {
+        "base 10 logarithm of X", [this]() {
+            return one_arg_conv_op(
+                [](const auto& a) -> numeric {
+                    mpf log10 = log(mpf{10});
+                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                    {
+                        return log(a) / log10;
+                    }
+                    else
+                    {
+                        if (a > decltype(a)(0))
+                        {
+                            return log(mpf{a}) / log10;
+                        }
+                        else
+                        {
+                            return log(mpc{a}) / log10;
+                        }
+                    }
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["ln"] = {
+        "base e logarithm of X", [this]() {
+            return one_arg_conv_op(
+                [](const auto& a) -> numeric {
+                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                    {
+                        return log(a);
+                    }
+                    else
+                    {
+                        if (a > decltype(a)(0))
+                        {
+                            return log(mpf{a});
+                        }
+                        else
+                        {
+                            return log(mpc{a});
+                        }
+                    }
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["!"] = {
+        "factorial of first item on the stack", [this]() -> bool {
+            stack_entry e = _stack.front();
+            mpz* v = std::get_if<mpz>(&e.value);
+            if (!v || (*v > 100000))
+            {
+                return false;
+            }
+            _stack.pop_front();
+            mpz f = *v;
+            mpz n = *v;
+            while (--n > 1)
+            {
+                f *= n;
+            }
+            _stack.emplace_front(f, _base, _fixed_bits, _precision, _is_signed);
+            return true;
+        }};
     _operations["e"] = {"pushes constant e onto the stack", [this]() -> bool {
                             stack_entry e(boost::math::constants::e<mpf>(),
                                           _base, _fixed_bits, _precision,
