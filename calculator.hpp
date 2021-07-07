@@ -361,5 +361,8 @@ class calculator
     int _precision = 8;
     e_angle_mode _angle_mode = e_angle_mode::rad;
     std::deque<stack_entry> _stack;
-    std::map<std::string, std::function<bool()>> _operations;
+    std::map<std::string, std::tuple<std::string, std::function<bool()>>>
+        _operations;
+    std::vector<std::string> _op_names;
+    size_t _op_names_max_strlen;
 };

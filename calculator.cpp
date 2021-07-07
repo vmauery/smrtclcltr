@@ -20,10 +20,36 @@ calculator::calculator()
 
 bool calculator::run_one(const std::string& expr)
 {
+    if (expr == "help")
+    {
+        // if no arguments follow,
+        auto fn = get_next_token();
+        if (fn == "" || fn == "\n")
+        {
+            size_t mxlen = _op_names_max_strlen + 4;
+            size_t cols = 80 / mxlen;
+            for (size_t idx = 0; idx < _op_names.size(); idx++)
+            {
+                std::cout << std::left << std::setw(mxlen) << _op_names[idx];
+                if (idx % cols == (cols - 1) || idx == (_op_names.size() - 1))
+                {
+                    std::cout << "\n";
+                }
+            }
+            return true;
+        }
+        auto help_op = _operations.find(fn);
+        if (help_op != _operations.end())
+        {
+            std::cout << help_op->first << "\n\t"
+                      << std::get<0>(help_op->second) << "\n";
+        }
+        return true;
+    }
     auto op = _operations.find(expr);
     if (op != _operations.end())
     {
-        return op->second();
+        return std::get<1>(op->second)();
     }
     // not a function
     stack_entry e;
@@ -232,167 +258,217 @@ void calculator::make_grammar()
 
 void calculator::make_functions()
 {
-    _operations["debug"] = [this]() -> bool { return debug(); };
-    _operations["base"] = [this]() -> bool { return base(); };
-    _operations["fixed_bits"] = [this]() -> bool { return fixed_bits(); };
-    _operations["precision"] = [this]() -> bool { return precision(); };
-    _operations["unsigned"] = [this]() -> bool { return unsigned_mode(); };
-    _operations["rad"] = [this]() -> bool {
-        return angle_mode(e_angle_mode::rad);
-    };
-    _operations["deg"] = [this]() -> bool {
-        return angle_mode(e_angle_mode::deg);
-    };
-    _operations["grad"] = [this]() -> bool {
-        return angle_mode(e_angle_mode::grad);
-    };
-    _operations["drop"] = [this]() -> bool {
-        if (_stack.size() < 1)
-        {
-            return false;
-        }
-        stack_entry a = _stack.front();
-        _stack.pop_front();
-        return true;
-    };
-    _operations["swap"] = [this]() -> bool {
-        if (_stack.size() < 2)
-        {
-            return false;
-        }
-        stack_entry a = _stack.front();
-        _stack.pop_front();
-        stack_entry b = _stack.front();
-        _stack.pop_front();
-        _stack.push_front(std::move(a));
-        _stack.push_front(std::move(b));
-        return true;
-    };
-    _operations["+"] = [this]() -> bool {
-        return two_arg_op([](const auto& a, const auto& b) { return a + b; });
-    };
-    _operations["-"] = [this]() -> bool {
-        return two_arg_op([](const auto& a, const auto& b) { return a - b; });
-    };
-    _operations["*"] = [this]() -> bool {
-        return two_arg_op([](const auto& a, const auto& b) { return a * b; });
-    };
-    _operations["/"] = [this]() -> bool {
-        return two_arg_conv_op(
-            [](const auto& a, const auto& b) { return a / b; },
-            std::tuple<mpz>{}, std::tuple<mpq>{}, std::tuple<mpq, mpf, mpc>{});
-    };
-    _operations["sqrt"] = [this]() -> bool {
-        return one_arg_conv_op(
-            [](const auto& a) -> numeric {
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    return sqrt(a);
-                }
-                else
-                {
-                    if (a >= decltype(a)(0))
+    _operations["debug"] = {"enable debug",
+                            [this]() -> bool { return debug(); }};
+    _operations["base"] = {"sets the numeric base",
+                           [this]() -> bool { return base(); }};
+    _operations["fixed_bits"] = {"sets the number of fixed bits",
+                                 [this]() -> bool { return fixed_bits(); }};
+    _operations["precision"] = {"sets the precision",
+                                [this]() -> bool { return precision(); }};
+    _operations["unsigned"] = {"sets unsigned mode",
+                               [this]() -> bool { return unsigned_mode(); }};
+    _operations["rad"] = {"sets radians angle mode", [this]() -> bool {
+                              return angle_mode(e_angle_mode::rad);
+                          }};
+    _operations["deg"] = {"sets degrees angle mode", [this]() -> bool {
+                              return angle_mode(e_angle_mode::deg);
+                          }};
+    _operations["grad"] = {"sets gradians angle mode", [this]() -> bool {
+                               return angle_mode(e_angle_mode::grad);
+                           }};
+    _operations["drop"] = {"drops one item from the stack", [this]() -> bool {
+                               if (_stack.size() < 1)
+                               {
+                                   return false;
+                               }
+                               stack_entry a = _stack.front();
+                               _stack.pop_front();
+                               return true;
+                           }};
+    _operations["swap"] = {"swaps position of first two items on the stack",
+                           [this]() -> bool {
+                               if (_stack.size() < 2)
+                               {
+                                   return false;
+                               }
+                               stack_entry a = _stack.front();
+                               _stack.pop_front();
+                               stack_entry b = _stack.front();
+                               _stack.pop_front();
+                               _stack.push_front(std::move(a));
+                               _stack.push_front(std::move(b));
+                               return true;
+                           }};
+    _operations["+"] = {"addition for first two items on stack",
+                        [this]() -> bool {
+                            return two_arg_op([](const auto& a, const auto& b) {
+                                return a + b;
+                            });
+                        }};
+    _operations["-"] = {"subtraction for first two items on stack",
+                        [this]() -> bool {
+                            return two_arg_op([](const auto& a, const auto& b) {
+                                return a - b;
+                            });
+                        }};
+    _operations["*"] = {"multiplication for first two items on stack",
+                        [this]() -> bool {
+                            return two_arg_op([](const auto& a, const auto& b) {
+                                return a * b;
+                            });
+                        }};
+    _operations["/"] = {
+        "division for first two items on stack", [this]() -> bool {
+            return two_arg_conv_op(
+                [](const auto& a, const auto& b) { return a / b; },
+                std::tuple<mpz>{}, std::tuple<mpq>{},
+                std::tuple<mpq, mpf, mpc>{});
+        }};
+    _operations["sqrt"] = {
+        "square root of the first item on the stack", [this]() -> bool {
+            return one_arg_conv_op(
+                [](const auto& a) -> numeric {
+                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                     {
-                        return sqrt(mpf{a});
+                        return sqrt(a);
                     }
                     else
                     {
-                        return sqrt(mpc{a});
+                        if (a >= decltype(a)(0))
+                        {
+                            return sqrt(mpf{a});
+                        }
+                        else
+                        {
+                            return sqrt(mpc{a});
+                        }
                     }
-                }
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
-    _operations["sin"] = [this]() -> bool {
-        return one_arg_conv_op(
-            [this](const auto& a) -> numeric {
-                return scaled_trig_op(a, [](const auto& a) { return sin(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
-    _operations["cos"] = [this]() -> bool {
-        return one_arg_conv_op(
-            [this](const auto& a) -> numeric {
-                return scaled_trig_op(a, [](const auto& a) { return cos(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
-    _operations["tan"] = [this]() -> bool {
-        return one_arg_conv_op(
-            [this](const auto& a) -> numeric {
-                return scaled_trig_op(a, [](const auto& a) { return tan(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
-    _operations["asin"] = [this]() -> bool {
-        return one_arg_conv_op(
-            [this](const auto& a) -> numeric {
-                return scaled_trig_op_inv(
-                    a, [](const auto& a) { return asin(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
-    _operations["acos"] = [this]() -> bool {
-        return one_arg_conv_op(
-            [this](const auto& a) -> numeric {
-                return scaled_trig_op_inv(
-                    a, [](const auto& a) { return acos(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
-    _operations["atan"] = [this]() -> bool {
-        return one_arg_conv_op(
-            [this](const auto& a) -> numeric {
-                return scaled_trig_op_inv(
-                    a, [](const auto& a) { return atan(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
-    _operations["e"] = [this]() -> bool {
-        stack_entry e(boost::math::constants::e<mpf>(), _base, _fixed_bits,
-                      _precision, _is_signed);
-        _stack.push_front(std::move(e));
-        return true;
-    };
-    _operations["pi"] = [this]() -> bool {
-        stack_entry e(boost::math::constants::pi<mpf>(), _base, _fixed_bits,
-                      _precision, _is_signed);
-        _stack.push_front(std::move(e));
-        return true;
-    };
-    _operations["neg"] = [this]() -> bool {
-        return one_arg_op([](const auto& a) { return -a; });
-    };
-    _operations["%"] = [this]() -> bool {
-        return two_arg_limited_op<mpz>(
-            [](const auto& a, const auto& b) { return a % b; });
-    };
-    _operations["&"] = [this]() -> bool {
-        return two_arg_limited_op<mpz>(
-            [](const auto& a, const auto& b) { return a & b; });
-    };
-    _operations["|"] = [this]() -> bool {
-        return two_arg_limited_op<mpz>(
-            [](const auto& a, const auto& b) { return a | b; });
-    };
-    _operations["xor"] = [this]() -> bool {
-        return two_arg_limited_op<mpz>(
-            [](const auto& a, const auto& b) { return a ^ b; });
-    };
-    _operations["~"] = [this]() -> bool {
-        return one_arg_limited_op<mpz>([](const auto& a) { return ~a; });
-    };
-    _operations["^"] = [this]() -> bool {
-        return two_arg_conv_op(
-            [](const auto& a, const auto& b) { return pow(a, b); },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
-    };
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["sin"] = {
+        "returns Sine of the first item on the stack", [this]() -> bool {
+            return one_arg_conv_op(
+                [this](const auto& a) -> numeric {
+                    return scaled_trig_op(a,
+                                          [](const auto& a) { return sin(a); });
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["cos"] = {
+        "returns Cosine of the first item on the stack", [this]() -> bool {
+            return one_arg_conv_op(
+                [this](const auto& a) -> numeric {
+                    return scaled_trig_op(a,
+                                          [](const auto& a) { return cos(a); });
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["tan"] = {
+        "returns Tangent of the first item on the stack", [this]() -> bool {
+            return one_arg_conv_op(
+                [this](const auto& a) -> numeric {
+                    return scaled_trig_op(a,
+                                          [](const auto& a) { return tan(a); });
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["asin"] = {
+        "returns Arcsine of the first item on the stack", [this]() -> bool {
+            return one_arg_conv_op(
+                [this](const auto& a) -> numeric {
+                    return scaled_trig_op_inv(
+                        a, [](const auto& a) { return asin(a); });
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["acos"] = {
+        "returns Arccosine of the first item on the stack", [this]() -> bool {
+            return one_arg_conv_op(
+                [this](const auto& a) -> numeric {
+                    return scaled_trig_op_inv(
+                        a, [](const auto& a) { return acos(a); });
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["atan"] = {
+        "returns Arctangent of the first item on the stack", [this]() -> bool {
+            return one_arg_conv_op(
+                [this](const auto& a) -> numeric {
+                    return scaled_trig_op_inv(
+                        a, [](const auto& a) { return atan(a); });
+                },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+    _operations["e"] = {"pushes constant e onto the stack", [this]() -> bool {
+                            stack_entry e(boost::math::constants::e<mpf>(),
+                                          _base, _fixed_bits, _precision,
+                                          _is_signed);
+                            _stack.push_front(std::move(e));
+                            return true;
+                        }};
+    _operations["pi"] = {"pushes constant Pi onto the stack", [this]() -> bool {
+                             stack_entry e(boost::math::constants::pi<mpf>(),
+                                           _base, _fixed_bits, _precision,
+                                           _is_signed);
+                             _stack.push_front(std::move(e));
+                             return true;
+                         }};
+    _operations["neg"] = {
+        "negates the first item on the stack", [this]() -> bool {
+            return one_arg_op([](const auto& a) { return -a; });
+        }};
+    _operations["%"] = {
+        "modular division for the first two items on the stack",
+        [this]() -> bool {
+            return two_arg_limited_op<mpz>(
+                [](const auto& a, const auto& b) { return a % b; });
+        }};
+    _operations["&"] = {
+        "bitwise AND of the first two items on the stack", [this]() -> bool {
+            return two_arg_limited_op<mpz>(
+                [](const auto& a, const auto& b) { return a & b; });
+        }};
+    _operations["|"] = {
+        "bitwise OR of the first two items on the stack", [this]() -> bool {
+            return two_arg_limited_op<mpz>(
+                [](const auto& a, const auto& b) { return a | b; });
+        }};
+    _operations["xor"] = {
+        "bitwise xor of the first two items on the stack", [this]() -> bool {
+            return two_arg_limited_op<mpz>(
+                [](const auto& a, const auto& b) { return a ^ b; });
+        }};
+    _operations["~"] = {
+        "bitwise inversion of the first item on the stack", [this]() -> bool {
+            return one_arg_limited_op<mpz>([](const auto& a) { return ~a; });
+        }};
+    _operations["^"] = {
+        "exponentiation for the first two items on the stack",
+        [this]() -> bool {
+            return two_arg_conv_op(
+                [](const auto& a, const auto& b) { return pow(a, b); },
+                std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+                std::tuple<mpf, mpc>{});
+        }};
+
+    _op_names_max_strlen = 1;
+    std::transform(_operations.begin(), _operations.end(),
+                   std::back_inserter(_op_names), [this](const auto& kv) {
+                       size_t sz = kv.first.size();
+                       if (sz > _op_names_max_strlen)
+                       {
+                           _op_names_max_strlen = sz;
+                       }
+                       return kv.first;
+                   });
+    std::sort(_op_names.begin(), _op_names.end());
 }
