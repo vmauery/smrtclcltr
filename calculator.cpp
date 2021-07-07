@@ -260,6 +260,17 @@ void calculator::make_functions()
 {
     _operations["debug"] = {"enable debug",
                             [this]() -> bool { return debug(); }};
+    _operations["clear"] = {"clear the stack and settings", [this]() -> bool {
+                                _stack.clear();
+                                return true;
+                            }};
+    _operations["depth"] = {
+        "returns the number of items on the stack", [this]() -> bool {
+            stack_entry e(mpz(_stack.size()), _base, _fixed_bits, _precision,
+                          _is_signed);
+            _stack.push_front(std::move(e));
+            return true;
+        }};
     _operations["base"] = {"sets the numeric base",
                            [this]() -> bool { return base(); }};
     _operations["fixed_bits"] = {"sets the number of fixed bits",
@@ -286,6 +297,16 @@ void calculator::make_functions()
                                _stack.pop_front();
                                return true;
                            }};
+    _operations["dup"] = {"duplicates first item on the stack",
+                          [this]() -> bool {
+                              if (_stack.size() < 1)
+                              {
+                                  return false;
+                              }
+                              stack_entry a = _stack.front();
+                              _stack.push_front(a);
+                              return true;
+                          }};
     _operations["swap"] = {"swaps position of first two items on the stack",
                            [this]() -> bool {
                                if (_stack.size() < 2)
@@ -324,6 +345,47 @@ void calculator::make_functions()
                 [](const auto& a, const auto& b) { return a / b; },
                 std::tuple<mpz>{}, std::tuple<mpq>{},
                 std::tuple<mpq, mpf, mpc>{});
+        }};
+    _operations["sum"] = {
+        "returns the sum of the first X items on the stack", [this]() -> bool {
+            stack_entry e = _stack.front();
+            mpz* v = std::get_if<mpz>(&e.value);
+            if (!v || (*v > 1000000000) || (*v >= _stack.size()))
+            {
+                return false;
+            }
+            _stack.pop_front();
+            size_t count = static_cast<size_t>(*v - 1);
+            auto add = std::get<1>(_operations["+"]);
+            for (; count > 0; count--)
+            {
+                if (!add())
+                {
+                    return false;
+                }
+            }
+            return true;
+        }};
+    _operations["prod"] = {
+        "returns the product of the first X items on the stack",
+        [this]() -> bool {
+            stack_entry e = _stack.front();
+            mpz* v = std::get_if<mpz>(&e.value);
+            if (!v || (*v > 1000000000) || (*v >= _stack.size()))
+            {
+                return false;
+            }
+            _stack.pop_front();
+            size_t count = static_cast<size_t>(*v - 1);
+            auto mult = std::get<1>(_operations["*"]);
+            for (; count > 0; count--)
+            {
+                if (!mult())
+                {
+                    return false;
+                }
+            }
+            return true;
         }};
     _operations["sqrt"] = {
         "square root of the first item on the stack", [this]() -> bool {
