@@ -346,6 +346,41 @@ void calculator::make_functions()
                 std::tuple<mpz>{}, std::tuple<mpq>{},
                 std::tuple<mpq, mpf, mpc>{});
         }};
+    _operations["range"] = {
+        "adds to the stack a range of numbers [Y..X)", [this]() -> bool {
+            stack_entry xe = _stack.front();
+            _stack.pop_front();
+            stack_entry ye = _stack.front();
+            mpz* x = std::get_if<mpz>(&xe.value);
+            mpz* y = std::get_if<mpz>(&ye.value);
+            if (!x || !y)
+            {
+                _stack.push_front(xe);
+                return false;
+            }
+            _stack.pop_front();
+            mpz step, count;
+            if (*x > *y)
+            {
+                count = *x - *y;
+                step = 1;
+            }
+            else
+            {
+                count = *y - *x;
+                step = -1;
+            }
+            mpz v = *y;
+            for (; count > 0; count--)
+            {
+                stack_entry ve;
+                ve.value = v;
+                _stack.emplace_front(v, _base, _fixed_bits, _precision,
+                                     _is_signed);
+                v += step;
+            }
+            return true;
+        }};
     _operations["sum"] = {
         "returns the sum of the first X items on the stack", [this]() -> bool {
             stack_entry e = _stack.front();
