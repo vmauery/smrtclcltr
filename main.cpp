@@ -12,7 +12,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 int main()
 {
-    calculator calc;
+    Calculator calc;
     calc.run();
     return 0;
 }

@@ -78,7 +78,9 @@ add_definitions (-DBOOST_ASIO_DISABLE_THREADS)
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable (smrtclcltr main.cpp numeric.cpp calculator.cpp )
+file(GLOB FUNCTIONS functions/*.cpp)
+
+add_executable (smrtclcltr main.cpp numeric.cpp constants.cpp calculator.cpp ${FUNCTIONS})
 if (USE_GMP_MATH)
     target_link_libraries (smrtclcltr -lgmp)
 endif()
