@@ -48,6 +48,10 @@ using complex_backend =
 using rational_backend =
     boost::multiprecision::backends::rational_adaptor<int_backend>;
 
+static inline void set_default_precision(int)
+{
+}
+
 #else /* USE_GMP_BACKEND */
 
 using int_backend = boost::multiprecision::gmp_int;
@@ -58,6 +62,12 @@ using complex_backend =
     boost::multiprecision::complex_adaptor<boost::multiprecision::gmp_float<0>>;
 
 using rational_backend = boost::multiprecision::gmp_rational;
+
+static inline void set_default_precision(int iv)
+{
+    boost::multiprecision::number<
+        float_backend, boost::multiprecision::et_off>::default_precision(iv);
+}
 
 #endif // CPP / GMP
 
@@ -74,6 +84,10 @@ using mpq = boost::multiprecision::number<rational_backend,
                                           boost::multiprecision::et_off>;
 
 #else // basic types
+
+static inline void set_default_precision(int)
+{
+}
 
 #include <complex>
 

@@ -147,7 +147,7 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
         throw;
     }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
-                             calc.config.fixed_bits, calc.config.precision,
+                             calc.config.fixed_bits, a.precision,
                              calc.config.is_signed);
     return true;
 }
@@ -186,7 +186,7 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
         throw;
     }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
-                             calc.config.fixed_bits, calc.config.precision,
+                             calc.config.fixed_bits, a.precision,
                              calc.config.is_signed);
     return true;
 }
@@ -221,7 +221,7 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
         throw;
     }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
-                             calc.config.fixed_bits, calc.config.precision,
+                             calc.config.fixed_bits, a.precision,
                              calc.config.is_signed);
     return true;
 }
@@ -251,9 +251,9 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
         calc.stack.push_front(b);
         throw;
     }
-    calc.stack.emplace_front(std::move(cv), calc.config.base,
-                             calc.config.fixed_bits, calc.config.precision,
-                             calc.config.is_signed);
+    calc.stack.emplace_front(
+        std::move(cv), calc.config.base, calc.config.fixed_bits,
+        std::min(a.precision, b.precision), calc.config.is_signed);
     return true;
 }
 
@@ -299,9 +299,9 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
         calc.stack.push_front(b);
         throw;
     }
-    calc.stack.emplace_front(std::move(cv), calc.config.base,
-                             calc.config.fixed_bits, calc.config.precision,
-                             calc.config.is_signed);
+    calc.stack.emplace_front(
+        std::move(cv), calc.config.base, calc.config.fixed_bits,
+        std::min(a.precision, b.precision), calc.config.is_signed);
     return true;
 }
 
@@ -343,9 +343,9 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
         calc.stack.push_front(b);
         throw;
     }
-    calc.stack.emplace_front(std::move(cv), calc.config.base,
-                             calc.config.fixed_bits, calc.config.precision,
-                             calc.config.is_signed);
+    calc.stack.emplace_front(
+        std::move(cv), calc.config.base, calc.config.fixed_bits,
+        std::min(a.precision, b.precision), calc.config.is_signed);
     return true;
 }
 

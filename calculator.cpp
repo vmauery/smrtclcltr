@@ -229,6 +229,7 @@ bool Calculator::precision()
         if (iv > 0 && iv <= 1000000)
         {
             config.precision = iv;
+            set_default_precision(iv);
             return true;
         }
     }
@@ -258,7 +259,7 @@ void Calculator::show_stack()
                 std::cout << std::hex;
                 break;
         }
-        std::cout << it->value << "\n";
+        std::cout << std::setprecision(it->precision) << it->value << "\n";
     }
 }
 
