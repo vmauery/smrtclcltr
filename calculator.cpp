@@ -149,7 +149,14 @@ bool Calculator::run()
         }
         else
         {
-            run_one(token);
+            try
+            {
+                run_one(token);
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "Exception: " << e.what() << "\n";
+            }
         }
     }
     return true;

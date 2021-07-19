@@ -134,8 +134,18 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
     }
     stack_entry a = calc.stack.front();
     calc.stack.pop_front();
+
     numeric cv;
-    cv = std::visit([&fn](const auto& a) { return operate(fn, a); }, a.value);
+    try
+    {
+        cv = std::visit([&fn](const auto& a) { return operate(fn, a); },
+                        a.value);
+    }
+    catch (const std::exception& e)
+    {
+        calc.stack.push_front(a);
+        throw;
+    }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
                              calc.config.fixed_bits, calc.config.precision,
                              calc.config.is_signed);
@@ -164,8 +174,17 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
         return false;
     }
     calc.stack.pop_front();
-    numeric cv =
-        std::visit([&fn](const auto& a) { return operate(fn, a); }, lca);
+
+    numeric cv;
+    try
+    {
+        cv = std::visit([&fn](const auto& a) { return operate(fn, a); }, lca);
+    }
+    catch (const std::exception& e)
+    {
+        calc.stack.push_front(a);
+        throw;
+    }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
                              calc.config.fixed_bits, calc.config.precision,
                              calc.config.is_signed);
@@ -190,8 +209,17 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
         return false;
     }
     calc.stack.pop_front();
-    numeric cv =
-        std::visit([&fn](const auto& a) { return operate(fn, a); }, la);
+
+    numeric cv;
+    try
+    {
+        cv = std::visit([&fn](const auto& a) { return operate(fn, a); }, la);
+    }
+    catch (const std::exception& e)
+    {
+        calc.stack.push_front(a);
+        throw;
+    }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
                              calc.config.fixed_bits, calc.config.precision,
                              calc.config.is_signed);
@@ -210,9 +238,19 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
     calc.stack.pop_front();
     calc.stack.pop_front();
 
-    numeric cv = std::visit(
-        [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
-        a.value, b.value);
+    numeric cv;
+    try
+    {
+        cv = std::visit(
+            [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
+            a.value, b.value);
+    }
+    catch (const std::exception& e)
+    {
+        calc.stack.push_front(a);
+        calc.stack.push_front(b);
+        throw;
+    }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
                              calc.config.fixed_bits, calc.config.precision,
                              calc.config.is_signed);
@@ -248,9 +286,19 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
     calc.stack.pop_front();
     calc.stack.pop_front();
 
-    numeric cv = std::visit(
-        [&fn](const auto& a, const auto& b) { return operate(fn, a, b); }, lca,
-        lcb);
+    numeric cv;
+    try
+    {
+        cv = std::visit(
+            [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
+            lca, lcb);
+    }
+    catch (const std::exception& e)
+    {
+        calc.stack.push_front(a);
+        calc.stack.push_front(b);
+        throw;
+    }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
                              calc.config.fixed_bits, calc.config.precision,
                              calc.config.is_signed);
@@ -282,9 +330,19 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
     calc.stack.pop_front();
     calc.stack.pop_front();
 
-    numeric cv = std::visit(
-        [&fn](const auto& a, const auto& b) { return operate(fn, a, b); }, la,
-        lb);
+    numeric cv;
+    try
+    {
+        cv = std::visit(
+            [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
+            la, lb);
+    }
+    catch (const std::exception& e)
+    {
+        calc.stack.push_front(a);
+        calc.stack.push_front(b);
+        throw;
+    }
     calc.stack.emplace_front(std::move(cv), calc.config.base,
                              calc.config.fixed_bits, calc.config.precision,
                              calc.config.is_signed);
