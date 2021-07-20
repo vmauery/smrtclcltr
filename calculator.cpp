@@ -243,6 +243,10 @@ void Calculator::show_stack()
     size_t c = stack.size();
     for (auto it = stack.rbegin(); it != stack.rend(); it++)
     {
+        if (config.debug)
+        {
+            std::cout << numeric_types[it->value.index()] << " | ";
+        }
         std::cout << std::dec << c << ": ";
         c--;
         switch (it->base)

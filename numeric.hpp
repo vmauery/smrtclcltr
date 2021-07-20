@@ -285,6 +285,8 @@ static constexpr bool has_mpz_to_mpc = util::implicit<mpz, mpc>::exists;
 static constexpr bool has_mpq_to_mpc = util::implicit<mpq, mpc>::exists;
 
 using numeric = std::variant<mpz, mpf, mpc, mpq>;
+static constexpr std::array<const char*, 4> numeric_types = {
+    {"mpz", "mpf", "mpc", "mpq"}};
 
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa, const mpz& bb)
