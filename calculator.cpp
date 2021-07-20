@@ -332,6 +332,7 @@ void Calculator::make_functions()
     _operations["xor"] = functions::bitwise_xor;
     _operations["~"] = functions::bitwise_inv;
     _operations["^"] = functions::power;
+    _operations["modexp"] = functions::modexp;
 
     _op_names_max_strlen = 1;
     std::transform(_operations.begin(), _operations.end(),

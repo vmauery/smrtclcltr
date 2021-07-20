@@ -288,6 +288,13 @@ using numeric = std::variant<mpz, mpf, mpc, mpq>;
 static constexpr std::array<const char*, 4> numeric_types = {
     {"mpz", "mpf", "mpc", "mpq"}};
 
+// TODO: add the other 80 combinations? maybe as needed?
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa, const mpz& bb, const mpz& cc)
+{
+    return fn(aa, bb, cc);
+}
+
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa, const mpz& bb)
 {

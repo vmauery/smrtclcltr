@@ -349,6 +349,58 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
     return true;
 }
 
+template <typename... AllowedTypes, typename Fn>
+bool three_arg_limited_op(Calculator& calc, const Fn& fn,
+                          const std::tuple<AllowedTypes...>& /*allowed types*/)
+{
+    if (calc.stack.size() < 3)
+    {
+        return false;
+    }
+
+    stack_entry a = calc.stack[2];
+    stack_entry b = calc.stack[1];
+    stack_entry c = calc.stack[0];
+
+    if (!variant_holds_type<AllowedTypes...>(a.value) ||
+        !variant_holds_type<AllowedTypes...>(b.value) ||
+        !variant_holds_type<AllowedTypes...>(c.value))
+    {
+        return false;
+    }
+    std::variant<AllowedTypes...> la;
+    std::variant<AllowedTypes...> lb;
+    std::variant<AllowedTypes...> lc;
+    if (!reduce(a.value, la)() || !reduce(b.value, lb)() ||
+        !reduce(c.value, lc)())
+    {
+        return false;
+    }
+    calc.stack.pop_front();
+    calc.stack.pop_front();
+    calc.stack.pop_front();
+
+    numeric cv;
+    try
+    {
+        cv = std::visit([&fn](const auto& a, const auto& b,
+                              const auto& c) { return operate(fn, a, b, c); },
+                        la, lb, lc);
+    }
+    catch (const std::exception& e)
+    {
+        calc.stack.push_front(a);
+        calc.stack.push_front(b);
+        calc.stack.push_front(c);
+        throw;
+    }
+    calc.stack.emplace_front(std::move(cv), calc.config.base,
+                             calc.config.fixed_bits,
+                             std::min({a.precision, b.precision, c.precision}),
+                             calc.config.is_signed);
+    return true;
+}
+
 template <typename Fn>
 auto scaled_trig_op(Calculator& calc, auto a, const Fn& fn)
 {

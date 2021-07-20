@@ -42,6 +42,7 @@ extern CalcFunction bitwise_or;
 extern CalcFunction bitwise_xor;
 extern CalcFunction bitwise_inv;
 extern CalcFunction power;
+extern CalcFunction modexp;
 extern CalcFunction drop;
 extern CalcFunction dup;
 extern CalcFunction swap;
