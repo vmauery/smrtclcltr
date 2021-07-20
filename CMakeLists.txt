@@ -21,11 +21,20 @@ CHECK_LIBRARY_EXISTS (gmp __gmpf_abs "" HAS_GMP_LIB)
 CMAKE_DEPENDENT_OPTION(USE_GMP_MATH "Build using the GNU Multiprecision (GMP) library" OFF
                        "HAS_GMP_HEADERS;HAS_GMP_LIB" OFF)
 
+CHECK_INCLUDE_FILES(mpfr.h HAS_MPFR_HEADERS)
+CHECK_LIBRARY_EXISTS (mpfr __mpfr_abs "" HAS_MPFR_LIB)
+
+CMAKE_DEPENDENT_OPTION(USE_MPFR_MATH "Build using the GNU MPFR library" OFF
+    "HAS_GMP_HEADERS;HAS_GMP_LIB;HAS_MPFR_HEADERS;HAS_MPFR_LIB" OFF)
+
 option(USE_BOOST_MATH "Build using the Boost CPP Multiprecision library" ON)
 
 if (USE_GMP_MATH)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_GMP_BACKEND")
     message("Using GMP for multiprecision support")
+elseif (USE_MPFR_MATH)
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MPFR_BACKEND")
+    message("Using MPFR for multiprecision support")
 elseif (USE_BOOST_MATH)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_BOOST_CPP_BACKEND")
     message("Using Boost CPP for multiprecision support")
@@ -83,4 +92,7 @@ file(GLOB FUNCTIONS functions/*.cpp)
 add_executable (smrtclcltr main.cpp numeric.cpp constants.cpp calculator.cpp ${FUNCTIONS})
 if (USE_GMP_MATH)
     target_link_libraries (smrtclcltr -lgmp)
+endif()
+if (USE_MPFR_MATH)
+    target_link_libraries (smrtclcltr -lgmp -lmpfr)
 endif()

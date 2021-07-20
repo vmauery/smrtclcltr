@@ -11,7 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <iostream>
 #include <variant>
 
-#if (USE_BOOST_CPP_BACKEND || USE_GMP_BACKEND)
+#if (USE_BOOST_CPP_BACKEND || USE_GMP_BACKEND || USE_MPFR_BACKEND)
 
 #ifdef USE_BOOST_CPP_BACKEND
 #include <boost/serialization/nvp.hpp>
@@ -19,8 +19,10 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/multiprecision/cpp_complex.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
-#else // USE_GMP_BACKEND
+#elif defined(USE_GMP_BACKEND)
 #include <boost/multiprecision/gmp.hpp>
+#elif defined(USE_MPFR_BACKEND)
+#include <boost/multiprecision/mpfr.hpp>
 #endif
 #include <boost/multiprecision/complex_adaptor.hpp>
 #include <boost/multiprecision/number.hpp>
@@ -52,7 +54,7 @@ static inline void set_default_precision(int)
 {
 }
 
-#else /* USE_GMP_BACKEND */
+#elif defined(USE_GMP_BACKEND)
 
 using int_backend = boost::multiprecision::gmp_int;
 
@@ -69,7 +71,24 @@ static inline void set_default_precision(int iv)
         float_backend, boost::multiprecision::et_off>::default_precision(iv);
 }
 
-#endif // CPP / GMP
+#elif defined(USE_MPFR_BACKEND)
+
+using int_backend = boost::multiprecision::gmp_int;
+
+using float_backend = boost::multiprecision::mpfr_float_backend<0>;
+
+using complex_backend = boost::multiprecision::complex_adaptor<
+    boost::multiprecision::mpfr_float_backend<0>>;
+
+using rational_backend = boost::multiprecision::gmp_rational;
+
+static inline void set_default_precision(int iv)
+{
+    boost::multiprecision::number<
+        float_backend, boost::multiprecision::et_off>::default_precision(iv);
+}
+
+#endif // CPP / GMP / MPFR
 
 using mpz =
     boost::multiprecision::number<int_backend, boost::multiprecision::et_off>;
