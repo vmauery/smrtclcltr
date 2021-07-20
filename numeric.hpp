@@ -28,6 +28,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <boost/multiprecision/number.hpp>
 
 #ifdef USE_BOOST_CPP_BACKEND
+static constexpr const char MATH_BACKEND[] = "boost::multiprecision::cpp_*";
 static constexpr size_t max_digits = 1000;
 static constexpr int32_t exp_min = -262142;
 static constexpr int32_t exp_max = 262143;
@@ -55,6 +56,7 @@ static inline void set_default_precision(int)
 }
 
 #elif defined(USE_GMP_BACKEND)
+static constexpr const char MATH_BACKEND[] = "boost::multiprecision::gmp_*";
 
 using int_backend = boost::multiprecision::gmp_int;
 
@@ -72,6 +74,7 @@ static inline void set_default_precision(int iv)
 }
 
 #elif defined(USE_MPFR_BACKEND)
+static constexpr const char MATH_BACKEND[] = "boost::multiprecision::mpfr+gmp";
 
 using int_backend = boost::multiprecision::gmp_int;
 
@@ -103,6 +106,7 @@ using mpq = boost::multiprecision::number<rational_backend,
                                           boost::multiprecision::et_off>;
 
 #else // basic types
+static constexpr const char MATH_BACKEND[] = "native types";
 
 static inline void set_default_precision(int)
 {

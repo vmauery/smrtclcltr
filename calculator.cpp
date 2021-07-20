@@ -164,6 +164,7 @@ bool Calculator::run()
 
 bool Calculator::debug()
 {
+    std::cout << "using " << MATH_BACKEND << " for numeric backend\n";
     config.debug = !config.debug;
     return true;
 }
