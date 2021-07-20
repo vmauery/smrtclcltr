@@ -97,11 +97,37 @@ auto constexpr help = "modular division for the first two items on the stack";
 namespace power
 {
 
+numeric pow(const mpz& base, const mpz& exponent)
+{
+    mpz b(base), e(exponent);
+    bool invert = false;
+    if (e < 0)
+    {
+        invert = true;
+        e = -e;
+    }
+    mpz result = 1;
+    while (e > 0)
+    {
+        if (e & 1)
+        {
+            result *= b;
+        }
+        e = e >> 1;
+        b *= b;
+    }
+    if (invert)
+    {
+        return mpq(1, result);
+    }
+    return result;
+}
+
 bool impl(Calculator& calc)
 {
     return two_arg_conv_op(
         calc, [](const auto& a, const auto& b) { return pow(a, b); },
-        std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
+        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
 }
 
 auto constexpr help = "exponentiation for the first two items on the stack";

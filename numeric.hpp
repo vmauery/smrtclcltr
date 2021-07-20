@@ -291,7 +291,7 @@ static constexpr std::array<const char*, 4> numeric_types = {
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa, const mpz& bb)
 {
-    return mpz(fn(aa, bb));
+    return fn(aa, bb);
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa, const mpq& bb)
