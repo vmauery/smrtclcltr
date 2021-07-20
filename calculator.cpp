@@ -325,6 +325,7 @@ void Calculator::make_functions()
     _operations["pi"] = constants::pi;
     _operations["i"] = constants::i;
     _operations["neg"] = functions::negate;
+    _operations["inv"] = functions::inverse;
     _operations["%"] = functions::divmod;
     _operations["&"] = functions::bitwise_and;
     _operations["|"] = functions::bitwise_or;

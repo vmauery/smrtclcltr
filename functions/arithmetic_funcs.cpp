@@ -69,6 +69,18 @@ auto constexpr help = "negates the first item on the stack";
 
 } // namespace negate
 
+namespace inverse
+{
+
+bool impl(Calculator& calc)
+{
+    return one_arg_op(calc, [](const auto& a) { return 1 / a; });
+}
+
+auto constexpr help = "inverse of the first item on the stack (1/X)";
+
+} // namespace inverse
+
 namespace divmod
 {
 
@@ -106,6 +118,7 @@ CalcFunction subtract = {function::subtract::help, function::subtract::impl};
 CalcFunction multiply = {function::multiply::help, function::multiply::impl};
 CalcFunction divide = {function::divide::help, function::divide::impl};
 CalcFunction negate = {function::negate::help, function::negate::impl};
+CalcFunction inverse = {function::inverse::help, function::inverse::impl};
 CalcFunction divmod = {function::divmod::help, function::divmod::impl};
 CalcFunction power = {function::power::help, function::power::impl};
 

@@ -35,6 +35,7 @@ extern CalcFunction log;
 extern CalcFunction ln;
 extern CalcFunction factorial;
 extern CalcFunction negate;
+extern CalcFunction inverse;
 extern CalcFunction divmod;
 extern CalcFunction bitwise_and;
 extern CalcFunction bitwise_or;
