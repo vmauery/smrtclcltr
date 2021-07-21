@@ -7,11 +7,14 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <deque>
 #include <functional>
-#include <functions.hpp>
 #include <map>
 #include <numeric.hpp>
 #include <string>
 #include <tuple>
+
+class Calculator;
+
+using CalcFunction = std::tuple<std::string, std::function<bool(Calculator&)>>;
 
 struct stack_entry
 {

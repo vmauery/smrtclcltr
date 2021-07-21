@@ -6,13 +6,10 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #pragma once
 
+#include <calculator.hpp>
 #include <functional>
 #include <string>
 #include <tuple>
-
-class Calculator;
-
-using CalcFunction = std::tuple<std::string, std::function<bool(Calculator&)>>;
 
 namespace functions
 {
