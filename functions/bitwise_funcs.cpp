@@ -16,7 +16,11 @@ bool impl(Calculator& calc)
         calc, [](const auto& a, const auto& b) { return a & b; });
 }
 
-auto constexpr help = "bitwise AND of the first two items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x y &\n"
+                      "\n"
+                      "    Returns the bitwise AND of the bottom two items on "
+                      "the stack (x & y)\n";
 
 } // namespace bitwise_and
 
@@ -29,7 +33,11 @@ bool impl(Calculator& calc)
         calc, [](const auto& a, const auto& b) { return a | b; });
 }
 
-auto constexpr help = "bitwise OR of the first two items on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x y |\n"
+    "\n"
+    "    Returns the bitwise OR of the bottom two items on the stack (x & y)\n";
 
 } // namespace bitwise_or
 
@@ -42,7 +50,11 @@ bool impl(Calculator& calc)
         calc, [](const auto& a, const auto& b) { return a % b; });
 }
 
-auto constexpr help = "bitwise XOR of the first two items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x y xor\n"
+                      "\n"
+                      "    Returns the bitwise XOR of the bottom two items on "
+                      "the stack (x xor y)\n";
 
 } // namespace bitwise_xor
 
@@ -54,7 +66,11 @@ bool impl(Calculator& calc)
     return one_arg_limited_op<mpz>(calc, [](const auto& a) { return ~a; });
 }
 
-auto constexpr help = "bitwise INV of the first two items on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x ~\n"
+    "\n"
+    "    Returns the bitwise negation of the bottom item on the stack (~x)\n";
 
 } // namespace bitwise_inv
 

@@ -19,7 +19,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "pushes constant e onto the stack";
+auto constexpr help = "\n"
+                      "    Usage: e\n"
+                      "\n"
+                      "    Returns constant e (Euler's number)\n";
 
 } // namespace _e
 
@@ -35,8 +38,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "pushes constant Pi onto the stack";
-
+auto constexpr help = "\n"
+                      "    Usage: pi\n"
+                      "\n"
+                      "    Returns constant pi\n";
 } // namespace _pi
 
 namespace _i
@@ -50,7 +55,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "pushes constant i onto the stack";
+auto constexpr help = "\n"
+                      "    Usage: i\n"
+                      "\n"
+                      "    Returns constant i (square root of -1)\n";
 
 } // namespace _i
 

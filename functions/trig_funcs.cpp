@@ -22,7 +22,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "returns Sine of the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x sin\n"
+    "\n"
+    "    Returns the sine of the bottom item on the stack: sin(x)\n";
 
 } // namespace sine
 
@@ -40,7 +44,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "returns Cosine of the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x cos\n"
+    "\n"
+    "    Returns the cosine of the bottom item on the stack: cos(x)\n";
 
 } // namespace cosine
 
@@ -58,7 +66,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "returns Tangent of the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x tan\n"
+    "\n"
+    "    Returns the tangent of the bottom item on the stack: tan(x)\n";
 
 } // namespace tangent
 
@@ -76,7 +88,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "returns Arcsine of the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x asin\n"
+    "\n"
+    "    Returns the arcsine of the bottom item on the stack: asin(x)\n";
 
 } // namespace arcsine
 
@@ -94,7 +110,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "returns Arccosine of the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x acos\n"
+    "\n"
+    "    Returns the arccosine of the bottom item on the stack: acos(x)\n";
 
 } // namespace arccosine
 
@@ -112,7 +132,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "returns Arctangent of the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x atan\n"
+    "\n"
+    "    Returns the arctangent of the bottom item on the stack: atan(x)\n";
 
 } // namespace arctangent
 

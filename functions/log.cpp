@@ -35,7 +35,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "base 10 logarithm of X";
+auto constexpr help = "\n"
+                      "    Usage: x log\n"
+                      "\n"
+                      "    Returns the base-10 logarithm of the "
+                      "bottom item on the stack: log10(x)\n";
 
 } // namespace logarithm
 
@@ -66,7 +70,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "base e logarithm of X";
+auto constexpr help = "\n"
+                      "    Usage: x ln\n"
+                      "\n"
+                      "    Returns the base-e logarithm of the "
+                      "bottom item on the stack: ln(x)\n";
 
 } // namespace natural_logarithm
 } // namespace function

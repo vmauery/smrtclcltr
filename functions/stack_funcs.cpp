@@ -21,7 +21,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "drops one item from the stack";
+auto constexpr help = "\n"
+                      "    Usage: x drop\n"
+                      "\n"
+                      "    Removes the bottom item on the stack (x)\n";
 
 } // namespace drop
 
@@ -39,7 +42,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "duplicates first item on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x dup\n"
+                      "\n"
+                      "    Duplicates the bottom item on the stack (x x)\n";
 
 } // namespace dup
 
@@ -61,7 +67,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "swaps position of first two items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x y swap\n"
+                      "\n"
+                      "    Swaps the bottom two items on the stack (y x)\n";
 
 } // namespace swap
 
@@ -74,7 +83,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "clear the stack and settings";
+auto constexpr help = "\n"
+                      "    Usage: clear\n"
+                      "\n"
+                      "    Removes all items from the stack\n";
 
 } // namespace clear
 
@@ -90,7 +102,10 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "returns the number of items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: depth\n"
+                      "\n"
+                      "    Returns the number of items on the stack\n";
 
 } // namespace depth
 

@@ -16,7 +16,11 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "TEMPLATE of first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x TEMPLATE\n"
+    "\n"
+    "    Returns the TEMPLATE of the bottom item on the stack (x)\n";
 
 } // namespace TEMPLATE
 } // namespace function

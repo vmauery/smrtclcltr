@@ -31,7 +31,11 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "factorial of first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x !\n"
+    "\n"
+    "    Returns the factorial of the bottom item on the stack (x!)\n";
 
 } // namespace factorial
 } // namespace function

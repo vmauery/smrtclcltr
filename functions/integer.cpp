@@ -42,7 +42,11 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "factor the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x factor\n"
+    "\n"
+    "    Returns the factors of the bottom item on the stack\n";
 
 } // namespace factor
 
@@ -67,8 +71,11 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help =
-    "greatest common divisor (GCD) of the first two items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x y gcd\n"
+                      "\n"
+                      "    Returns the greatest common divisor (GCD) of the "
+                      "bottom two items on the stack: GCD(x,y)\n";
 
 } // namespace gcd
 
@@ -93,8 +100,11 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help =
-    "least common multiple (lcm) of the first two items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x y lcd\n"
+                      "\n"
+                      "    Returns the least common multiple (LCD) of the "
+                      "bottom two items on the stack: LCD(x,y)\n";
 
 } // namespace lcm
 } // namespace function

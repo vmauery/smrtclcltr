@@ -46,7 +46,11 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "adds to the stack a range of numbers [Y..X)";
+auto constexpr help = "\n"
+                      "    Usage: x y range\n"
+                      "\n"
+                      "    Returns the numbers in the range of [x,y) of the "
+                      "bottom two items on the stack: x x+1 ... y-1\n";
 
 } // namespace range
 } // namespace function

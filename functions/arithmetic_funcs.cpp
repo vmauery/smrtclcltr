@@ -15,7 +15,11 @@ bool impl(Calculator& calc)
     return two_arg_op(calc, [](const auto& a, const auto& b) { return a + b; });
 }
 
-auto constexpr help = "addition for first two items on stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x y +\n"
+    "\n"
+    "    Returns the sum of the bottom two items on the stack (x + y)\n";
 
 } // namespace add
 
@@ -27,7 +31,11 @@ bool impl(Calculator& calc)
     return two_arg_op(calc, [](const auto& a, const auto& b) { return a - b; });
 }
 
-auto constexpr help = "subtraction for first two items on stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x y -\n"
+    "\n"
+    "    Returns the difference of the bottom two items on the stack (x - y)\n";
 
 } // namespace subtract
 
@@ -39,7 +47,11 @@ bool impl(Calculator& calc)
     return two_arg_op(calc, [](const auto& a, const auto& b) { return a * b; });
 }
 
-auto constexpr help = "multiplication for first two items on stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x y *\n"
+    "\n"
+    "    Returns the product of the bottom two items on the stack (x * y)\n";
 
 } // namespace multiply
 
@@ -53,7 +65,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz>{}, std::tuple<mpq>{}, std::tuple<mpq, mpf, mpc>{});
 }
 
-auto constexpr help = "division for first two items on stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x y /\n"
+    "\n"
+    "    Returns the quotient of the bottom two items on the stack (x / y)\n";
 
 } // namespace divide
 
@@ -65,7 +81,11 @@ bool impl(Calculator& calc)
     return one_arg_op(calc, [](const auto& a) { return -a; });
 }
 
-auto constexpr help = "negates the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x neg\n"
+    "\n"
+    "    Returns the negation of the bottom item on the stack (-x)\n";
 
 } // namespace negate
 
@@ -77,7 +97,11 @@ bool impl(Calculator& calc)
     return one_arg_op(calc, [](const auto& a) { return 1 / a; });
 }
 
-auto constexpr help = "inverse of the first item on the stack (1/X)";
+auto constexpr help = "\n"
+                      "    Usage: x inv\n"
+                      "\n"
+                      "    Returns the multiplicative inverse of the bottom "
+                      "item on the stack (1/x)\n";
 
 } // namespace inverse
 
@@ -90,7 +114,11 @@ bool impl(Calculator& calc)
         calc, [](const auto& a, const auto& b) { return a % b; });
 }
 
-auto constexpr help = "modular division for the first two items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x y %\n"
+                      "\n"
+                      "    Returns the division remainder of the bottom two "
+                      "items on the stack (x mod y)\n";
 
 } // namespace divmod
 
@@ -130,7 +158,11 @@ bool impl(Calculator& calc)
         std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
 }
 
-auto constexpr help = "exponentiation for the first two items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: x y ^\n"
+                      "\n"
+                      "    Returns exponentiation of the bottom two items on "
+                      "the stack, e.g., x raised to the y power (x^y)\n";
 
 } // namespace power
 
@@ -165,8 +197,12 @@ bool impl(Calculator& calc)
         std::tuple<mpz>{});
 }
 
-auto constexpr help = "modular exponentiation using the first three items on "
-                      "the stack:\n(X ^ Y) mod Z";
+auto constexpr help =
+    "\n"
+    "    Usage: x y z modexp\n"
+    "\n"
+    "    Returns modular exponentiation of the bottom three items on "
+    "the stack, e.g., x raised to the y power mod z (x^y mod z)\n";
 
 } // namespace modexp
 

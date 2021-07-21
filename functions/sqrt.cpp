@@ -34,7 +34,11 @@ bool impl(Calculator& calc)
         std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
 }
 
-auto constexpr help = "square root of the first item on the stack";
+auto constexpr help =
+    "\n"
+    "    Usage: x sqrt\n"
+    "\n"
+    "    Returns the square root of the bottom item on the stack: sqrt(x)\n";
 
 } // namespace square_root
 } // namespace function

@@ -32,7 +32,11 @@ bool impl(Calculator& calc)
     return true;
 }
 
-auto constexpr help = "returns the sum of the first X items on the stack";
+auto constexpr help = "\n"
+                      "    Usage: ... x sum\n"
+                      "\n"
+                      "    Returns the sum of the "
+                      "bottom x items on the stack: Nx * Nx-1 * ... * N0\n";
 
 } // namespace sum
 } // namespace function
