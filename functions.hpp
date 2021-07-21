@@ -45,6 +45,9 @@ extern CalcFunction dup;
 extern CalcFunction swap;
 extern CalcFunction clear;
 extern CalcFunction depth;
+extern CalcFunction factor;
+extern CalcFunction gcd;
+extern CalcFunction lcm;
 
 } // namespace functions
 
