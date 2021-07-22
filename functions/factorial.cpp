@@ -3,32 +3,54 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
+#include <boost/math/special_functions/gamma.hpp>
+#include <exception>
 #include <function.hpp>
-
 namespace function
 {
 namespace factorial
 {
 
-bool impl(Calculator& calc)
+mpf factorial(const mpf& x)
 {
+    // non-int types get gamma treatment
+    return boost::math::tgamma(x + 1);
+}
 
-    stack_entry e = calc.stack.front();
-    mpz* v = std::get_if<mpz>(&e.value);
-    if (!v || (*v > 100000))
+mpf factorial(const mpq& x)
+{
+    mpf xp(x + 1);
+    // non-int types get gamma treatment
+    return boost::math::tgamma(xp);
+}
+
+mpc factorial(const mpc&)
+{
+    throw std::invalid_argument("Not implemented for complex numbers");
+}
+
+mpz factorial(const mpz& x)
+{
+    if (x == 0)
     {
-        return false;
+        return 1;
     }
-    calc.stack.pop_front();
-    mpz f = *v;
-    mpz n = *v;
+    if (x < 0)
+    {
+        throw std::range_error("Undefined for integers x < 0");
+    }
+    mpz f = x;
+    mpz n = x;
     while (--n > 1)
     {
         f *= n;
     }
-    calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                             calc.config.precision, calc.config.is_signed);
-    return true;
+    return f;
+}
+
+bool impl(Calculator& calc)
+{
+    return one_arg_op(calc, [](const auto& x) { return factorial(x); });
 }
 
 auto constexpr help =
