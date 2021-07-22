@@ -48,6 +48,8 @@ extern CalcFunction depth;
 extern CalcFunction factor;
 extern CalcFunction gcd;
 extern CalcFunction lcm;
+extern CalcFunction combination;
+extern CalcFunction permutation;
 
 } // namespace functions
 

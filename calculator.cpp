@@ -337,6 +337,8 @@ void Calculator::make_functions()
     _operations["factor"] = functions::factor;
     _operations["gcd"] = functions::gcd;
     _operations["lcm"] = functions::lcm;
+    _operations["comb"] = functions::combination;
+    _operations["perm"] = functions::permutation;
 
     _op_names_max_strlen = 1;
     std::transform(_operations.begin(), _operations.end(),
