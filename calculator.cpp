@@ -324,6 +324,7 @@ void Calculator::make_functions()
     _operations["depth"] = functions::depth;
     _operations["drop"] = functions::drop;
     _operations["dup"] = functions::dup;
+    _operations["over"] = functions::over;
     _operations["swap"] = functions::swap;
     _operations["+"] = functions::add;
     _operations["-"] = functions::subtract;

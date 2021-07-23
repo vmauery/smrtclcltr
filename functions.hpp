@@ -42,6 +42,7 @@ extern CalcFunction power;
 extern CalcFunction modexp;
 extern CalcFunction drop;
 extern CalcFunction dup;
+extern CalcFunction over;
 extern CalcFunction swap;
 extern CalcFunction clear;
 extern CalcFunction depth;

@@ -49,6 +49,28 @@ auto constexpr help = "\n"
 
 } // namespace dup
 
+namespace over
+{
+
+bool impl(Calculator& calc)
+{
+    if (calc.stack.size() < 2)
+    {
+        return false;
+    }
+    stack_entry a = calc.stack[1];
+    calc.stack.push_front(a);
+    return true;
+}
+
+auto constexpr help =
+    "\n"
+    "    Usage: x over\n"
+    "\n"
+    "    Pushes the second to bottom item onto the stack as the bottom\n";
+
+} // namespace over
+
 namespace swap
 {
 
@@ -116,6 +138,7 @@ namespace functions
 
 CalcFunction drop = {function::drop::help, function::drop::impl};
 CalcFunction dup = {function::dup::help, function::dup::impl};
+CalcFunction over = {function::over::help, function::over::impl};
 CalcFunction swap = {function::swap::help, function::swap::impl};
 CalcFunction clear = {function::clear::help, function::clear::impl};
 CalcFunction depth = {function::depth::help, function::depth::impl};
