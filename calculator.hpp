@@ -59,12 +59,15 @@ class Calculator
     bool run();
 
   protected:
+    std::deque<Stack> saved_stacks;
+
     void make_grammar();
     void make_functions();
 
     void show_stack();
     std::string get_next_token();
     bool run_one(const std::string& expr);
+    bool undo();
 
     bool debug();
     bool base();

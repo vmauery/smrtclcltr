@@ -151,6 +151,8 @@ bool Calculator::run()
         {
             try
             {
+                // before executing the next token, save the stack
+                saved_stacks.push_front(stack);
                 run_one(token);
             }
             catch (const std::exception& e)
@@ -159,6 +161,21 @@ bool Calculator::run()
             }
         }
     }
+    return true;
+}
+
+bool Calculator::undo()
+{
+    if (saved_stacks.size() == 0)
+    {
+        return false;
+    }
+    // first, remove the stack that was saved just prior to this executing
+    saved_stacks.pop_front();
+    // then, restore the stack that would have been there
+    // prior to the previous command
+    stack = saved_stacks[0];
+    saved_stacks.pop_front();
     return true;
 }
 
@@ -276,6 +293,9 @@ void Calculator::make_functions()
 {
     _operations["debug"] = {
         "enable debug", [](Calculator& calc) -> bool { return calc.debug(); }};
+    _operations["undo"] = {
+        "undo last operation or command line",
+        [](Calculator& calc) -> bool { return calc.undo(); }};
     _operations["base"] = {
         "sets the numeric base",
         [](Calculator& calc) -> bool { return calc.base(); }};
