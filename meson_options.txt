@@ -1,0 +1,1 @@
+option('numeric', type : 'combo', choices : ['mpfr', 'gmp', 'boost', 'native'], value : 'mpfr', description: 'Numeric backend to use')

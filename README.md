@@ -13,17 +13,24 @@ The idea here is that you have a keyboard attached to your HP48GX. Remember the 
 
 ## Building
 ### Prerequisites
- - cmake and cmake
- - clang++ or g++
- - libgmp-dev
+ - meson and ninja
+ - clang++-12 or g++-10 (or later)
+ - libmpfr-dev (optional, but recommended for speed and usability)
+ - libgmp-dev (optional, but second choice)
  - libboost-dev (header-only libraries)
 
 ### Incantation
-SmrtClcltr's build system is cmake-based. So build it just like any other cmake application.
+SmrtClcltr's build system is meson-based. So build it just like any other meson application.
 ```
-# configure
-( mkdir build && cd build && cmake .. )
+# configure (name assumes gcc is default)
+meson build-gcc
 
 # build
-make -C build/
+ninja -C build-gcc
+
+# configure with an alternate compiler
+CC=clang CXX=clang++ meson build-clang
+
+# build
+ninja -C build-clang
 ```
