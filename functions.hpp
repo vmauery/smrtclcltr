@@ -51,6 +51,7 @@ extern CalcFunction gcd;
 extern CalcFunction lcm;
 extern CalcFunction combination;
 extern CalcFunction permutation;
+extern CalcFunction split;
 
 } // namespace functions
 

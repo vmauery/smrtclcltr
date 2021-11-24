@@ -28,6 +28,7 @@ src = [
   'functions/log.cpp',
   'functions/range.cpp',
   'functions/sum.cpp',
+  'functions/util_funcs.cpp',
   ]
 
 cxx = meson.get_compiler('cpp')

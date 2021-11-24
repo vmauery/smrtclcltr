@@ -360,6 +360,7 @@ void Calculator::make_functions()
     _operations["lcm"] = functions::lcm;
     _operations["comb"] = functions::combination;
     _operations["perm"] = functions::permutation;
+    _operations["split"] = functions::split;
 
     _op_names_max_strlen = 1;
     std::transform(_operations.begin(), _operations.end(),
