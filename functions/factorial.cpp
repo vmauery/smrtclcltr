@@ -29,23 +29,40 @@ mpc factorial(const mpc&)
     throw std::invalid_argument("Not implemented for complex numbers");
 }
 
+mpz bin_split_factorial(const mpz& a, const mpz& b)
+{
+    mpz d = a - b;
+    if (d <= 0)
+        return 1;
+    if (d < 4)
+    {
+        if (d == 1)
+        {
+            return a;
+        }
+        if (d == 2)
+        {
+            return a * (a - 1);
+        }
+        // d == 3
+        return a * (a - 1) * (a - 2);
+    }
+    // all other values >= 4
+    mpz m = (a + b) / 2;
+    return bin_split_factorial(a, m) * bin_split_factorial(m, b);
+}
+
 mpz factorial(const mpz& x)
 {
-    if (x == 0)
-    {
-        return 1;
-    }
     if (x < 0)
     {
         throw std::range_error("Undefined for integers x < 0");
     }
-    mpz f = x;
-    mpz n = x;
-    while (--n > 1)
+    if (x < 2)
     {
-        f *= n;
+        return 1;
     }
-    return f;
+    return bin_split_factorial(x, 0);
 }
 
 bool impl(Calculator& calc)
