@@ -73,6 +73,118 @@ auto constexpr help =
 
 } // namespace divide
 
+namespace ceil
+{
+
+bool impl(Calculator& calc)
+{
+    return one_arg_conv_op(
+        calc,
+        [](const auto& a) -> numeric {
+            if constexpr (std::is_same<decltype(a), const mpc&>::value)
+            {
+                // complex adapter doesn't work with
+                // boost::multiprecision::ceil
+                mpf rp = boost::multiprecision::ceil(a.real());
+                mpf ip = boost::multiprecision::ceil(a.imag());
+                return mpc(rp, ip);
+            }
+            else if constexpr (std::is_same<decltype(a), const mpz&>::value)
+            {
+                // integers are already there
+                return a;
+            }
+            else
+            {
+                return boost::multiprecision::ceil(a);
+            }
+        },
+        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+}
+
+auto constexpr help =
+    "\n"
+    "    Usage: x ceil\n"
+    "\n"
+    "    Returns the smallest integer greater than the bottom "
+    "item on the stack (round up)\n";
+
+} // namespace ceil
+
+namespace floor
+{
+
+bool impl(Calculator& calc)
+{
+    return one_arg_conv_op(
+        calc,
+        [](const auto& a) -> numeric {
+            if constexpr (std::is_same<decltype(a), const mpc&>::value)
+            {
+                // complex adapter doesn't work with
+                // boost::multiprecision::floor
+                mpf rp = boost::multiprecision::floor(a.real());
+                mpf ip = boost::multiprecision::floor(a.imag());
+                return mpc(rp, ip);
+            }
+            else if constexpr (std::is_same<decltype(a), const mpz&>::value)
+            {
+                // integers are already there
+                return a;
+            }
+            else
+            {
+                return boost::multiprecision::floor(a);
+            }
+        },
+        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+}
+
+auto constexpr help = "\n"
+                      "    Usage: x floor\n"
+                      "\n"
+                      "    Returns the smallest integer less than the bottom "
+                      "item on the stack (round down)\n";
+
+} // namespace floor
+
+namespace round
+{
+
+bool impl(Calculator& calc)
+{
+    return one_arg_conv_op(
+        calc,
+        [](const auto& a) -> numeric {
+            if constexpr (std::is_same<decltype(a), const mpc&>::value)
+            {
+                // complex adapter doesn't work with
+                // boost::multiprecision::round
+                mpf rp = boost::multiprecision::round(a.real());
+                mpf ip = boost::multiprecision::round(a.imag());
+                return mpc(rp, ip);
+            }
+            else if constexpr (std::is_same<decltype(a), const mpz&>::value)
+            {
+                // integers are already there
+                return a;
+            }
+            else
+            {
+                return boost::multiprecision::round(a);
+            }
+        },
+        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+}
+
+auto constexpr help = "\n"
+                      "    Usage: x round\n"
+                      "\n"
+                      "    Returns the nearest integer to the bottom "
+                      "item on the stack (classic round)\n";
+
+} // namespace round
+
 namespace negate
 {
 
@@ -215,6 +327,9 @@ CalcFunction add = {function::add::help, function::add::impl};
 CalcFunction subtract = {function::subtract::help, function::subtract::impl};
 CalcFunction multiply = {function::multiply::help, function::multiply::impl};
 CalcFunction divide = {function::divide::help, function::divide::impl};
+CalcFunction floor = {function::floor::help, function::floor::impl};
+CalcFunction ceil = {function::ceil::help, function::ceil::impl};
+CalcFunction round = {function::round::help, function::round::impl};
 CalcFunction negate = {function::negate::help, function::negate::impl};
 CalcFunction inverse = {function::inverse::help, function::inverse::impl};
 CalcFunction divmod = {function::divmod::help, function::divmod::impl};
