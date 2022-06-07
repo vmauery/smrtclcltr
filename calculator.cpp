@@ -198,6 +198,12 @@ bool Calculator::angle_mode(e_angle_mode mode)
     return true;
 }
 
+bool Calculator::mpq_mode(e_mpq_mode mode)
+{
+    config.mpq_mode = mode;
+    return true;
+}
+
 bool Calculator::base()
 {
     stack_entry e = stack.front();
@@ -281,7 +287,26 @@ void Calculator::show_stack()
                 std::cout << std::hex;
                 break;
         }
-        std::cout << std::setprecision(it->precision) << it->value << "\n";
+        auto& v = it->value;
+
+        if (auto q = std::get_if<mpq>(&v); q)
+        {
+            // mpq gets special treatment to print a quotient or float
+            if (config.mpq_mode == e_mpq_mode::f)
+            {
+                mpf f = mpf{boost::multiprecision::numerator(*q)} /
+                        mpf{boost::multiprecision::denominator(*q)};
+                std::cout << std::setprecision(it->precision) << f << "\n";
+            }
+            else
+            {
+                std::cout << std::setprecision(it->precision) << *q << "\n";
+            }
+        }
+        else
+        {
+            std::cout << std::setprecision(it->precision) << v << "\n";
+        }
     }
 }
 
@@ -305,6 +330,12 @@ void Calculator::make_functions()
     _operations["precision"] = {
         "sets the precision",
         [](Calculator& calc) -> bool { return calc.precision(); }};
+    _operations["q"] = {
+        "prints quotients as quotients",
+        [](Calculator& calc) -> bool { return calc.mpq_mode(e_mpq_mode::q); }};
+    _operations["f"] = {
+        "prints quotients as floats",
+        [](Calculator& calc) -> bool { return calc.mpq_mode(e_mpq_mode::f); }};
     _operations["unsigned"] = {
         "sets unsigned mode",
         [](Calculator& calc) -> bool { return calc.unsigned_mode(); }};

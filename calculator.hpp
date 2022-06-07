@@ -41,6 +41,11 @@ class Calculator
         deg,
         grad
     };
+    enum class e_mpq_mode
+    {
+        f,
+        q
+    };
     struct Config
     {
         bool debug = false;
@@ -49,6 +54,7 @@ class Calculator
         bool is_signed = true;
         int precision = 8;
         e_angle_mode angle_mode = e_angle_mode::rad;
+        e_mpq_mode mpq_mode = e_mpq_mode::f;
     };
     using Stack = std::deque<stack_entry>;
 
@@ -75,6 +81,7 @@ class Calculator
     bool precision();
     bool unsigned_mode();
     bool angle_mode(e_angle_mode);
+    bool mpq_mode(e_mpq_mode);
     bool _running = true;
 
     std::map<std::string, CalcFunction> _operations;
