@@ -4,6 +4,13 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#if HAVE_READLINE == 1
+#include <readline/history.h>
+#include <readline/readline.h>
+#endif // HAVE_READLINE
+
+#include <unistd.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/multiprecision/number.hpp>
 #include <calculator.hpp>
@@ -16,6 +23,12 @@ Calculator::Calculator()
 {
     // set up the grammar?
     make_grammar();
+    config.interactive = isatty(STDIN_FILENO);
+#if HAVE_READLINE == 1
+    // don't forget to disable tab completion for now
+    rl_bind_key('\t', rl_insert);
+#endif // HAVE_READLINE
+
     // add all the functions
     make_functions();
 }
@@ -112,19 +125,62 @@ bool Calculator::run_one(const std::string& expr)
     return true;
 }
 
+std::optional<std::string> Calculator::get_input()
+{
+    if (config.interactive)
+    {
+        // for interactive, use readline
+#if HAVE_READLINE == 1
+        char* buf = readline("> ");
+        std::string nextline;
+        if (buf)
+        {
+            nextline = buf;
+            free(buf);
+            if (*buf)
+            {
+                add_history(buf);
+                return nextline;
+            }
+        }
+#else
+        // for non-interactive, std::getline() works fine
+        // std::cerr << "<waiting for input>\n";
+        std::cout << "> ";
+        std::cout.flush();
+        if (std::string nextline; std::getline(std::cin, nextline))
+        {
+            return nextline;
+        }
+#endif // HAVE_READLINE
+        return std::nullopt;
+    }
+    else
+    {
+        // for non-interactive, std::getline() works fine
+        // std::cerr << "<waiting for input>\n";
+        if (std::string nextline; std::getline(std::cin, nextline))
+        {
+            return nextline;
+        }
+        return std::nullopt;
+    }
+}
+
 std::string Calculator::get_next_token()
 {
     static std::deque<std::string> current_line;
     if (current_line.size() == 0)
     {
-        std::string input;
         // std::cerr << "<waiting for input>\n";
-        if (!std::getline(std::cin, input))
+        std::optional<std::string> nextline = get_input();
+        if (!nextline)
         {
             // std::cerr << "end of input\n";
             _running = false;
             return "";
         }
+        std::string& input = *nextline;
         boost::split(current_line, input, boost::is_any_of(" \t\n\r"));
         current_line.push_back("\n");
     }
@@ -271,8 +327,11 @@ void Calculator::show_stack()
         {
             std::cout << numeric_types[it->value.index()] << " | ";
         }
-        std::cout << std::dec << c << ": ";
-        c--;
+        if (config.interactive)
+        {
+            std::cout << std::dec << c << ": ";
+            c--;
+        }
         switch (it->base)
         {
             case 2:

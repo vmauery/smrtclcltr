@@ -47,6 +47,8 @@ elif (get_option('numeric') == 'native')
   add_project_arguments(['-DUSE_BASIC_TYPES'], language: 'cpp')
 endif
 
+all_dependencies = [ numeric ]
+
 add_project_arguments(
   cxx.get_supported_arguments([
     '-Wcast-align',
@@ -74,6 +76,13 @@ security_flags = [
   '-Wformat-security'
   ]
 
+# Use readline by default if found, can be disabled with option
+rldep = dependency('readline', required: false)
+if rldep.found() and get_option('readline') == true
+  add_project_arguments(['-DHAVE_READLINE'], language: 'cpp')
+  all_dependencies += [ rldep ]
+endif
+
 ## Add security flags for builds of type 'release','debugoptimized' and 'minsize'
 
 if not (get_option('buildtype') == 'plain' or get_option('buildtype').startswith('debug'))
@@ -100,5 +109,5 @@ add_project_arguments(
 
 executable('smrtclcltr',
   sources: src,
-  dependencies: numeric
+  dependencies: all_dependencies
   )
