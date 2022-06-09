@@ -79,6 +79,7 @@ class Calculator
 
     bool debug();
     bool base();
+    bool cbase();
     bool fixed_bits();
     bool precision();
     bool unsigned_mode();

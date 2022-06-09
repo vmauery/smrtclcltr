@@ -17,12 +17,11 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <cmath>
 #include <function.hpp>
 #include <functions.hpp>
+#include <iostream>
 #include <string>
 
 Calculator::Calculator()
 {
-    // set up the grammar?
-    make_grammar();
     config.interactive = isatty(STDIN_FILENO);
 #if HAVE_READLINE == 1
     // don't forget to disable tab completion for now
@@ -31,6 +30,49 @@ Calculator::Calculator()
 
     // add all the functions
     make_functions();
+
+    // set up the grammar
+    make_grammar();
+}
+
+std::string binary_to_hex(const std::string& v)
+{
+    std::string out;
+    out.reserve(v.size() / 4 + 4);
+    // top nibble might not be full
+    // The rest will be a full 4-bits each
+    size_t bits = v.size();
+    auto next = v.begin();
+    if (v.starts_with("0b"))
+    {
+        next += 2;
+        bits -= 2;
+    }
+    // pick off first bits
+    int nibble = 0;
+    for (size_t i = (bits & 0xfffffffc); i < bits; i++)
+    {
+        nibble <<= 1;
+        nibble += (*next++ & 1);
+    }
+    // round down to nearest 4 bits
+    bits &= 0xfffffffc;
+    constexpr char itohex[] = "0123456789abcdef";
+    out.push_back('0');
+    out.push_back('x');
+    out.push_back(itohex[nibble]);
+    while (bits)
+    {
+        nibble = 0;
+        for (size_t i = 0; i < 4; i++)
+        {
+            nibble <<= 1;
+            nibble += (*next++ & 1);
+        }
+        out.push_back(itohex[nibble]);
+        bits -= 4;
+    }
+    return out;
 }
 
 bool Calculator::run_one(const std::string& expr)
@@ -68,6 +110,10 @@ bool Calculator::run_one(const std::string& expr)
     }
     // not a function
     stack_entry e;
+    e.base = config.base;
+    e.precision = config.precision;
+    e.fixed_bits = config.fixed_bits;
+    e.is_signed = config.is_signed;
     try
     {
         if (expr.find("(") != std::string::npos)
@@ -104,10 +150,34 @@ bool Calculator::run_one(const std::string& expr)
             else
             {
                 // std::cerr << "mpz(\"" << expr << "\")\n";
+                std::string num;
+                if (expr[0] == '0')
+                {
+                    // check for base prefix
+                    if (expr.starts_with("0x"))
+                    {
+                        e.base = 16;
+                        num = expr;
+                    }
+                    else if (expr.starts_with("0b"))
+                    {
+                        e.base = 2;
+                        num = binary_to_hex(expr);
+                    }
+                    else
+                    {
+                        e.base = 8;
+                        num = expr;
+                    }
+                }
+                else
+                {
+                    num = expr;
+                }
 #ifndef TEST_BASIC_TYPES
-                e.value = mpz(expr);
+                e.value = mpz(num);
 #else
-                e.value = std::stoi(expr);
+                e.value = std::stoi(num);
 #endif
             }
         }
@@ -117,10 +187,6 @@ bool Calculator::run_one(const std::string& expr)
         std::cerr << "bad expression '" << expr << "'\n";
         return false;
     }
-    e.base = config.base;
-    e.precision = config.precision;
-    e.fixed_bits = config.fixed_bits;
-    e.is_signed = config.is_signed;
     stack.push_front(std::move(e));
     return true;
 }
@@ -281,6 +347,13 @@ bool Calculator::base()
     return false;
 }
 
+bool Calculator::cbase()
+{
+    stack_entry& e = stack.front();
+    e.base = config.base;
+    return true;
+}
+
 bool Calculator::fixed_bits()
 {
     stack_entry e = stack.front();
@@ -316,6 +389,64 @@ bool Calculator::precision()
     return false;
 }
 
+struct binary_wrapper
+{
+    explicit binary_wrapper(const mpz& v) : v(v)
+    {
+    }
+    const mpz& v;
+};
+
+std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw)
+{
+    const mpz& v = bw.v;
+    // limit binary prints to 64k bits?
+    size_t bits = 0;
+    mpz mask(v);
+    if (mask < 0)
+    {
+        mask = -mask;
+    }
+    while (mask > 0)
+    {
+        mask >>= 1;
+        bits++;
+    }
+    if (bits >= 64 * 1024)
+    {
+        std::stringstream ss;
+        ss << v;
+        os << ss.str();
+        return os;
+    }
+    mask = 1;
+    mask <<= bits;
+    std::string out;
+    out.reserve(bits + 3);
+    if (os.flags() & std::ios_base::showbase)
+    {
+        out.push_back('0');
+        out.push_back(os.flags() & std::ios_base::uppercase ? 'B' : 'b');
+    }
+    while (mask && !(mask & v))
+    {
+        mask >>= 1;
+    }
+    if (mask)
+    {
+        for (; mask; mask >>= 1)
+        {
+            out.push_back(v & mask ? '1' : '0');
+        }
+    }
+    else
+    {
+        out.push_back('0');
+    }
+    os << out;
+    return os;
+}
+
 void Calculator::show_stack()
 {
     // on higher lines; truncate?
@@ -331,20 +462,6 @@ void Calculator::show_stack()
         {
             std::cout << std::dec << c << ": ";
             c--;
-        }
-        switch (it->base)
-        {
-            case 2:
-                break;
-            case 8:
-                std::cout << std::oct;
-                break;
-            case 10:
-                std::cout << std::dec;
-                break;
-            case 16:
-                std::cout << std::hex;
-                break;
         }
         auto& v = it->value;
 
@@ -364,6 +481,28 @@ void Calculator::show_stack()
         }
         else
         {
+            switch (it->base)
+            {
+                case 2:
+                    std::cout << std::showbase;
+                    // only ints, only base 2, special case
+                    if (auto z = std::get_if<mpz>(&v); z)
+                    {
+                        std::cout << std::setprecision(it->precision)
+                                  << binary_wrapper(*z) << "\n";
+                        continue;
+                    }
+                    break;
+                case 8:
+                    std::cout << std::showbase << std::oct;
+                    break;
+                case 10:
+                    std::cout << std::showbase << std::dec;
+                    break;
+                case 16:
+                    std::cout << std::showbase << std::hex;
+                    break;
+            }
             std::cout << std::setprecision(it->precision) << v << "\n";
         }
     }
@@ -383,6 +522,9 @@ void Calculator::make_functions()
     _operations["base"] = {
         "sets the numeric base",
         [](Calculator& calc) -> bool { return calc.base(); }};
+    _operations["cbase"] = {
+        "changes the numeric base of the bottom item to be the current base",
+        [](Calculator& calc) -> bool { return calc.cbase(); }};
     _operations["fixed_bits"] = {
         "sets the number of fixed bits",
         [](Calculator& calc) -> bool { return calc.fixed_bits(); }};
