@@ -16,7 +16,7 @@ bool impl(Calculator& calc)
     {
         return false;
     }
-    stack_entry a = calc.stack.front();
+    // stack_entry a = calc.stack.front();
     calc.stack.pop_front();
     return true;
 }

@@ -6,7 +6,7 @@ project('smrtclcltr', 'cpp',
     'warning_level=3',
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'cpp_std=c++2a',
+    'cpp_std=c++20',
     ]
   )
 
@@ -61,7 +61,6 @@ add_project_arguments(
     '-Wold-style-cast',
     '-Woverloaded-virtual',
     '-Wunused',
-    '-std=c++20',
     ]),
   language: 'cpp'
   )
