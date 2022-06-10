@@ -18,6 +18,8 @@ extern CalcFunction add;
 extern CalcFunction subtract;
 extern CalcFunction multiply;
 extern CalcFunction divide;
+extern CalcFunction lshift;
+extern CalcFunction rshift;
 extern CalcFunction range;
 extern CalcFunction sum;
 extern CalcFunction product;

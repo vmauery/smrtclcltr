@@ -74,6 +74,44 @@ auto constexpr help =
 
 } // namespace divide
 
+namespace lshift
+{
+
+bool impl(Calculator& calc)
+{
+    return two_arg_limited_op<mpz>(calc, [](const auto& a, const auto& b) {
+        return a << static_cast<unsigned long>(b);
+    });
+}
+
+auto constexpr help =
+    "\n"
+    "    Usage: x y <<\n"
+    "\n"
+    "    Returns the next-to-bottom item left-shifted by the bottom item\n"
+    "    on the stack (x << y)\n";
+
+} // namespace lshift
+
+namespace rshift
+{
+
+bool impl(Calculator& calc)
+{
+    return two_arg_limited_op<mpz>(calc, [](const auto& a, const auto& b) {
+        return a >> static_cast<unsigned long>(b);
+    });
+}
+
+auto constexpr help =
+    "\n"
+    "    Usage: x y >>\n"
+    "\n"
+    "    Returns the next-to-bottom item right-shifted by the bottom item\n"
+    "    on the stack (x >> y)\n";
+
+} // namespace rshift
+
 namespace ceil
 {
 
@@ -343,6 +381,8 @@ CalcFunction add = {function::add::help, function::add::impl};
 CalcFunction subtract = {function::subtract::help, function::subtract::impl};
 CalcFunction multiply = {function::multiply::help, function::multiply::impl};
 CalcFunction divide = {function::divide::help, function::divide::impl};
+CalcFunction lshift = {function::lshift::help, function::lshift::impl};
+CalcFunction rshift = {function::rshift::help, function::rshift::impl};
 CalcFunction floor = {function::floor::help, function::floor::impl};
 CalcFunction ceil = {function::ceil::help, function::ceil::impl};
 CalcFunction round = {function::round::help, function::round::impl};

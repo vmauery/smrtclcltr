@@ -550,6 +550,8 @@ void Calculator::make_functions()
     _operations["-"] = functions::subtract;
     _operations["*"] = functions::multiply;
     _operations["/"] = functions::divide;
+    _operations[">>"] = functions::rshift;
+    _operations["<<"] = functions::lshift;
     _operations["floor"] = functions::floor;
     _operations["ceil"] = functions::ceil;
     _operations["round"] = functions::round;
