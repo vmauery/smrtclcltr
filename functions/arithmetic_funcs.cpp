@@ -3,6 +3,7 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
+#include <cmath>
 #include <function.hpp>
 
 namespace function
@@ -76,6 +77,12 @@ auto constexpr help =
 namespace ceil
 {
 
+#ifdef USE_BASIC_TYPES
+#define ceil_fn ceill
+#else
+#define ceil_fn boost::multiprecision::ceil
+#endif
+
 bool impl(Calculator& calc)
 {
     return one_arg_conv_op(
@@ -83,10 +90,9 @@ bool impl(Calculator& calc)
         [](const auto& a) -> numeric {
             if constexpr (std::is_same<decltype(a), const mpc&>::value)
             {
-                // complex adapter doesn't work with
-                // boost::multiprecision::ceil
-                mpf rp = boost::multiprecision::ceil(a.real());
-                mpf ip = boost::multiprecision::ceil(a.imag());
+                // complex adapter doesn't work with ceil
+                mpf rp = ceil_fn(a.real());
+                mpf ip = ceil_fn(a.imag());
                 return mpc(rp, ip);
             }
             else if constexpr (std::is_same<decltype(a), const mpz&>::value)
@@ -96,7 +102,7 @@ bool impl(Calculator& calc)
             }
             else
             {
-                return boost::multiprecision::ceil(a);
+                return ceil_fn(a);
             }
         },
         std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
@@ -114,6 +120,12 @@ auto constexpr help =
 namespace floor
 {
 
+#ifdef USE_BASIC_TYPES
+#define floor_fn floorl
+#else
+#define floor_fn boost::multiprecision::floor
+#endif
+
 bool impl(Calculator& calc)
 {
     return one_arg_conv_op(
@@ -121,10 +133,9 @@ bool impl(Calculator& calc)
         [](const auto& a) -> numeric {
             if constexpr (std::is_same<decltype(a), const mpc&>::value)
             {
-                // complex adapter doesn't work with
-                // boost::multiprecision::floor
-                mpf rp = boost::multiprecision::floor(a.real());
-                mpf ip = boost::multiprecision::floor(a.imag());
+                // complex adapter doesn't work with floor
+                mpf rp = floor_fn(a.real());
+                mpf ip = floor_fn(a.imag());
                 return mpc(rp, ip);
             }
             else if constexpr (std::is_same<decltype(a), const mpz&>::value)
@@ -134,7 +145,7 @@ bool impl(Calculator& calc)
             }
             else
             {
-                return boost::multiprecision::floor(a);
+                return floor_fn(a);
             }
         },
         std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
@@ -151,6 +162,12 @@ auto constexpr help = "\n"
 namespace round
 {
 
+#ifdef USE_BASIC_TYPES
+#define round_fn roundl
+#else
+#define round_fn boost::multiprecision::round
+#endif
+
 bool impl(Calculator& calc)
 {
     return one_arg_conv_op(
@@ -158,10 +175,9 @@ bool impl(Calculator& calc)
         [](const auto& a) -> numeric {
             if constexpr (std::is_same<decltype(a), const mpc&>::value)
             {
-                // complex adapter doesn't work with
-                // boost::multiprecision::round
-                mpf rp = boost::multiprecision::round(a.real());
-                mpf ip = boost::multiprecision::round(a.imag());
+                // complex adapter doesn't work with round
+                mpf rp = round_fn(a.real());
+                mpf ip = round_fn(a.imag());
                 return mpc(rp, ip);
             }
             else if constexpr (std::is_same<decltype(a), const mpz&>::value)
@@ -171,7 +187,7 @@ bool impl(Calculator& calc)
             }
             else
             {
-                return boost::multiprecision::round(a);
+                return round_fn(a);
             }
         },
         std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
@@ -190,7 +206,7 @@ namespace negate
 
 bool impl(Calculator& calc)
 {
-    return one_arg_op(calc, [](const auto& a) { return -a; });
+    return one_arg_op(calc, [](const auto& a) { return decltype(a)(0) - a; });
 }
 
 auto constexpr help =
@@ -206,7 +222,7 @@ namespace inverse
 
 bool impl(Calculator& calc)
 {
-    return one_arg_op(calc, [](const auto& a) { return 1 / a; });
+    return one_arg_op(calc, [](const auto& a) { return decltype(a)(1) / a; });
 }
 
 auto constexpr help = "\n"

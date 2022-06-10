@@ -116,21 +116,15 @@ bool Calculator::run_one(const std::string& expr)
     e.is_signed = config.is_signed;
     try
     {
-        if (expr.find("(") != std::string::npos)
+        if (expr.starts_with("(") || expr.ends_with("i"))
         {
             // std::cerr << "mpc(\"" << expr << "\")\n";
-#ifndef TEST_BASIC_TYPES
-            e.value = mpc(expr);
-#endif
+            e.value = parse_mpc(expr);
         }
         else if (expr.find(".") != std::string::npos)
         {
             // std::cerr << "mpf(\"" << expr << "\")\n";
-#ifndef TEST_BASIC_TYPES
-            e.value = mpf(expr);
-#else
-            e.value = std::stod(expr);
-#endif
+            e.value = parse_mpf(expr);
         }
         else if (expr.find("/") != std::string::npos)
         {
@@ -142,10 +136,8 @@ bool Calculator::run_one(const std::string& expr)
             if (config.fixed_bits)
             {
                 // std::cerr << "make_fixed(mpz(\"" << expr << "\"))\n";
-#ifndef TEST_BASIC_TYPES
-                e.value =
-                    make_fixed(mpz(expr), config.fixed_bits, config.is_signed);
-#endif
+                auto v = parse_mpz(expr);
+                e.value = make_fixed(v, config.fixed_bits, config.is_signed);
             }
             else
             {
@@ -174,17 +166,13 @@ bool Calculator::run_one(const std::string& expr)
                 {
                     num = expr;
                 }
-#ifndef TEST_BASIC_TYPES
-                e.value = mpz(num);
-#else
-                e.value = std::stoi(num);
-#endif
+                e.value = parse_mpz(num);
             }
         }
     }
     catch (const std::exception& e)
     {
-        std::cerr << "bad expression '" << expr << "'\n";
+        std::cerr << "bad expression '" << expr << "': " << e.what() << "\n";
         return false;
     }
     stack.push_front(std::move(e));
@@ -247,6 +235,7 @@ std::string Calculator::get_next_token()
             return "";
         }
         std::string& input = *nextline;
+        boost::algorithm::to_lower(input);
         boost::split(current_line, input, boost::is_any_of(" \t\n\r"));
         current_line.push_back("\n");
     }
@@ -470,8 +459,7 @@ void Calculator::show_stack()
             // mpq gets special treatment to print a quotient or float
             if (config.mpq_mode == e_mpq_mode::f)
             {
-                mpf f = mpf{boost::multiprecision::numerator(*q)} /
-                        mpf{boost::multiprecision::denominator(*q)};
+                auto f = to_mpf(*q);
                 std::cout << std::setprecision(it->precision) << f << "\n";
             }
             else

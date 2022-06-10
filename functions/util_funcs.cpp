@@ -9,6 +9,7 @@ namespace function
 {
 namespace split
 {
+
 bool impl(Calculator& calc)
 {
     stack_entry a = calc.stack.front();
@@ -29,10 +30,10 @@ bool impl(Calculator& calc)
     {
         calc.stack.pop_front();
         stack_entry q1{a};
-        q1.value = boost::multiprecision::numerator(*q);
+        q1.value = helper::numerator(*q);
         calc.stack.push_front(q1);
         stack_entry q2{a};
-        q2.value = boost::multiprecision::denominator(*q);
+        q2.value = helper::denominator(*q);
         calc.stack.push_front(q2);
         return true;
     }
