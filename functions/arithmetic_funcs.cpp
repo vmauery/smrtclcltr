@@ -332,46 +332,6 @@ auto constexpr help = "\n"
 
 } // namespace power
 
-namespace modexp
-{
-
-mpz pow(const mpz& base, const mpz& exponent, const mpz& modulus)
-{
-    mpz b(base), e(exponent), m(modulus);
-    mpz result = 1;
-    while (e > 0)
-    {
-        if (e & 1)
-        {
-            result *= b;
-            result %= m;
-        }
-        e = e >> 1;
-        b *= b;
-        b %= m;
-    }
-    return result;
-}
-
-bool impl(Calculator& calc)
-{
-    return three_arg_limited_op(
-        calc,
-        [](const auto& a, const auto& b, const auto& c) {
-            return pow(a, b, c);
-        },
-        std::tuple<mpz>{});
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: x y z modexp\n"
-    "\n"
-    "    Returns modular exponentiation of the bottom three items on "
-    "the stack, e.g., x raised to the y power mod z (x^y mod z)\n";
-
-} // namespace modexp
-
 } // namespace function
 
 namespace functions
@@ -390,6 +350,5 @@ CalcFunction negate = {function::negate::help, function::negate::impl};
 CalcFunction inverse = {function::inverse::help, function::inverse::impl};
 CalcFunction divmod = {function::divmod::help, function::divmod::impl};
 CalcFunction power = {function::power::help, function::power::impl};
-CalcFunction modexp = {function::modexp::help, function::modexp::impl};
 
 } // namespace functions

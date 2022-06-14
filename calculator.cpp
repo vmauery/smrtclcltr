@@ -586,6 +586,7 @@ void Calculator::make_functions()
     _operations["~"] = functions::bitwise_inv;
     _operations["^"] = functions::power;
     _operations["modexp"] = functions::modexp;
+    _operations["modinv"] = functions::modinv;
     _operations["factor"] = functions::factor;
     _operations["gcd"] = functions::gcd;
     _operations["lcm"] = functions::lcm;
