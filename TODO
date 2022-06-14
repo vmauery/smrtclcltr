@@ -1,0 +1,33 @@
+Ideas for future development
+ * Support for different 'displays'
+   * Non-interactive (read input, print final value, no extras)
+   * Simple with or without readline
+   * TUI with status and extra info
+     * Show modes rad/deg, polar/rect
+	 * Show error messages
+	 * Memory usage? CPU usage?
+ * Date/time support (waiting for C++20 libs to get implemented)
+ * Tab completion of function names
+ * Better parsing of input (spirit? or maybe just more regexes?)
+ * Constants library (interactive lookup for lesser-known constants)
+ * More functions (long list)
+ * N-d vector support
+   * parse / cross / dot / add / subtract / scaler
+ * Array support
+   * parse / add / subtract / inv / det / mult
+ * Variable store/recall support
+ * Scripting? Like the HP language? That might be too much...
+ * Saved state?
+ * Modes
+   * Modular arithmetic mode
+   * Polar/rect mode
+   * Fixed bit math (for debugging C math issues, show over/under-flow bit)
+ * Graphing? WTF? That's fancy.
+ * Eval of formula ('x^2+2*x+3' 3 $x store eval)?
+ * Auto-downcast support (choose least-complex type for no data loss)
+   * may be lossy if precision is low... mpf to mpq/mpz might be a lie
+   * mpf -> mpz if no fractional part
+   * mpf -> mpq for perfect fractions?
+   * mpq -> mpq for denominator = 1
+   * mpc -> mpf for imaginary = 0
+ * Units. A work in progress.
