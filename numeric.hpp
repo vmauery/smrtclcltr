@@ -12,7 +12,12 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <variant>
 
 extern int default_precision;
+
 #if (USE_BOOST_CPP_BACKEND || USE_GMP_BACKEND || USE_MPFR_BACKEND)
+
+static constexpr int builtin_default_precision = 50;
+// yes, I know abritrary precision, but be reasonable, my dude!
+static constexpr int max_precision = 1000000;
 
 #ifdef USE_BOOST_CPP_BACKEND
 #include <boost/serialization/nvp.hpp>
@@ -221,10 +226,6 @@ static inline mpz parse_mpz(const std::string& s)
     }
     return mpz(s);
 }
-static inline mpf parse_mpf(const std::string& s)
-{
-    return mpf(s);
-}
 
 extern mpc parse_mpc(const std::string& s);
 
@@ -234,6 +235,9 @@ static inline mpq parse_mpq(const std::string& s)
 }
 
 #else // USE_BASIC_TYPES
+
+static constexpr int builtin_default_precision = 20;
+static constexpr int max_precision = 20;
 
 static constexpr const char MATH_BACKEND[] = "native types";
 
@@ -582,11 +586,6 @@ static inline mpz parse_mpz(const std::string& s)
     return ret;
 }
 
-static inline mpf parse_mpf(const std::string& s)
-{
-    return std::stold(s);
-}
-
 extern mpc parse_mpc(const std::string& s);
 
 static inline mpq parse_mpq(const std::string& s)
@@ -595,6 +594,8 @@ static inline mpq parse_mpq(const std::string& s)
 }
 
 #endif // USE_BASIC_TYPES
+
+mpq parse_mpf(const std::string& s);
 
 namespace util
 {

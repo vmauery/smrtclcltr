@@ -28,6 +28,9 @@ Calculator::Calculator()
     rl_bind_key('\t', rl_insert);
 #endif // HAVE_READLINE
 
+    config.precision = builtin_default_precision;
+    set_default_precision(builtin_default_precision);
+
     // add all the functions
     make_functions();
 
@@ -368,7 +371,7 @@ bool Calculator::precision()
     {
         stack.pop_front();
         auto iv = static_cast<int>(*v);
-        if (iv > 0 && iv <= 1000000)
+        if (iv > 0 && iv <= max_precision)
         {
             config.precision = iv;
             set_default_precision(iv);
