@@ -72,6 +72,85 @@ static mpq make_quotient(const std::string& s)
     return val;
 }
 
+/*
+ * make_quotient:
+ * original source: https://www.ics.uci.edu/~eppstein/numth/frap.c
+ *
+ * find rational approximation to given real number
+ * David Eppstein / UC Irvine / 8 Aug 1993
+ *
+ * With corrections from Arno Formella, May 2008
+ *
+ * based on the theory of continued fractions
+ * if x = a1 + 1/(a2 + 1/(a3 + 1/(a4 + ...)))
+ * then best approximation is found by truncating this series
+ * (with some adjustments in the last term).
+ *
+ * Note the fraction can be recovered as the first column of the matrix
+ *  ( a1 1 ) ( a2 1 ) ( a3 1 ) ...
+ *  ( 1  0 ) ( 1  0 ) ( 1  0 )
+ * Instead of keeping the sequence of continued fraction terms,
+ * we just keep the last partial product of these matrices.
+ */
+
+mpq make_quotient(const mpf& f, int digits)
+{
+    int orig_prec = default_precision;
+    set_default_precision(orig_prec + 2);
+    const mpf one(1.0l);
+    // require error of at least original precision
+    const mpf max_error = pow(mpf(10.0l), -orig_prec);
+    // std::cerr << "looking for max_error < " << max_error << "\n";
+
+    mpz m[2][2];
+    mpf x(f);
+    mpz ai;
+    mpz maxden = pow(mpz(10), digits);
+
+    /* initialize matrix */
+    m[0][0] = m[1][1] = 1;
+    m[0][1] = m[1][0] = 0;
+
+    /* loop finding terms until denom gets too big */
+    while (m[1][0] * (ai = to_mpz(x)) + m[1][1] <= maxden)
+    {
+        mpz t;
+        t = m[0][0] * ai + m[0][1];
+        m[0][1] = m[0][0];
+        m[0][0] = t;
+        t = m[1][0] * ai + m[1][1];
+        m[1][1] = m[1][0];
+        m[1][0] = t;
+        if (x == to_mpf(ai))
+            break; // AF: division by zero
+        x = one / (x - to_mpf(ai));
+    }
+
+    mpq result(m[0][0], m[1][0]);
+    // throw something; not a perfect representation
+    mpf error = abs(f - to_mpf(result));
+    // std::cerr << result << ", error = " << error << "\n";
+
+    /* now try other possibility */
+    ai = (maxden - m[1][1]) / m[1][0];
+    m[0][0] = m[0][0] * ai + m[0][1];
+    m[1][0] = m[1][0] * ai + m[1][1];
+    mpq result2(m[0][0], m[1][0]);
+    mpf error2 = abs(f - to_mpf(result2));
+    // std::cerr << result2 << ", error2 = " << error2 << "\n";
+    set_default_precision(orig_prec);
+    if (error > max_error && error2 > max_error)
+    {
+        // std::cerr << "lossy mpf->mpq; not into it.\n";
+        throw std::invalid_argument("Unable to convert mpf to mpq");
+    }
+    if (error <= error2)
+    {
+        return result;
+    }
+    return result2;
+}
+
 mpq parse_mpf(const std::string& s)
 {
     return make_quotient(s);

@@ -139,7 +139,7 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
     try
     {
         cv = std::visit([&fn](const auto& a) { return operate(fn, a); },
-                        a.value);
+                        a.value());
     }
     catch (const std::exception& e)
     {
@@ -164,7 +164,7 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
         return false;
     }
     stack_entry a = calc.stack.front();
-    numeric& ca = a.value;
+    numeric& ca = a.value();
     conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
     std::variant<Ltypes...> lca;
     if (!reduce(ca, lca)())
@@ -200,11 +200,11 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
     }
     stack_entry a = calc.stack.front();
     std::variant<AllowedTypes...> la;
-    if (!variant_holds_type<AllowedTypes...>(a.value))
+    if (!variant_holds_type<AllowedTypes...>(a.value()))
     {
         return false;
     }
-    if (!reduce(a.value, la)())
+    if (!reduce(a.value(), la)())
     {
         return false;
     }
@@ -243,7 +243,7 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
     {
         cv = std::visit(
             [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
-            a.value, b.value);
+            a.value(), b.value());
     }
     catch (const std::exception& e)
     {
@@ -271,9 +271,9 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
 
-    numeric& ca = a.value;
+    numeric& ca = a.value();
     conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
-    numeric& cb = b.value;
+    numeric& cb = b.value();
     conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cb);
     std::variant<Ltypes...> lca;
     std::variant<Ltypes...> lcb;
@@ -316,14 +316,14 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
 
-    if (!variant_holds_type<AllowedTypes...>(a.value) ||
-        !variant_holds_type<AllowedTypes...>(b.value))
+    if (!variant_holds_type<AllowedTypes...>(a.value()) ||
+        !variant_holds_type<AllowedTypes...>(b.value()))
     {
         return false;
     }
     std::variant<AllowedTypes...> la;
     std::variant<AllowedTypes...> lb;
-    if (!reduce(a.value, la)() || !reduce(b.value, lb)())
+    if (!reduce(a.value(), la)() || !reduce(b.value(), lb)())
     {
         return false;
     }
@@ -362,17 +362,17 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
     stack_entry b = calc.stack[1];
     stack_entry c = calc.stack[0];
 
-    if (!variant_holds_type<AllowedTypes...>(a.value) ||
-        !variant_holds_type<AllowedTypes...>(b.value) ||
-        !variant_holds_type<AllowedTypes...>(c.value))
+    if (!variant_holds_type<AllowedTypes...>(a.value()) ||
+        !variant_holds_type<AllowedTypes...>(b.value()) ||
+        !variant_holds_type<AllowedTypes...>(c.value()))
     {
         return false;
     }
     std::variant<AllowedTypes...> la;
     std::variant<AllowedTypes...> lb;
     std::variant<AllowedTypes...> lc;
-    if (!reduce(a.value, la)() || !reduce(b.value, lb)() ||
-        !reduce(c.value, lc)())
+    if (!reduce(a.value(), la)() || !reduce(b.value(), lb)() ||
+        !reduce(c.value(), lc)())
     {
         return false;
     }

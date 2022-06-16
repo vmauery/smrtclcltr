@@ -18,7 +18,7 @@ namespace factor
 bool impl(Calculator& calc)
 {
     stack_entry e = calc.stack.front();
-    mpz* v = std::get_if<mpz>(&e.value);
+    mpz* v = std::get_if<mpz>(&e.value());
     if (!v)
     {
         return false;
@@ -67,8 +67,8 @@ bool impl(Calculator& calc)
 {
     stack_entry e1 = calc.stack[1];
     stack_entry e0 = calc.stack[0];
-    mpz* v = std::get_if<mpz>(&e1.value);
-    mpz* u = std::get_if<mpz>(&e0.value);
+    mpz* v = std::get_if<mpz>(&e1.value());
+    mpz* u = std::get_if<mpz>(&e0.value());
     if (!v || !u)
     {
         return false;
@@ -102,8 +102,8 @@ bool impl(Calculator& calc)
 {
     stack_entry e1 = calc.stack[1];
     stack_entry e0 = calc.stack[0];
-    mpz* v = std::get_if<mpz>(&e1.value);
-    mpz* u = std::get_if<mpz>(&e0.value);
+    mpz* v = std::get_if<mpz>(&e1.value());
+    mpz* u = std::get_if<mpz>(&e0.value());
     if (!v || !u)
     {
         return false;

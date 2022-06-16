@@ -15,8 +15,8 @@ bool impl(Calculator& calc)
     stack_entry xe = calc.stack.front();
     calc.stack.pop_front();
     stack_entry ye = calc.stack.front();
-    mpz* x = std::get_if<mpz>(&xe.value);
-    mpz* y = std::get_if<mpz>(&ye.value);
+    mpz* x = std::get_if<mpz>(&xe.value());
+    mpz* y = std::get_if<mpz>(&ye.value());
     if (!x || !y)
     {
         calc.stack.push_front(xe);
@@ -38,7 +38,7 @@ bool impl(Calculator& calc)
     for (; count > 0; count--)
     {
         stack_entry ve;
-        ve.value = v;
+        ve.value(v);
         calc.stack.emplace_front(v, calc.config.base, calc.config.fixed_bits,
                                  calc.config.precision, calc.config.is_signed);
         v += step;

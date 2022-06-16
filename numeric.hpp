@@ -596,6 +596,7 @@ static inline mpq parse_mpq(const std::string& s)
 #endif // USE_BASIC_TYPES
 
 mpq parse_mpf(const std::string& s);
+mpq make_quotient(const mpf& f, int digits);
 
 namespace util
 {

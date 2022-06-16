@@ -122,17 +122,17 @@ bool Calculator::run_one(const std::string& expr)
         if (expr.starts_with("(") || expr.ends_with("i"))
         {
             // std::cerr << "mpc(\"" << expr << "\")\n";
-            e.value = parse_mpc(expr);
+            e.value(parse_mpc(expr));
         }
         else if (expr.find(".") != std::string::npos)
         {
             // std::cerr << "mpf(\"" << expr << "\")\n";
-            e.value = parse_mpf(expr);
+            e.value(parse_mpf(expr));
         }
         else if (expr.find("/") != std::string::npos)
         {
             // std::cerr << "mpq(\"" << expr << "\")\n";
-            e.value = mpq(expr);
+            e.value(mpq(expr));
         }
         else
         {
@@ -140,7 +140,7 @@ bool Calculator::run_one(const std::string& expr)
             {
                 // std::cerr << "make_fixed(mpz(\"" << expr << "\"))\n";
                 auto v = parse_mpz(expr);
-                e.value = make_fixed(v, config.fixed_bits, config.is_signed);
+                e.value(make_fixed(v, config.fixed_bits, config.is_signed));
             }
             else
             {
@@ -169,7 +169,7 @@ bool Calculator::run_one(const std::string& expr)
                 {
                     num = expr;
                 }
-                e.value = parse_mpz(num);
+                e.value(parse_mpz(num));
             }
         }
     }
@@ -321,7 +321,7 @@ bool Calculator::mpq_mode(e_mpq_mode mode)
 bool Calculator::base()
 {
     stack_entry e = stack.front();
-    mpz* v = std::get_if<mpz>(&e.value);
+    mpz* v = std::get_if<mpz>(&e.value());
     if (v)
     {
         auto iv = static_cast<int>(*v);
@@ -349,7 +349,7 @@ bool Calculator::cbase()
 bool Calculator::fixed_bits()
 {
     stack_entry e = stack.front();
-    mpz* v = std::get_if<mpz>(&e.value);
+    mpz* v = std::get_if<mpz>(&e.value());
     if (v)
     {
         stack.pop_front();
@@ -366,7 +366,7 @@ bool Calculator::fixed_bits()
 bool Calculator::precision()
 {
     stack_entry e = stack.front();
-    mpz* v = std::get_if<mpz>(&e.value);
+    mpz* v = std::get_if<mpz>(&e.value());
     if (v)
     {
         stack.pop_front();
@@ -448,14 +448,14 @@ void Calculator::show_stack()
     {
         if (config.debug)
         {
-            std::cout << numeric_types[it->value.index()] << " | ";
+            std::cout << numeric_types[it->value().index()] << " | ";
         }
         if (config.interactive)
         {
             std::cout << std::dec << c << ": ";
             c--;
         }
-        auto& v = it->value;
+        auto& v = it->value();
 
         if (auto q = std::get_if<mpq>(&v); q)
         {

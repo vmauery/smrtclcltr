@@ -25,8 +25,8 @@ bool impl(Calculator& calc)
 {
     stack_entry e1 = calc.stack[1];
     stack_entry e0 = calc.stack[0];
-    mpz* x = std::get_if<mpz>(&e1.value);
-    mpz* y = std::get_if<mpz>(&e0.value);
+    mpz* x = std::get_if<mpz>(&e1.value());
+    mpz* y = std::get_if<mpz>(&e0.value());
     if (!x || !y || (*y > *x))
     {
         return false;
@@ -74,8 +74,8 @@ bool impl(Calculator& calc)
 {
     stack_entry e1 = calc.stack[1];
     stack_entry e0 = calc.stack[0];
-    mpz* x = std::get_if<mpz>(&e1.value);
-    mpz* y = std::get_if<mpz>(&e0.value);
+    mpz* x = std::get_if<mpz>(&e1.value());
+    mpz* y = std::get_if<mpz>(&e0.value());
     if (!x || !y || (*y > *x))
     {
         return false;

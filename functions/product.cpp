@@ -14,7 +14,7 @@ namespace product
 bool impl(Calculator& calc)
 {
     stack_entry e = calc.stack.front();
-    mpz* v = std::get_if<mpz>(&e.value);
+    mpz* v = std::get_if<mpz>(&e.value());
     if (!v || (*v > 1000000000) || (*v >= static_cast<mpz>(calc.stack.size())))
     {
         return false;
