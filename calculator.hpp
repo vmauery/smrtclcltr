@@ -9,6 +9,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <functional>
 #include <map>
 #include <numeric.hpp>
+#include <optional>
 #include <string>
 #include <tuple>
 
@@ -48,6 +49,7 @@ class Calculator
     };
     struct Config
     {
+        bool interactive = true;
         bool debug = false;
         int base = 10;
         int fixed_bits = 0;
@@ -71,12 +73,14 @@ class Calculator
     void make_functions();
 
     void show_stack();
+    std::optional<std::string> get_input();
     std::string get_next_token();
     bool run_one(const std::string& expr);
     bool undo();
 
     bool debug();
     bool base();
+    bool cbase();
     bool fixed_bits();
     bool precision();
     bool unsigned_mode();

@@ -1,1 +1,2 @@
 option('numeric', type : 'combo', choices : ['mpfr', 'gmp', 'boost', 'native'], value : 'mpfr', description: 'Numeric backend to use')
+option('readline', type : 'boolean', value : true, description: 'Use libreadline if found')

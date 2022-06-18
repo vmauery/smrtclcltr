@@ -6,7 +6,7 @@ project('smrtclcltr', 'cpp',
     'warning_level=3',
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'cpp_std=c++2a',
+    'cpp_std=c++20',
     ]
   )
 
@@ -47,6 +47,8 @@ elif (get_option('numeric') == 'native')
   add_project_arguments(['-DUSE_BASIC_TYPES'], language: 'cpp')
 endif
 
+all_dependencies = [ numeric ]
+
 add_project_arguments(
   cxx.get_supported_arguments([
     '-Wcast-align',
@@ -59,7 +61,6 @@ add_project_arguments(
     '-Wold-style-cast',
     '-Woverloaded-virtual',
     '-Wunused',
-    '-std=c++20',
     ]),
   language: 'cpp'
   )
@@ -73,6 +74,13 @@ security_flags = [
   '-Wformat',
   '-Wformat-security'
   ]
+
+# Use readline by default if found, can be disabled with option
+rldep = dependency('readline', required: false)
+if rldep.found() and get_option('readline') == true
+  add_project_arguments(['-DHAVE_READLINE'], language: 'cpp')
+  all_dependencies += [ rldep ]
+endif
 
 ## Add security flags for builds of type 'release','debugoptimized' and 'minsize'
 
@@ -100,5 +108,5 @@ add_project_arguments(
 
 executable('smrtclcltr',
   sources: src,
-  dependencies: numeric
+  dependencies: all_dependencies
   )

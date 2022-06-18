@@ -3,7 +3,11 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
+#ifdef USE_BASIC_TYPES
+#include <numeric>
+#else
 #include <boost/integer/common_factor_rt.hpp>
+#endif
 #include <function.hpp>
 
 namespace function
@@ -53,6 +57,12 @@ auto constexpr help =
 namespace gcd
 {
 
+#ifdef USE_BASIC_TYPES
+#define gcd_fn std::gcd
+#else
+#define gcd_fn boost::math::gcd
+#endif
+
 bool impl(Calculator& calc)
 {
     stack_entry e1 = calc.stack[1];
@@ -65,7 +75,7 @@ bool impl(Calculator& calc)
     }
     calc.stack.pop_front();
     calc.stack.pop_front();
-    mpz f = boost::math::gcd(*v, *u);
+    mpz f = gcd_fn(*v, *u);
     calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
                              calc.config.precision, calc.config.is_signed);
     return true;
@@ -82,6 +92,12 @@ auto constexpr help = "\n"
 namespace lcm
 {
 
+#ifdef USE_BASIC_TYPES
+#define lcm_fn std::lcm
+#else
+#define lcm_fn boost::math::lcm
+#endif
+
 bool impl(Calculator& calc)
 {
     stack_entry e1 = calc.stack[1];
@@ -94,7 +110,7 @@ bool impl(Calculator& calc)
     }
     calc.stack.pop_front();
     calc.stack.pop_front();
-    mpz f = boost::math::lcm(*v, *u);
+    mpz f = lcm_fn(*v, *u);
     calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
                              calc.config.precision, calc.config.is_signed);
     return true;
