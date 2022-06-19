@@ -24,11 +24,6 @@ mpf factorial(const mpq& x)
     return boost::math::tgamma(xp);
 }
 
-mpc factorial(const mpc&)
-{
-    throw std::invalid_argument("Not implemented for complex numbers");
-}
-
 mpz bin_split_factorial(const mpz& a, const mpz& b)
 {
     mpz d = a - b;
@@ -67,7 +62,8 @@ mpz factorial(const mpz& x)
 
 bool impl(Calculator& calc)
 {
-    return one_arg_op(calc, [](const auto& x) { return factorial(x); });
+    return one_arg_limited_op<mpz, mpf, mpq>(
+        calc, [](const auto& x) { return factorial(x); });
 }
 
 auto constexpr help =
