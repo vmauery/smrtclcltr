@@ -16,6 +16,122 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <tuple>
 #include <type_traits>
 
+// TODO: add the other 80 combinations? maybe as needed?
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa, const mpz& bb, const mpz& cc)
+{
+    return fn(aa, bb, cc);
+}
+
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa, const mpz& bb)
+{
+    return fn(aa, bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa, const mpq& bb)
+{
+    return fn(to_mpq(aa), bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa, const mpf& bb)
+{
+    return fn(to_mpf(aa), bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa, const mpc& bb)
+{
+    return fn(to_mpc(aa), bb);
+}
+
+// mpq
+template <typename Fn>
+numeric operate(const Fn& fn, const mpq& aa, const mpz& bb)
+{
+    return fn(aa, to_mpq(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpq& aa, const mpq& bb)
+{
+    return fn(aa, bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpq& aa, const mpf& bb)
+{
+    return fn(to_mpf(aa), bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpq& aa, const mpc& bb)
+{
+    return fn(to_mpc(aa), bb);
+}
+
+// mpf
+template <typename Fn>
+numeric operate(const Fn& fn, const mpf& aa, const mpz& bb)
+{
+    return fn(aa, to_mpf(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpf& aa, const mpq& bb)
+{
+    return fn(aa, to_mpf(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpf& aa, const mpf& bb)
+{
+    return fn(aa, bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpf& aa, const mpc& bb)
+{
+    return fn(to_mpc(aa), bb);
+}
+
+// mpc
+template <typename Fn>
+numeric operate(const Fn& fn, const mpc& aa, const mpz& bb)
+{
+    return fn(aa, to_mpc(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpc& aa, const mpq& bb)
+{
+    return fn(aa, to_mpc(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpc& aa, const mpf& bb)
+{
+    return fn(aa, to_mpc(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpc& aa, const mpc& bb)
+{
+    return fn(aa, bb);
+}
+
+
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa)
+{
+    return fn(aa);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpq& aa)
+{
+    return fn(aa);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpf& aa)
+{
+    return fn(aa);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpc& aa)
+{
+    return fn(aa);
+}
+
 constexpr bool const_or(bool b0)
 {
     return b0;
