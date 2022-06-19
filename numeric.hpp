@@ -288,6 +288,7 @@ struct rational
     T den;
     rational(const mpz& n = 0, const mpz& d = 1) : num(n), den(d)
     {
+        reduce();
     }
 
     explicit rational(const std::string& r)
@@ -302,6 +303,17 @@ struct rational
         {
             num = std::stoll(r.substr(0, d));
             den = std::stoll(r.substr(d + 1));
+        }
+        reduce();
+    }
+
+    void reduce()
+    {
+        T cf = std::__gcd(den, den);
+        if (cf > 1)
+        {
+            num /= cf;
+            den /= cf;
         }
     }
 
@@ -402,12 +414,14 @@ struct rational
         T nden = std::__gcd(den, r.den);
         num = num * nden / den + r.num * nden / r.den;
         den = nden;
+        reduce();
         return *this;
     }
     rational& operator-=(const rational& r)
     {
         T nden = std::__gcd(den, r.den);
         num = num * nden / den - r.num * nden / r.den;
+        reduce();
         den = nden;
         return *this;
     }
@@ -415,12 +429,14 @@ struct rational
     {
         num *= r.num;
         den *= r.den;
+        reduce();
         return *this;
     }
     rational& operator/=(const rational& r)
     {
         num *= r.den;
         den *= r.num;
+        reduce();
         return *this;
     }
     operator mpz() const
