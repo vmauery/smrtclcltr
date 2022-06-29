@@ -43,6 +43,11 @@ numeric operate(const Fn& fn, const mpz& aa, const mpc& bb)
 {
     return fn(to_mpc(aa), bb);
 }
+template <typename Fn>
+numeric operate(const Fn& fn, const mpz& aa, const time_& bb)
+{
+    return fn(aa, bb);
+}
 
 // mpq
 template <typename Fn>
@@ -64,6 +69,11 @@ template <typename Fn>
 numeric operate(const Fn& fn, const mpq& aa, const mpc& bb)
 {
     return fn(to_mpc(aa), bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const mpq& aa, const time_& bb)
+{
+    return fn(to_mpf(aa), bb);
 }
 
 // mpf
@@ -87,6 +97,11 @@ numeric operate(const Fn& fn, const mpf& aa, const mpc& bb)
 {
     return fn(to_mpc(aa), bb);
 }
+template <typename Fn>
+numeric operate(const Fn& fn, const mpf& aa, const time_& bb)
+{
+    return fn(aa, bb);
+}
 
 // mpc
 template <typename Fn>
@@ -109,7 +124,38 @@ numeric operate(const Fn& fn, const mpc& aa, const mpc& bb)
 {
     return fn(aa, bb);
 }
+template <typename Fn>
+numeric operate(const Fn& fn, const mpc& aa, const time_& bb)
+{
+    return fn(to_mpf(aa), bb);
+}
 
+// time_
+template <typename Fn>
+numeric operate(const Fn& fn, const time_& aa, const mpz& bb)
+{
+    return fn(aa, bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const time_& aa, const mpq& bb)
+{
+    return fn(aa, to_mpf(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const time_& aa, const mpf& bb)
+{
+    return fn(aa, bb);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const time_& aa, const mpc& bb)
+{
+    return fn(aa, to_mpf(bb));
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const time_& aa, const time_& bb)
+{
+    return fn(aa, bb);
+}
 
 template <typename Fn>
 numeric operate(const Fn& fn, const mpz& aa)
@@ -128,6 +174,11 @@ numeric operate(const Fn& fn, const mpf& aa)
 }
 template <typename Fn>
 numeric operate(const Fn& fn, const mpc& aa)
+{
+    return fn(aa);
+}
+template <typename Fn>
+numeric operate(const Fn& fn, const time_& aa)
 {
     return fn(aa);
 }

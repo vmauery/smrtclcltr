@@ -64,6 +64,7 @@ extern CalcFunction lcm;
 extern CalcFunction combination;
 extern CalcFunction permutation;
 extern CalcFunction split;
+extern CalcFunction unix_ts;
 
 } // namespace functions
 

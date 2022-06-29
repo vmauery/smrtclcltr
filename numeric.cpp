@@ -19,7 +19,7 @@ std::ostream& operator<<(std::ostream& out, const numeric& n)
         [&out](const auto& nn) -> std::ostream& { return out << nn; }, n);
 }
 
-static mpq make_quotient(const std::string& s)
+mpq make_quotient(const std::string& s)
 {
     static std::regex real{
         "([-+])?" // optional sign
@@ -219,4 +219,63 @@ mpc parse_mpc(const std::string& s)
         }
     }
     return mpc(complex_parts[0], complex_parts[1]);
+}
+
+time_ parse_time(const std::string& s)
+{
+    static std::regex time_literal("("           // start of value capture
+                                   "[-+.eE\\d]+" // number bits
+                                   ")"           // end of value capture
+                                   "("           // start of units capture
+                                   "ns|"         // nanoseconds
+                                   "us|"         // microseconds
+                                   "ms|"         // milliseconds
+                                   "s|"          // seconds
+                                   "m|"          // minutes
+                                   "h|"          // hours
+                                   "d"           // days
+                                   ")"           // end of units capture
+                                   ,
+                                   std::regex::ECMAScript);
+    std::smatch parts;
+    if (!std::regex_match(s, parts, time_literal))
+    {
+        throw std::runtime_error("input failed to match time literal regex");
+    }
+    // [0] entire number
+    // [1] value
+    // [2] units
+    mpq value = parse_mpf(parts[1].str());
+    std::string units = parts[2].str();
+    if (units == "ns")
+    {
+        // no-op
+    }
+    else if (units == "us")
+    {
+        value *= 1'000ull;
+    }
+    else if (units == "ms")
+    {
+        value *= 1'000'000ull;
+    }
+    else if (units == "s")
+    {
+        value *= 1'000'000'000ull;
+    }
+    else if (units == "m")
+    {
+        value *= 60ull * 1'000'000'000ull;
+    }
+    else if (units == "h")
+    {
+        value *= 60ull * 60ull * 1'000'000'000ull;
+    }
+    else if (units == "d")
+    {
+        value *= 24ull * 60ull * 60ull * 1'000'000'000ull;
+    }
+    // all values are in terms of nanoseconds
+    value /= 1'000'000'000ull;
+    return time_(value, false);
 }

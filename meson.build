@@ -28,6 +28,7 @@ src = [
   'functions/sqrt.cpp',
   'functions/stack_funcs.cpp',
   'functions/sum.cpp',
+  'functions/time_funcs.cpp',
   'functions/trig_funcs.cpp',
   'functions/util_funcs.cpp',
   ]

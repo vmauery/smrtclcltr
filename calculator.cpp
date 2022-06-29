@@ -119,7 +119,14 @@ bool Calculator::run_one(const std::string& expr)
     e.is_signed = config.is_signed;
     try
     {
-        if (expr.starts_with("(") || expr.ends_with("i"))
+        // time literals ns, us, ms, s, m, h, d
+        if (expr.ends_with("ns") || expr.ends_with("us") ||
+            expr.ends_with("ms") || expr.ends_with("s") ||
+            expr.ends_with("m") || expr.ends_with("h") || expr.ends_with("d"))
+        {
+            e.value(parse_time(expr));
+        }
+        else if (expr.starts_with("(") || expr.ends_with("i"))
         {
             // std::cerr << "mpc(\"" << expr << "\")\n";
             e.value(parse_mpc(expr));
@@ -597,6 +604,7 @@ void Calculator::make_functions()
     _operations["comb"] = functions::combination;
     _operations["perm"] = functions::permutation;
     _operations["split"] = functions::split;
+    _operations["now"] = functions::unix_ts;
 
     _op_names_max_strlen = 1;
     std::transform(_operations.begin(), _operations.end(),

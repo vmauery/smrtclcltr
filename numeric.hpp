@@ -112,6 +112,9 @@ using mpc = boost::multiprecision::number<complex_backend,
 using mpq = boost::multiprecision::number<rational_backend,
                                           boost::multiprecision::et_off>;
 
+mpq make_quotient(const mpf& f, int digits);
+mpq make_quotient(const std::string& s);
+
 namespace helper
 {
 static inline mpz numerator(const mpq& q)
@@ -167,9 +170,18 @@ static inline mpq to_mpq(const mpz& v)
 }
 static inline mpq to_mpq(const mpf& v)
 {
-    mpz den(1);
-    den <<= default_precision;
-    return mpq(to_mpz(v * mpf(den)), den);
+    try
+    {
+        // try an exact quotient first
+        return make_quotient(v, default_precision);
+    }
+    catch (const std::exception& e)
+    {
+        // do the best with our precision (we cannot fail)
+        mpz den(1);
+        den <<= default_precision;
+        return mpq(to_mpz(v * mpf(den)), den);
+    }
 }
 static inline mpq to_mpq(const mpq& v)
 {
@@ -177,9 +189,9 @@ static inline mpq to_mpq(const mpq& v)
 }
 static inline mpq to_mpq(const mpc& v)
 {
-    mpz den(1);
-    den <<= default_precision;
-    return mpq(to_mpz(v.real() * mpf(den)), den);
+    // magnitude here instead?
+    mpf vmag = abs(v);
+    return to_mpq(vmag);
 }
 // to_mpc
 static inline mpc to_mpc(const mpz& v)
@@ -462,6 +474,9 @@ struct rational
     }
 };
 
+mpq make_quotient(const mpf& f, int digits);
+mpq make_quotient(const std::string& s);
+
 namespace helper
 {
 static inline mpz numerator(const mpq& q)
@@ -517,9 +532,18 @@ static inline mpq to_mpq(const mpz& v)
 }
 static inline mpq to_mpq(const mpf& v)
 {
-    mpz den(1);
-    den <<= default_precision;
-    return mpq(to_mpz(v * den), den);
+    try
+    {
+        // try an exact quotient first
+        return make_quotient(v, default_precision);
+    }
+    catch (const std::exception& e)
+    {
+        // do the best with our precision (we cannot fail)
+        mpz den(1);
+        den <<= default_precision;
+        return mpq(to_mpz(v * mpf(den)), den);
+    }
 }
 static inline mpq to_mpq(const mpq& v)
 {
@@ -527,9 +551,9 @@ static inline mpq to_mpq(const mpq& v)
 }
 static inline mpq to_mpq(const mpc& v)
 {
-    mpz den(1);
-    den <<= default_precision;
-    return mpq(to_mpz(v.real() * den), den);
+    // magnitude here instead?
+    mpf vmag = abs(v);
+    return to_mpq(vmag);
 }
 // to_mpc
 static inline mpc to_mpc(const mpz& v)
@@ -611,62 +635,305 @@ static inline mpq parse_mpq(const std::string& s)
 
 #endif // USE_BASIC_TYPES
 
-mpq parse_mpf(const std::string& s);
-mpq make_quotient(const mpf& f, int digits);
-
-namespace util
+struct time_
 {
+    time_() : value(0, 0), absolute(false)
+    {
+    }
 
-template <typename From, typename To>
-class implicit
-{
-    using success = char;
-    using dummy = long double;
-    static success test(To);
-    static dummy test(...);
-    static From f();
+    template <typename Rep, typename Period>
+    time_(const std::chrono::duration<Rep, Period>& d, bool absolute = false) :
+        value(std::chrono::nanoseconds(d).count(), 1'000'000'000ull),
+        absolute(absolute)
+    {
+    }
 
-  public:
-    static constexpr bool exists = sizeof(test(f())) == sizeof(success);
+    template <typename Clock, typename Duration>
+    time_(const std::chrono::time_point<Clock, Duration>& tp) :
+        time_(tp.time_since_epoch(), true)
+    {
+    }
+
+    // parse time_ from string
+    explicit time_(const std::string& t) :
+        value(make_quotient(t)), absolute(false)
+    {
+    }
+
+    time_(const mpz& t) : value(to_mpq(t)), absolute(true)
+    {
+    }
+    time_(const mpq& t) : value(to_mpq(t)), absolute(true)
+    {
+    }
+    time_(const mpf& t) : value(to_mpq(t)), absolute(true)
+    {
+    }
+    time_(const mpc& t) : value(to_mpq(t)), absolute(true)
+    {
+    }
+
+    // numbers to time_ (default to absolute times)
+    time_(const mpz& t, bool absolute) : value(to_mpq(t)), absolute(absolute)
+    {
+    }
+    time_(const mpq& t, bool absolute) : value(t), absolute(absolute)
+    {
+    }
+    time_(const mpf& t, bool absolute) : value(to_mpq(t)), absolute(absolute)
+    {
+    }
+    time_(const mpc& t, bool absolute) : value(to_mpq(t)), absolute(absolute)
+    {
+    }
+
+    bool operator==(const time_& t) const
+    {
+        return absolute == t.absolute && value == t.value;
+    }
+    bool operator!=(const time_& t) const
+    {
+        return !(absolute == t.absolute && value == t.value);
+    }
+    bool operator<(const time_& t) const
+    {
+        if (absolute != t.absolute)
+        {
+            throw std::invalid_argument(
+                "cannot compare absolute and relative times");
+        }
+        return value < t.value;
+    }
+    bool operator>(const time_& t) const
+    {
+        if (absolute != t.absolute)
+        {
+            throw std::invalid_argument(
+                "cannot compare absolute and relative times");
+        }
+        return value > t.value;
+    }
+    bool operator<=(const time_& t) const
+    {
+        if (absolute != t.absolute)
+        {
+            throw std::invalid_argument(
+                "cannot compare absolute and relative times");
+        }
+        return value <= t.value;
+    }
+    bool operator>=(const time_& t) const
+    {
+        if (absolute != t.absolute)
+        {
+            throw std::invalid_argument(
+                "cannot compare absolute and relative times");
+        }
+        return value >= t.value;
+    }
+    /* ops with other times */
+    time_ operator+(const time_& t) const
+    {
+        if (absolute && t.absolute)
+        {
+            throw std::invalid_argument(
+                "cannot perform arithmetic with two absolute times");
+        }
+        return time_(value + t.value, absolute | t.absolute);
+    }
+    time_ operator-(const time_& t) const
+    {
+        return time_(value - t.value, absolute ^ t.absolute);
+    }
+    time_ operator*(const time_&) const
+    {
+        throw std::invalid_argument("cannot perform multiplication with times");
+    }
+    time_ operator/(const time_& t) const
+    {
+        if (absolute || t.absolute)
+        {
+            throw std::invalid_argument(
+                "cannot perform division with absolute times");
+        }
+        return time_(value / t.value, absolute);
+    }
+    time_& operator+=(const time_& t)
+    {
+        if (absolute && t.absolute)
+        {
+            throw std::invalid_argument(
+                "cannot perform arithmetic with two absolute times");
+        }
+        value += t.value;
+        absolute |= t.absolute;
+        return *this;
+    }
+    time_& operator-=(const time_& t)
+    {
+        value -= t.value;
+        absolute ^= t.absolute;
+        return *this;
+    }
+    time_& operator*=(const time_& t)
+    {
+        if (absolute)
+        {
+            throw std::invalid_argument(
+                "cannot perform arithmetic with an absolute time");
+        }
+        value -= t.value;
+        absolute ^= t.absolute;
+        return *this;
+    }
+    time_& operator/=(const time_& t)
+    {
+        if (absolute)
+        {
+            throw std::invalid_argument(
+                "cannot perform arithmetic with an absolute time");
+        }
+        value /= t.value;
+        absolute ^= t.absolute;
+        return *this;
+    }
+
+    /* ops with scalers */
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_ operator+(const T& t) const
+    {
+        return time_(value + to_mpq(t), absolute);
+    }
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_ operator-(const T& t) const
+    {
+        return time_(value - to_mpq(t), absolute);
+    }
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_ operator*(const T& t) const
+    {
+        // mult on absolute time makes it a duration
+        return time_(value * to_mpq(t), false);
+    }
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_ operator/(const T& t) const
+    {
+        // div on absolute time makes it a duration
+        return time_(value / to_mpq(t), false);
+    }
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_& operator+=(const T& t)
+    {
+        value += to_mpq(t);
+        return *this;
+    }
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_& operator-=(const T& t)
+    {
+        value -= to_mpq(t);
+        return *this;
+    }
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_& operator*=(const T& t)
+    {
+        // mult on absolute time makes it a duration
+        value *= to_mpq(t);
+        absolute = false;
+        return *this;
+    }
+    template <typename T,
+              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    time_& operator/=(const T& t)
+    {
+        // div on absolute time makes it a duration
+        value /= to_mpq(t);
+        absolute = false;
+        return *this;
+    }
+
+    /*
+    operator mpz() const
+    {
+        return static_cast<mpz>(helper::numerator(value) /
+                                helper::denominator(value));
+    }
+    operator mpf() const
+    {
+        return static_cast<mpf>(helper::numerator(value)) /
+               static_cast<mpf>(helper::denominator(value));
+    }
+    operator mpc() const
+    {
+        return static_cast<mpf>(helper::numerator(value)) /
+               static_cast<mpf>(helper::denominator(value));
+    }
+    */
+    friend std::ostream& operator<<(std::ostream& output, const time_& t)
+    {
+        if (t.absolute)
+        {
+            unsigned long long nanos = static_cast<unsigned long long>(
+                (helper::numerator(t.value) * mpz(1'000'000'000ull)) /
+                helper::denominator(t.value));
+            std::chrono::duration d = std::chrono::nanoseconds(nanos);
+            std::chrono::time_point<std::chrono::system_clock> tp(d);
+            const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
+            return output << std::put_time(std::localtime(&t_c), "%F %T");
+        }
+        else
+        {
+            auto f = to_mpf(t.value);
+            return output << std::setprecision(20) << f;
+        }
+    }
+
+    mpq value;
+    bool absolute;
 };
 
-} // namespace util
-
-static constexpr bool has_mpz_to_mpc = util::implicit<mpz, mpc>::exists;
-static constexpr bool has_mpq_to_mpc = util::implicit<mpq, mpc>::exists;
-
-using datetime = std::chrono::time_point<std::chrono::system_clock>;
-#ifdef COMMENT_CODE
-std::tuple<std::chrono::year_month_day, std::chrono::hh_mm_ss>
-    parse_datetime(const datetime& dt)
+/* scaler ops with time_ */
+template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+time_ operator+(const S& s, const time_& t)
 {
-    auto tp = std::chrono::zoned_time{std::chrono::current_zone(), dt}
-                  .get_local_time();
-    auto dp = floor<std::chrono::days>(tp);
-    std::chrono::year_month_day ymd{dp};
-    std::chrono::hh_mm_ss hms{floor<std::chrono::milliseconds>(tp - dp)};
-    /*
-    auto y = ymd.year();
-    auto m = ymd.month();
-    auto d = ymd.day();
-    auto h = hms.hours();
-    auto M = hms.minutes();
-    auto s = hms.seconds();
-    auto ms = hms.subseconds();
-    */
-    return {ymd, hms};
+    return time_(t.value + to_mpq(s), t.absolute);
 }
-#endif
+template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+time_ operator-(const S& s, const time_& t)
+{
+    return time_(t.value - to_mpq(s), t.absolute);
+}
+template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+time_ operator*(const S& s, const time_& t)
+{
+    // mult on absolute time makes it a duration
+    return time_(t.value * to_mpq(s), false);
+}
+template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+time_ operator/(const S& s, const time_& t)
+{
+    // div on absolute time makes it a duration
+    return time_(t.value / to_mpq(s), false);
+}
 
-using numeric = std::variant<mpz, mpf, mpc, mpq>;
+using numeric = std::variant<mpz, mpf, mpc, mpq, time_>;
 
 static constexpr auto numeric_types = std::to_array<const char*>({
     "mpz",
     "mpf",
     "mpc",
     "mpq",
+    "time",
 });
 
 std::ostream& operator<<(std::ostream& out, const numeric& n);
 
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
+mpq parse_mpf(const std::string& s);
+time_ parse_time(const std::string& s);

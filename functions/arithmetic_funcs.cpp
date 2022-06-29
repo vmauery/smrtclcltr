@@ -63,7 +63,8 @@ bool impl(Calculator& calc)
 {
     return two_arg_conv_op(
         calc, [](const auto& a, const auto& b) { return a / b; },
-        std::tuple<mpz>{}, std::tuple<mpq>{}, std::tuple<mpq, mpf, mpc>{});
+        std::tuple<mpz>{}, std::tuple<mpq>{},
+        std::tuple<mpq, mpf, mpc, time_>{});
 }
 
 auto constexpr help =
@@ -244,7 +245,7 @@ namespace negate
 
 bool impl(Calculator& calc)
 {
-    return one_arg_op(calc, [](const auto& a) { return decltype(a)(0) - a; });
+    return one_arg_op(calc, [](const auto& a) { return decltype(a){} - a; });
 }
 
 auto constexpr help =
@@ -260,7 +261,8 @@ namespace inverse
 
 bool impl(Calculator& calc)
 {
-    return one_arg_op(calc, [](const auto& a) { return decltype(a)(1) / a; });
+    return one_arg_limited_op<mpz, mpf, mpq, mpc>(
+        calc, [](const auto& a) { return decltype(a)(1) / a; });
 }
 
 auto constexpr help = "\n"
