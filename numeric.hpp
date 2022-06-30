@@ -937,3 +937,20 @@ std::ostream& operator<<(std::ostream& out, const numeric& n);
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
 mpq parse_mpf(const std::string& s);
 time_ parse_time(const std::string& s);
+
+static inline mpz to_mpz(const numeric& n)
+{
+    return std::visit([](const auto& a) { return to_mpz(a); }, n);
+}
+static inline mpf to_mpf(const numeric& n)
+{
+    return std::visit([](const auto& a) { return to_mpf(a); }, n);
+}
+static inline mpq to_mpq(const numeric& n)
+{
+    return std::visit([](const auto& a) { return to_mpq(a); }, n);
+}
+static inline mpc to_mpc(const numeric& n)
+{
+    return std::visit([](const auto& a) { return to_mpc(a); }, n);
+}
