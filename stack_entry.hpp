@@ -6,81 +6,54 @@ SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
 #include <numeric.hpp>
+#include <units.hpp>
 
 struct stack_entry
 {
     stack_entry() :
-        _value(), base(10), fixed_bits(0), precision(8), is_signed(true)
+        _value(), _unit(), base(10), fixed_bits(0), precision(8),
+        is_signed(true)
     {
     }
     stack_entry(numeric&& v, int b, int f, int p, bool s) :
-        base(b), fixed_bits(f), precision(p), is_signed(s)
+        _unit(), base(b), fixed_bits(f), precision(p), is_signed(s)
     {
-        _value = reduce(v);
+        _value = reduce_numeric(v, precision);
     }
 
-    numeric& value()
+    stack_entry(numeric&& v, const units::unit& u, int b, int f, int p,
+                bool s) :
+        _unit(u),
+        base(b), fixed_bits(f), precision(p), is_signed(s)
+    {
+        _value = reduce_numeric(v, precision);
+    }
+
+    const numeric& value() const
     {
         return _value;
     }
     void value(const numeric& n)
     {
-        _value = reduce(n);
+        _value = reduce_numeric(n, precision);
     }
 
-    numeric reduce(const numeric& n)
+    units::unit& unit()
     {
-        // std::visit([](auto& a) { std::cerr << "reduce(" << a << ")\n"; }, n);
-        /*
-         * may be lossy if precision is low... mpf to mpq/mpz might be a lie
-         * mpc -> mpf for imaginary = 0
-         * mpf -> mpz if no fractional part
-         * mpf -> mpq for perfect fractions?
-         * mpq -> mpz for denominator = 1
-         */
-        if (auto q = std::get_if<mpq>(&n); q)
-        {
-            if (helper::denominator(*q) == 1)
-            {
-                return helper::numerator(*q);
-            }
-            return n;
-        }
-        else if (auto f = std::get_if<mpf>(&n); f)
-        {
-            if (*f == mpf(0.0))
-            {
-                return mpz(0);
-            }
-            // internally, make_quotient will do calculations
-            // with a higher precision than the current precision
-            // but we will limit the size of the denominator to
-            // a reasonable size to keep irrationals from getting
-            // turned into rationals
-            try
-            {
-                // make_quotient might return a reducible q
-                // so call reduce again
-                return reduce(make_quotient(*f, precision / 5));
-            }
-            catch (const std::exception& e)
-            {
-                return n;
-            }
-        }
-        else if (auto c = std::get_if<mpc>(&n); c)
-        {
-            if (c->imag() == mpf(0.0))
-            {
-                return reduce(c->real());
-            }
-            return n;
-        }
-        return n;
+        return _unit;
+    }
+    void unit(const units::unit& u)
+    {
+        _unit = u;
+    }
+    void unit(const std::string& u)
+    {
+        _unit = units::unit(u);
     }
 
   protected:
     numeric _value;
+    units::unit _unit;
 
   public:
     int base;

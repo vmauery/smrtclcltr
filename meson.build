@@ -15,6 +15,7 @@ src = [
   'numeric.cpp',
   'constants.cpp',
   'calculator.cpp',
+  'units.cpp',
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',
   'functions/factorial.cpp',
@@ -29,6 +30,7 @@ src = [
   'functions/sum.cpp',
   'functions/time_funcs.cpp',
   'functions/trig_funcs.cpp',
+  'functions/unit_funcs.cpp',
   'functions/util_funcs.cpp',
   ]
 

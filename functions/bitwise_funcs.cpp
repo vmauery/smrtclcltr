@@ -31,7 +31,15 @@ struct bitwise_and : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return two_arg_limited_op<mpz>(
-            calc, [](const auto& a, const auto& b) { return a & b; });
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw std::invalid_argument("units do not match");
+                }
+                return {a & b, ua};
+            });
     }
 };
 
@@ -58,7 +66,15 @@ struct bitwise_or : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return two_arg_limited_op<mpz>(
-            calc, [](const auto& a, const auto& b) { return a | b; });
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw std::invalid_argument("units do not match");
+                }
+                return {a | b, ua};
+            });
     }
 };
 
@@ -85,7 +101,15 @@ struct bitwise_xor : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return two_arg_limited_op<mpz>(
-            calc, [](const auto& a, const auto& b) { return a % b; });
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw std::invalid_argument("units do not match");
+                }
+                return {a ^ b, ua};
+            });
     }
 };
 
@@ -111,7 +135,11 @@ struct bitwise_inv : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_limited_op<mpz>(calc, [](const auto& a) { return ~a; });
+        return one_arg_limited_op<mpz>(calc,
+                                       [](const auto& a, const units::unit& ua)
+                                           -> std::tuple<numeric, units::unit> {
+                                           return {~a, ua};
+                                       });
     }
 };
 

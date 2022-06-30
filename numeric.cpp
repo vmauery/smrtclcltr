@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <chrono>
 #include <cmath>
+#include <functions/common.hpp>
 #include <iostream>
 #include <numeric.hpp>
 #include <regex>
@@ -54,7 +55,7 @@ mpq make_quotient(const std::string& s)
     mpz sign = (parts[1].matched && parts[1].str() == "-") ? -1 : 1;
     mpz whole = parts[2].matched ? parse_mpz(parts[2].str()) : 0;
     mpz num = parts[4].matched ? parse_mpz(parts[4].str()) : 0;
-    mpz den = pow(mpz(10), parts[3].str().size());
+    mpz den = pow_fn(mpz(10), parts[3].str().size());
     mpq val(sign * (whole * den + num), den);
     if (parts[5].matched)
     {
@@ -62,11 +63,11 @@ mpq make_quotient(const std::string& s)
         // FIXME: check to see if this will get too big? Then what?
         if (exp < 0)
         {
-            val /= pow(mpz(10), -exp);
+            val /= to_mpq(function::util::pow(mpz(10), -exp));
         }
         else
         {
-            val *= pow(mpz(10), exp);
+            val *= to_mpq(function::util::pow(mpz(10), exp));
         }
     }
     return val;
@@ -99,13 +100,13 @@ mpq make_quotient(const mpf& f, int digits)
     set_default_precision(orig_prec + 2);
     const mpf one(1.0l);
     // require error of at least original precision
-    const mpf max_error = pow(mpf(10.0l), -orig_prec);
+    const mpf max_error = pow_fn(mpf(10.0l), -orig_prec);
     // std::cerr << "looking for max_error < " << max_error << "\n";
 
     mpz m[2][2];
     mpf x(f);
     mpz ai;
-    mpz maxden = pow(mpz(10), digits);
+    mpz maxden = pow_fn(mpz(10), digits);
 
     /* initialize matrix */
     m[0][0] = m[1][1] = 1;
@@ -240,7 +241,7 @@ time_ parse_time(const std::string& s)
     std::smatch parts;
     if (!std::regex_match(s, parts, time_literal))
     {
-        throw std::runtime_error("input failed to match time literal regex");
+        throw std::invalid_argument("input failed to match time literal regex");
     }
     // [0] entire number
     // [1] value
@@ -253,29 +254,96 @@ time_ parse_time(const std::string& s)
     }
     else if (units == "us")
     {
-        value *= 1'000ull;
+        value *= mpq(1'000ull, 1);
     }
     else if (units == "ms")
     {
-        value *= 1'000'000ull;
+        value *= mpq(1'000'000ull, 1);
     }
     else if (units == "s")
     {
-        value *= 1'000'000'000ull;
+        value *= mpq(1'000'000'000ull, 1);
     }
     else if (units == "m")
     {
-        value *= 60ull * 1'000'000'000ull;
+        value *= mpq(60ull * 1'000'000'000ull, 1);
     }
     else if (units == "h")
     {
-        value *= 60ull * 60ull * 1'000'000'000ull;
+        value *= mpq(60ull * 60ull * 1'000'000'000ull, 1);
     }
     else if (units == "d")
     {
-        value *= 24ull * 60ull * 60ull * 1'000'000'000ull;
+        value *= mpq(24ull * 60ull * 60ull * 1'000'000'000ull, 1);
     }
     // all values are in terms of nanoseconds
-    value /= 1'000'000'000ull;
+    value /= mpq(1'000'000'000ull, 1);
     return time_(value, false);
+}
+
+numeric reduce_numeric(const numeric& n, int precision)
+{
+    if (precision == 0)
+    {
+        precision = default_precision;
+    }
+    // std::visit([](auto& a) { std::cerr << "reduce(" << a << ")\n"; }, n);
+    /*
+     * may be lossy if precision is low... mpf to mpq/mpz might be a lie
+     * mpc -> mpf for imaginary = 0
+     * mpf -> mpz if no fractional part
+     * mpf -> mpq for perfect fractions?
+     * mpq -> mpz for denominator = 1
+     */
+    if (auto q = std::get_if<mpq>(&n); q)
+    {
+        if (helper::denominator(*q) == 1)
+        {
+            return helper::numerator(*q);
+        }
+#ifndef USE_BASIC_TYPES
+        // multiprecision mpq does not reduce internally
+        mpz c = gcd_fn(helper::numerator(*q), helper::denominator(*q));
+        if (c > 1)
+        {
+            if (c == helper::denominator(*q))
+            {
+                return helper::numerator(*q) / c;
+            }
+            return mpq(helper::numerator(*q) / c, helper::denominator(*q) / c);
+        }
+#endif // !USE_BASIC_TYPES
+        return n;
+    }
+    else if (auto f = std::get_if<mpf>(&n); f)
+    {
+        if (*f == mpf(0.0))
+        {
+            return mpz(0);
+        }
+        // internally, make_quotient will do calculations
+        // with a higher precision than the current precision
+        // but we will limit the size of the denominator to
+        // a reasonable size to keep irrationals from getting
+        // turned into rationals
+        try
+        {
+            // make_quotient might return a reducible q
+            // so call reduce again
+            return reduce_numeric(make_quotient(*f, precision / 5), precision);
+        }
+        catch (const std::exception& e)
+        {
+            return n;
+        }
+    }
+    else if (auto c = std::get_if<mpc>(&n); c)
+    {
+        if (c->imag() == mpf(0.0))
+        {
+            return reduce_numeric(c->real(), precision);
+        }
+        return n;
+    }
+    return n;
 }

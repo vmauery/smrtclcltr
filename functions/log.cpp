@@ -32,21 +32,22 @@ struct logarithm : public CalcFunction
     {
         return one_arg_conv_op(
             calc,
-            [](const auto& a) -> numeric {
+            [](const auto& a,
+               const units::unit&) -> std::tuple<numeric, units::unit> {
                 mpf log10 = log(mpf{10});
                 if constexpr (std::is_same<decltype(a), const mpc&>::value)
                 {
-                    return log(a) / log10;
+                    return {log(a) / log10, units::unit()};
                 }
                 else
                 {
                     if (a > decltype(a)(0))
                     {
-                        return log(mpf{a}) / log10;
+                        return {log(mpf{a}) / log10, units::unit()};
                     }
                     else
                     {
-                        return log(mpc{a}) / log10;
+                        return {log(mpc{a}) / log10, units::unit()};
                     }
                 }
             },
@@ -79,20 +80,21 @@ struct natural_logarithm : public CalcFunction
     {
         return one_arg_conv_op(
             calc,
-            [](const auto& a) -> numeric {
+            [](const auto& a,
+               const units::unit&) -> std::tuple<numeric, units::unit> {
                 if constexpr (std::is_same<decltype(a), const mpc&>::value)
                 {
-                    return log(a);
+                    return {log(a), units::unit()};
                 }
                 else
                 {
                     if (a > decltype(a)(0))
                     {
-                        return log(mpf{a});
+                        return {log(mpf{a}), units::unit()};
                     }
                     else
                     {
-                        return log(mpc{a});
+                        return {log(mpc{a}), units::unit()};
                     }
                 }
             },

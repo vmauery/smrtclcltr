@@ -32,7 +32,11 @@ struct product : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         stack_entry e = calc.stack.front();
-        mpz* v = std::get_if<mpz>(&e.value());
+        if (e.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
         if (!v || (*v > 1000000000) ||
             (*v >= static_cast<mpz>(calc.stack.size())))
         {

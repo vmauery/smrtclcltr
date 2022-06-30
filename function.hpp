@@ -15,173 +15,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <string>
 #include <tuple>
 #include <type_traits>
-
-// TODO: add the other 80 combinations? maybe as needed?
-template <typename Fn>
-numeric operate(const Fn& fn, const mpz& aa, const mpz& bb, const mpz& cc)
-{
-    return fn(aa, bb, cc);
-}
-
-template <typename Fn>
-numeric operate(const Fn& fn, const mpz& aa, const mpz& bb)
-{
-    return fn(aa, bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpz& aa, const mpq& bb)
-{
-    return fn(to_mpq(aa), bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpz& aa, const mpf& bb)
-{
-    return fn(to_mpf(aa), bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpz& aa, const mpc& bb)
-{
-    return fn(to_mpc(aa), bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpz& aa, const time_& bb)
-{
-    return fn(aa, bb);
-}
-
-// mpq
-template <typename Fn>
-numeric operate(const Fn& fn, const mpq& aa, const mpz& bb)
-{
-    return fn(aa, to_mpq(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpq& aa, const mpq& bb)
-{
-    return fn(aa, bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpq& aa, const mpf& bb)
-{
-    return fn(to_mpf(aa), bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpq& aa, const mpc& bb)
-{
-    return fn(to_mpc(aa), bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpq& aa, const time_& bb)
-{
-    return fn(to_mpf(aa), bb);
-}
-
-// mpf
-template <typename Fn>
-numeric operate(const Fn& fn, const mpf& aa, const mpz& bb)
-{
-    return fn(aa, to_mpf(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpf& aa, const mpq& bb)
-{
-    return fn(aa, to_mpf(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpf& aa, const mpf& bb)
-{
-    return fn(aa, bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpf& aa, const mpc& bb)
-{
-    return fn(to_mpc(aa), bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpf& aa, const time_& bb)
-{
-    return fn(aa, bb);
-}
-
-// mpc
-template <typename Fn>
-numeric operate(const Fn& fn, const mpc& aa, const mpz& bb)
-{
-    return fn(aa, to_mpc(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpc& aa, const mpq& bb)
-{
-    return fn(aa, to_mpc(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpc& aa, const mpf& bb)
-{
-    return fn(aa, to_mpc(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpc& aa, const mpc& bb)
-{
-    return fn(aa, bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpc& aa, const time_& bb)
-{
-    return fn(to_mpf(aa), bb);
-}
-
-// time_
-template <typename Fn>
-numeric operate(const Fn& fn, const time_& aa, const mpz& bb)
-{
-    return fn(aa, bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const time_& aa, const mpq& bb)
-{
-    return fn(aa, to_mpf(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const time_& aa, const mpf& bb)
-{
-    return fn(aa, bb);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const time_& aa, const mpc& bb)
-{
-    return fn(aa, to_mpf(bb));
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const time_& aa, const time_& bb)
-{
-    return fn(aa, bb);
-}
-
-template <typename Fn>
-numeric operate(const Fn& fn, const mpz& aa)
-{
-    return fn(aa);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpq& aa)
-{
-    return fn(aa);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpf& aa)
-{
-    return fn(aa);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const mpc& aa)
-{
-    return fn(aa);
-}
-template <typename Fn>
-numeric operate(const Fn& fn, const time_& aa)
-{
-    return fn(aa);
-}
+#include <units.hpp>
 
 constexpr bool const_or(bool b0)
 {
@@ -249,12 +83,6 @@ struct reduce
     }
 };
 
-template <typename TypeOut, typename TypeIn>
-TypeOut coerce_variant(const TypeIn& in)
-{
-    return TypeOut(in);
-}
-
 template <std::size_t N, class... Args>
 using list_type_t = std::tuple_element_t<N, std::tuple<Args...>>;
 
@@ -300,20 +128,11 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
         return false;
     }
     stack_entry a = calc.stack.front();
-    calc.stack.pop_front();
 
-    numeric cv;
-    try
-    {
-        cv = std::visit([&fn](const auto& a) { return operate(fn, a); },
-                        a.value());
-    }
-    catch (const std::exception& e)
-    {
-        calc.stack.push_front(a);
-        throw;
-    }
-    calc.stack.emplace_front(std::move(cv), calc.config.base,
+    auto [cv, nu] = std::visit(
+        [&fn, ua{a.unit()}](const auto& a) { return fn(a, ua); }, a.value());
+    calc.stack.pop_front();
+    calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                              calc.config.fixed_bits, a.precision,
                              calc.config.is_signed);
     return true;
@@ -331,7 +150,7 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
         return false;
     }
     stack_entry a = calc.stack.front();
-    numeric& ca = a.value();
+    numeric ca = a.value();
     conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
     std::variant<Ltypes...> lca;
     if (!reduce(ca, lca)())
@@ -340,19 +159,12 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
                      "shit c++.\n";
         return false;
     }
+
+    auto [cv, nu] = std::visit(
+        [&fn, ua{a.unit()}](const auto& a) { return fn(a, ua); }, lca);
     calc.stack.pop_front();
 
-    numeric cv;
-    try
-    {
-        cv = std::visit([&fn](const auto& a) { return operate(fn, a); }, lca);
-    }
-    catch (const std::exception& e)
-    {
-        calc.stack.push_front(a);
-        throw;
-    }
-    calc.stack.emplace_front(std::move(cv), calc.config.base,
+    calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                              calc.config.fixed_bits, a.precision,
                              calc.config.is_signed);
     return true;
@@ -375,19 +187,12 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
     {
         return false;
     }
-    calc.stack.pop_front();
 
-    numeric cv;
-    try
-    {
-        cv = std::visit([&fn](const auto& a) { return operate(fn, a); }, la);
-    }
-    catch (const std::exception& e)
-    {
-        calc.stack.push_front(a);
-        throw;
-    }
-    calc.stack.emplace_front(std::move(cv), calc.config.base,
+    auto [cv, nu] = std::visit(
+        [&fn, ua{a.unit()}](const auto& a) { return fn(a, ua); }, la);
+
+    calc.stack.pop_front();
+    calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                              calc.config.fixed_bits, a.precision,
                              calc.config.is_signed);
     return true;
@@ -402,24 +207,63 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
     }
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
+
+    if (a.unit().compat(b.unit()))
+    {
+        // convert b to a units
+        b.value(units::convert(b.value(), b.unit(), a.unit()));
+    }
+    auto [cv, nu] = std::visit(
+        [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
+            return fn(a, b, ua, ub);
+        },
+        a.value(), b.value());
+
     calc.stack.pop_front();
     calc.stack.pop_front();
 
-    numeric cv;
-    try
-    {
-        cv = std::visit(
-            [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
-            a.value(), b.value());
-    }
-    catch (const std::exception& e)
-    {
-        calc.stack.push_front(a);
-        calc.stack.push_front(b);
-        throw;
-    }
     calc.stack.emplace_front(
-        std::move(cv), calc.config.base, calc.config.fixed_bits,
+        std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
+        std::min(a.precision, b.precision), calc.config.is_signed);
+    return true;
+}
+
+template <typename Fn>
+bool two_arg_uconv_op(Calculator& calc, const Fn& fn)
+{
+    if (calc.stack.size() < 2)
+    {
+        return false;
+    }
+    stack_entry a = calc.stack[1];
+    stack_entry b = calc.stack[0];
+
+    if (a.unit().compat(b.unit()))
+    {
+        // convert b to a units
+        b.value(units::convert(b.value(), b.unit(), a.unit()));
+    }
+    else if (units::are_temp_units(a.unit(), b.unit()))
+    {
+        b.value(std::visit(
+            [ub{b.unit()}, ua{a.unit()}](const auto& v) {
+                return units::scale_temp_units(v, ub, ua);
+            },
+            b.value()));
+        b.unit(a.unit());
+    }
+
+    auto [cv, nu] = std::visit(
+        [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
+            return fn(a, b, ua, ub);
+        },
+        a.value(), b.value());
+
+    calc.stack.pop_front();
+    calc.stack.pop_front();
+
+    calc.stack.emplace_front(
+        std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
         std::min(a.precision, b.precision), calc.config.is_signed);
     return true;
 }
@@ -438,9 +282,14 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
 
-    numeric& ca = a.value();
+    if (a.unit().compat(b.unit()))
+    {
+        // convert b to a units
+        b.value(units::convert(b.value(), b.unit(), a.unit()));
+    }
+    numeric ca = a.value();
     conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
-    numeric& cb = b.value();
+    numeric cb = b.value();
     conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cb);
     std::variant<Ltypes...> lca;
     std::variant<Ltypes...> lcb;
@@ -450,24 +299,17 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
                      "shit c++.\n";
         return false;
     }
+    auto [cv, nu] = std::visit(
+        [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
+            return fn(a, b, ua, ub);
+        },
+        lca, lcb);
+
     calc.stack.pop_front();
     calc.stack.pop_front();
 
-    numeric cv;
-    try
-    {
-        cv = std::visit(
-            [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
-            lca, lcb);
-    }
-    catch (const std::exception& e)
-    {
-        calc.stack.push_front(a);
-        calc.stack.push_front(b);
-        throw;
-    }
     calc.stack.emplace_front(
-        std::move(cv), calc.config.base, calc.config.fixed_bits,
+        std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
         std::min(a.precision, b.precision), calc.config.is_signed);
     return true;
 }
@@ -494,24 +336,22 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
     {
         return false;
     }
+
+    if (a.unit().compat(b.unit()))
+    {
+        // convert b to a units
+        b.value(units::convert(b.value(), b.unit(), a.unit()));
+    }
+    auto [cv, nu] = std::visit(
+        [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
+            return fn(a, b, ua, ub);
+        },
+        la, lb);
     calc.stack.pop_front();
     calc.stack.pop_front();
 
-    numeric cv;
-    try
-    {
-        cv = std::visit(
-            [&fn](const auto& a, const auto& b) { return operate(fn, a, b); },
-            la, lb);
-    }
-    catch (const std::exception& e)
-    {
-        calc.stack.push_front(a);
-        calc.stack.push_front(b);
-        throw;
-    }
     calc.stack.emplace_front(
-        std::move(cv), calc.config.base, calc.config.fixed_bits,
+        std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
         std::min(a.precision, b.precision), calc.config.is_signed);
     return true;
 }
@@ -529,6 +369,16 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
     stack_entry b = calc.stack[1];
     stack_entry c = calc.stack[0];
 
+    if (a.unit().compat(b.unit()))
+    {
+        // convert b to a units
+        b.value(units::convert(b.value(), b.unit(), a.unit()));
+    }
+    if (a.unit().compat(c.unit()))
+    {
+        // convert c to a units
+        c.value(units::convert(c.value(), c.unit(), a.unit()));
+    }
     if (!variant_holds_type<AllowedTypes...>(a.value()) ||
         !variant_holds_type<AllowedTypes...>(b.value()) ||
         !variant_holds_type<AllowedTypes...>(c.value()))
@@ -543,25 +393,18 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
     {
         return false;
     }
+
+    auto [cv, nu] =
+        std::visit([&fn, ua{a.unit()}, ub{b.unit()}, uc{c.unit()}](
+                       const auto& a, const auto& b,
+                       const auto& c) { return fn(a, b, c, ua, ub, uc); },
+                   la, lb, lc);
+
     calc.stack.pop_front();
     calc.stack.pop_front();
     calc.stack.pop_front();
 
-    numeric cv;
-    try
-    {
-        cv = std::visit([&fn](const auto& a, const auto& b,
-                              const auto& c) { return operate(fn, a, b, c); },
-                        la, lb, lc);
-    }
-    catch (const std::exception& e)
-    {
-        calc.stack.push_front(a);
-        calc.stack.push_front(b);
-        calc.stack.push_front(c);
-        throw;
-    }
-    calc.stack.emplace_front(std::move(cv), calc.config.base,
+    calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                              calc.config.fixed_bits,
                              std::min({a.precision, b.precision, c.precision}),
                              calc.config.is_signed);
@@ -569,7 +412,8 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
 }
 
 template <typename Fn>
-auto scaled_trig_op(Calculator& calc, auto a, const Fn& fn)
+std::tuple<numeric, units::unit> scaled_trig_op(Calculator& calc, auto a,
+                                                const Fn& fn)
 {
     if (calc.config.angle_mode == Calculator::e_angle_mode::deg)
     {
@@ -579,11 +423,12 @@ auto scaled_trig_op(Calculator& calc, auto a, const Fn& fn)
     {
         a *= boost::math::constants::pi<mpf>() / 50;
     }
-    return fn(a);
+    return {fn(a), units::unit()};
 }
 
 template <typename Fn>
-auto scaled_trig_op_inv(Calculator& calc, const auto& a, const Fn& fn)
+std::tuple<numeric, units::unit> scaled_trig_op_inv(Calculator& calc,
+                                                    const auto& a, const Fn& fn)
 {
     auto b = fn(a);
     if (calc.config.angle_mode == Calculator::e_angle_mode::deg)
@@ -594,5 +439,5 @@ auto scaled_trig_op_inv(Calculator& calc, const auto& a, const Fn& fn)
     {
         b *= 50 / boost::math::constants::pi<mpf>();
     }
-    return b;
+    return {b, units::unit()};
 }

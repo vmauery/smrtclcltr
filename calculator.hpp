@@ -84,7 +84,8 @@ class Calculator
     void show_stack();
     std::optional<std::string> get_input();
     std::string get_next_token();
-    bool run_one(const std::string& expr);
+    bool run_one(std::string expr);
+
     bool _running = true;
 
     std::map<std::string, const CalcFunction*> _operations;

@@ -3,24 +3,13 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
-#ifdef USE_BASIC_TYPES
-#include <math.h>
-
-#include <numeric>
-#else
-#include <boost/integer/common_factor_rt.hpp>
-#endif
+#include <cmath>
 #include <function.hpp>
 
 namespace function
 {
 namespace util
 {
-#ifdef USE_BASIC_TYPES
-#define ceil_fn ceill
-#else
-#define ceil_fn boost::multiprecision::ceil
-#endif
 
 std::vector<mpz> factor_mpz(const mpz& x)
 {
@@ -103,7 +92,11 @@ struct factor : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         stack_entry e = calc.stack.front();
-        mpz* v = std::get_if<mpz>(&e.value());
+        if (e.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
         if (!v)
         {
             return false;
@@ -142,7 +135,11 @@ struct prime_factor : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         stack_entry e = calc.stack.front();
-        mpz* v = std::get_if<mpz>(&e.value());
+        if (e.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
         if (!v)
         {
             return false;
@@ -158,12 +155,6 @@ struct prime_factor : public CalcFunction
         return true;
     }
 };
-
-#ifdef USE_BASIC_TYPES
-#define gcd_fn std::gcd
-#else
-#define gcd_fn boost::math::gcd
-#endif
 
 struct gcd : public CalcFunction
 {
@@ -189,8 +180,12 @@ struct gcd : public CalcFunction
     {
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
-        mpz* v = std::get_if<mpz>(&e1.value());
-        mpz* u = std::get_if<mpz>(&e0.value());
+        if (e0.unit() != units::unit() || e1.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* v = std::get_if<mpz>(&e1.value());
+        const mpz* u = std::get_if<mpz>(&e0.value());
         if (!v || !u)
         {
             return false;
@@ -203,12 +198,6 @@ struct gcd : public CalcFunction
         return true;
     }
 };
-
-#ifdef USE_BASIC_TYPES
-#define lcm_fn std::lcm
-#else
-#define lcm_fn boost::math::lcm
-#endif
 
 struct lcm : public CalcFunction
 {
@@ -234,8 +223,12 @@ struct lcm : public CalcFunction
     {
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
-        mpz* v = std::get_if<mpz>(&e1.value());
-        mpz* u = std::get_if<mpz>(&e0.value());
+        if (e0.unit() != units::unit() || e1.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* v = std::get_if<mpz>(&e1.value());
+        const mpz* u = std::get_if<mpz>(&e0.value());
         if (!v || !u)
         {
             return false;

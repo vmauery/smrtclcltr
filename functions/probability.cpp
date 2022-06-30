@@ -60,8 +60,12 @@ struct combination : public CalcFunction
     {
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
-        mpz* x = std::get_if<mpz>(&e1.value());
-        mpz* y = std::get_if<mpz>(&e0.value());
+        if (e0.unit() != units::unit() || e1.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* x = std::get_if<mpz>(&e1.value());
+        const mpz* y = std::get_if<mpz>(&e0.value());
         if (!x || !y || (*y > *x))
         {
             return false;
@@ -107,8 +111,12 @@ struct permutation : public CalcFunction
     {
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
-        mpz* x = std::get_if<mpz>(&e1.value());
-        mpz* y = std::get_if<mpz>(&e0.value());
+        if (e0.unit() != units::unit() || e1.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* x = std::get_if<mpz>(&e1.value());
+        const mpz* y = std::get_if<mpz>(&e0.value());
         if (!x || !y || (*y > *x))
         {
             return false;

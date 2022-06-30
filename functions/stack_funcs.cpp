@@ -96,6 +96,10 @@ struct dropn : public CalcFunction
             return false;
         }
         stack_entry& n = calc.stack.front();
+        if (n.unit() != units::unit())
+        {
+            return false;
+        }
         size_t count = static_cast<size_t>(to_mpz(n.value()));
         if (calc.stack.size() < (count + 1))
         {
@@ -394,6 +398,10 @@ struct rolln : public CalcFunction
             return false;
         }
         stack_entry& n = calc.stack.front();
+        if (n.unit() != units::unit())
+        {
+            return false;
+        }
         size_t count = static_cast<size_t>(to_mpz(n.value()));
         if (calc.stack.size() < (count + 1))
         {

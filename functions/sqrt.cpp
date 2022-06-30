@@ -33,20 +33,21 @@ struct square_root : public CalcFunction
     {
         return one_arg_conv_op(
             calc,
-            [](const auto& a) -> numeric {
+            [](const auto& a,
+               const units::unit& ua) -> std::tuple<numeric, units::unit> {
                 if constexpr (std::is_same<decltype(a), const mpc&>::value)
                 {
-                    return sqrt(a);
+                    return {sqrt(a), units::pow(ua, 0.5l)};
                 }
                 else
                 {
                     if (a >= decltype(a)(0))
                     {
-                        return sqrt(mpf{a});
+                        return {sqrt(mpf{a}), units::pow(ua, 0.5l)};
                     }
                     else
                     {
-                        return sqrt(mpc{a});
+                        return {sqrt(mpc{a}), units::pow(ua, 0.5l)};
                     }
                 }
             },

@@ -33,8 +33,8 @@ struct range : public CalcFunction
         stack_entry xe = calc.stack.front();
         calc.stack.pop_front();
         stack_entry ye = calc.stack.front();
-        mpz* x = std::get_if<mpz>(&xe.value());
-        mpz* y = std::get_if<mpz>(&ye.value());
+        const mpz* x = std::get_if<mpz>(&xe.value());
+        const mpz* y = std::get_if<mpz>(&ye.value());
         if (!x || !y)
         {
             calc.stack.push_front(xe);

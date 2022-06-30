@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <boost/math/special_functions/gamma.hpp>
 #include <exception>
 #include <function.hpp>
+
 namespace function
 {
 
@@ -19,7 +20,7 @@ mpf factorial(const mpf& x)
 
 mpf factorial(const mpq& x)
 {
-    mpf xp(x + 1);
+    mpf xp = to_mpf(x + 1);
     // non-int types get gamma treatment
     return boost::math::tgamma(xp);
 }
@@ -83,7 +84,15 @@ struct factorial : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return one_arg_limited_op<mpz, mpf, mpq>(
-            calc, [](const auto& x) { return util::factorial(x); });
+            calc,
+            [](const auto& a,
+               const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                if (ua != units::unit())
+                {
+                    throw std::invalid_argument("units not permitted");
+                }
+                return {util::factorial(a), ua};
+            });
     }
 };
 

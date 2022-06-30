@@ -395,7 +395,7 @@ std::string binary_to_hex(const std::string& v)
     return out;
 }
 
-bool Calculator::run_one(const std::string& expr)
+bool Calculator::run_one(std::string expr)
 {
     if (expr == "help")
     {
@@ -442,6 +442,13 @@ bool Calculator::run_one(const std::string& expr)
     e.is_signed = config.is_signed;
     try
     {
+        if (auto ubar = expr.find("_"); ubar != std::string::npos)
+        {
+            // parse units off the end and then let the numeric get parsed below
+            std::string unitstr = expr.substr(ubar + 1);
+            expr = expr.substr(0, ubar);
+            e.unit(unitstr);
+        }
         // time literals ns, us, ms, s, m, h, d
         if (expr.ends_with("ns") || expr.ends_with("us") ||
             expr.ends_with("ms") || expr.ends_with("s") ||
@@ -476,7 +483,7 @@ bool Calculator::run_one(const std::string& expr)
             {
                 // std::cerr << "mpz(\"" << expr << "\")\n";
                 std::string num;
-                if (expr[0] == '0')
+                if (expr[0] == '0' && expr.size() > 1)
                 {
                     // check for base prefix
                     if (expr.starts_with("0x"))
@@ -569,7 +576,6 @@ std::string Calculator::get_next_token()
             return "";
         }
         std::string& input = *nextline;
-        boost::algorithm::to_lower(input);
         boost::split(current_line, input, boost::is_any_of(" \t\n\r"));
         current_line.push_back("\n");
     }
@@ -652,7 +658,7 @@ bool Calculator::mpq_mode(e_mpq_mode mode)
 bool Calculator::base()
 {
     stack_entry e = stack.front();
-    mpz* v = std::get_if<mpz>(&e.value());
+    const mpz* v = std::get_if<mpz>(&e.value());
     if (v)
     {
         auto iv = static_cast<int>(*v);
@@ -680,7 +686,7 @@ bool Calculator::cbase()
 bool Calculator::fixed_bits()
 {
     stack_entry e = stack.front();
-    mpz* v = std::get_if<mpz>(&e.value());
+    const mpz* v = std::get_if<mpz>(&e.value());
     if (v)
     {
         stack.pop_front();
@@ -697,7 +703,7 @@ bool Calculator::fixed_bits()
 bool Calculator::precision()
 {
     stack_entry e = stack.front();
-    mpz* v = std::get_if<mpz>(&e.value());
+    const mpz* v = std::get_if<mpz>(&e.value());
     if (v)
     {
         stack.pop_front();
@@ -794,11 +800,13 @@ void Calculator::show_stack()
             if (config.mpq_mode == e_mpq_mode::f)
             {
                 auto f = to_mpf(*q);
-                std::cout << std::setprecision(it->precision) << f << "\n";
+                std::cout << std::setprecision(it->precision) << f << it->unit()
+                          << "\n";
             }
             else
             {
-                std::cout << std::setprecision(it->precision) << *q << "\n";
+                std::cout << std::setprecision(it->precision) << *q
+                          << it->unit() << "\n";
             }
         }
         else
@@ -811,7 +819,7 @@ void Calculator::show_stack()
                     if (auto z = std::get_if<mpz>(&v); z)
                     {
                         std::cout << std::setprecision(it->precision)
-                                  << binary_wrapper(*z) << "\n";
+                                  << binary_wrapper(*z) << it->unit() << "\n";
                         continue;
                     }
                     break;
@@ -825,7 +833,8 @@ void Calculator::show_stack()
                     std::cout << std::showbase << std::hex;
                     break;
             }
-            std::cout << std::setprecision(it->precision) << v << "\n";
+            std::cout << std::setprecision(it->precision) << v << it->unit()
+                      << "\n";
         }
     }
 }

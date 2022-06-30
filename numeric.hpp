@@ -11,6 +11,13 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <iostream>
 #include <variant>
 
+#ifdef USE_BASIC_TYPES
+#include <cmath>
+#include <numeric>
+#else
+#include <boost/integer/common_factor_rt.hpp>
+#endif
+
 extern int default_precision;
 
 #if (USE_BOOST_CPP_BACKEND || USE_GMP_BACKEND || USE_MPFR_BACKEND)
@@ -18,6 +25,13 @@ extern int default_precision;
 static constexpr int builtin_default_precision = 50;
 // yes, I know abritrary precision, but be reasonable, my dude!
 static constexpr int max_precision = 1000000;
+
+#define floor_fn boost::multiprecision::floor
+#define ceil_fn boost::multiprecision::ceil
+#define round_fn boost::multiprecision::round
+#define lcm_fn boost::math::lcm
+#define gcd_fn boost::math::gcd
+#define pow_fn boost::multiprecision::pow
 
 #ifdef USE_BOOST_CPP_BACKEND
 #include <boost/serialization/nvp.hpp>
@@ -111,6 +125,17 @@ using mpc = boost::multiprecision::number<complex_backend,
 
 using mpq = boost::multiprecision::number<rational_backend,
                                           boost::multiprecision::et_off>;
+
+template <class T>
+struct is_arithmetic
+    : std::integral_constant<bool, std::is_integral<T>::value ||
+                                       std::is_floating_point<T>::value ||
+                                       std::is_same_v<T, mpz> ||
+                                       std::is_same_v<T, mpf>>
+{
+};
+template <class T>
+inline constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
 
 mpq make_quotient(const mpf& f, int digits);
 mpq make_quotient(const std::string& s);
@@ -233,7 +258,7 @@ static inline mpz parse_mpz(const std::string& s)
         {
             throw std::invalid_argument("input has an invalid exponent");
         }
-        ret *= mpz(boost::multiprecision::pow(mpf(10), exp));
+        ret *= mpz(pow_fn(mpf(10), exp));
         return ret;
     }
     return mpz(s);
@@ -247,6 +272,13 @@ static inline mpq parse_mpq(const std::string& s)
 }
 
 #else // USE_BASIC_TYPES
+
+#define floor_fn floorl
+#define ceil_fn ceill
+#define round_fn roundl
+#define lcm_fn std::lcm
+#define gcd_fn std::gcd
+#define pow_fn powl
 
 static constexpr int builtin_default_precision = 20;
 static constexpr int max_precision = 20;
@@ -263,42 +295,30 @@ static inline void set_default_precision(int iv)
 template <typename T>
 struct rational;
 
-template <typename T>
-class complexr;
-
 using mpz = long long;
 using mpf = long double;
 using mpc = std::complex<long double>;
 using mpq = rational<long long>;
 
-/*
 template <class T>
-class complexr : public std::complex<T>
-{
-  public:
-    constexpr complexr(const T& re = T(), const T& im = T()) :
-        std::complex<T>(re, im)
-    {
-    }
-    constexpr complexr(const complexr<T>& t) : std::complex<T>(t)
-    {
-    }
-
-    template <typename R>
-    explicit constexpr complexr(const rational<R>& r) :
-        std::complex<T>(static_cast<T>(r.numerator()) /
-                        static_cast<T>(r.denominator()))
-    {
-    }
-};
-*/
+inline constexpr bool is_arithmetic_v = std::is_arithmetic<T>::value;
 
 template <typename T>
 struct rational
 {
     T num;
     T den;
-    rational(const mpz& n = 0, const mpz& d = 1) : num(n), den(d)
+
+    rational() : num(0), den(1)
+    {
+    }
+
+    rational(const rational&) = default;
+    rational(rational&&) = default;
+    rational& operator=(const rational&) = default;
+    rational& operator=(rational&&) = default;
+
+    rational(const mpz& n, const mpz& d) : num(n), den(d)
     {
         reduce();
     }
@@ -321,7 +341,7 @@ struct rational
 
     void reduce()
     {
-        T cf = std::__gcd(den, den);
+        T cf = gcd_fn(num, den);
         if (cf > 1)
         {
             num /= cf;
@@ -337,15 +357,6 @@ struct rational
     {
         return den;
     }
-
-    /*
-    rational& operator=(const rational& r)
-    {
-        num = r.num;
-        den = r.den;
-        return *this;
-    }
-    */
 
     bool operator==(const rational& r) const
     {
@@ -374,13 +385,13 @@ struct rational
     /* ops with other ratios */
     rational operator+(const rational& r) const
     {
-        T nden = std::__gcd(den, r.den);
+        T nden = gcd_fn(den, r.den);
         T nnum = num * nden / den + r.num * nden / r.den;
         return rational(nnum, nden);
     }
     rational operator-(const rational& r) const
     {
-        T nden = std::__gcd(den, r.den);
+        T nden = gcd_fn(den, r.den);
         T nnum = num * nden / den - r.num * nden / r.den;
         return rational(nnum, nden);
     }
@@ -396,34 +407,9 @@ struct rational
         T nden = den * r.num;
         return rational(nnum, nden);
     }
-    /* ops with scalers */
-    template <typename S>
-    rational operator+(const S& s) const
-    {
-        T nnum = num + s * den;
-        return rational(nnum, den);
-    }
-    template <typename S>
-    rational operator-(const S& s) const
-    {
-        T nnum = num - s * den;
-        return rational(nnum, den);
-    }
-    template <typename S>
-    rational operator*(const S& s) const
-    {
-        T nnum = num * s;
-        return rational(nnum, den);
-    }
-    template <typename S>
-    rational operator/(const S& s) const
-    {
-        T nden = den * s;
-        return rational(num, nden);
-    }
     rational& operator+=(const rational& r)
     {
-        T nden = std::__gcd(den, r.den);
+        T nden = gcd_fn(den, r.den);
         num = num * nden / den + r.num * nden / r.den;
         den = nden;
         reduce();
@@ -431,7 +417,7 @@ struct rational
     }
     rational& operator-=(const rational& r)
     {
-        T nden = std::__gcd(den, r.den);
+        T nden = gcd_fn(den, r.den);
         num = num * nden / den - r.num * nden / r.den;
         reduce();
         den = nden;
@@ -450,18 +436,6 @@ struct rational
         den *= r.num;
         reduce();
         return *this;
-    }
-    operator mpz() const
-    {
-        return static_cast<mpz>(num / den);
-    }
-    operator mpf() const
-    {
-        return static_cast<mpf>(num) / static_cast<mpf>(den);
-    }
-    operator mpc() const
-    {
-        return static_cast<mpf>(num) / static_cast<mpf>(den);
     }
     friend std::ostream& operator<<(std::ostream& output, const rational& r)
     {
@@ -502,7 +476,7 @@ static inline mpz to_mpz(const mpf& v)
 
 static inline mpz to_mpz(const mpq& v)
 {
-    return static_cast<mpz>(static_cast<mpf>(v));
+    return helper::numerator(v) / helper::denominator(v);
 }
 static inline mpz to_mpz(const mpc& v)
 {
@@ -519,7 +493,8 @@ static inline mpf to_mpf(const mpf& v)
 }
 static inline mpf to_mpf(const mpq& v)
 {
-    return v;
+    return static_cast<mpf>(helper::numerator(v)) /
+           static_cast<mpf>(helper::denominator(v));
 }
 static inline mpf to_mpf(const mpc& v)
 {
@@ -566,7 +541,9 @@ static inline mpc to_mpc(const mpf& v)
 }
 static inline mpc to_mpc(const mpq& v)
 {
-    return mpc(v, 0);
+    mpf r = static_cast<mpf>(helper::numerator(v)) /
+            static_cast<mpf>(helper::denominator(v));
+    return mpc(r, 0);
 }
 static inline mpc to_mpc(const mpc& v)
 {
@@ -609,7 +586,7 @@ static inline mpz parse_mpz(const std::string& s)
             {
                 throw std::invalid_argument("input has an invalid exponent");
             }
-            exp = powl(10.0l, exp);
+            exp = pow_fn(10.0l, exp);
             mpf retf = ret * exp;
             if (exp == HUGE_VALL ||
                 ((retf) > mpf(std::numeric_limits<mpz>::max())))
@@ -660,16 +637,16 @@ struct time_
     {
     }
 
-    time_(const mpz& t) : value(to_mpq(t)), absolute(true)
+    explicit time_(const mpz& t) : value(to_mpq(t)), absolute(true)
     {
     }
-    time_(const mpq& t) : value(to_mpq(t)), absolute(true)
+    explicit time_(const mpq& t) : value(to_mpq(t)), absolute(true)
     {
     }
-    time_(const mpf& t) : value(to_mpq(t)), absolute(true)
+    explicit time_(const mpf& t) : value(to_mpq(t)), absolute(true)
     {
     }
-    time_(const mpc& t) : value(to_mpq(t)), absolute(true)
+    explicit time_(const mpc& t) : value(to_mpq(t)), absolute(true)
     {
     }
 
@@ -799,48 +776,41 @@ struct time_
     }
 
     /* ops with scalers */
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_ operator+(const T& t) const
     {
         return time_(value + to_mpq(t), absolute);
     }
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_ operator-(const T& t) const
     {
         return time_(value - to_mpq(t), absolute);
     }
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_ operator*(const T& t) const
     {
         // mult on absolute time makes it a duration
         return time_(value * to_mpq(t), false);
     }
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_ operator/(const T& t) const
     {
         // div on absolute time makes it a duration
         return time_(value / to_mpq(t), false);
     }
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_& operator+=(const T& t)
     {
         value += to_mpq(t);
         return *this;
     }
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_& operator-=(const T& t)
     {
         value -= to_mpq(t);
         return *this;
     }
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_& operator*=(const T& t)
     {
         // mult on absolute time makes it a duration
@@ -848,8 +818,7 @@ struct time_
         absolute = false;
         return *this;
     }
-    template <typename T,
-              std::enable_if_t<!std::is_same_v<T, time_>, bool> = true>
+    template <typename T, std::enable_if_t<is_arithmetic_v<T>, bool> = true>
     time_& operator/=(const T& t)
     {
         // div on absolute time makes it a duration
@@ -899,23 +868,23 @@ struct time_
 };
 
 /* scaler ops with time_ */
-template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+template <typename S, std::enable_if_t<is_arithmetic_v<S>, bool> = true>
 time_ operator+(const S& s, const time_& t)
 {
     return time_(t.value + to_mpq(s), t.absolute);
 }
-template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+template <typename S, std::enable_if_t<is_arithmetic_v<S>, bool> = true>
 time_ operator-(const S& s, const time_& t)
 {
     return time_(t.value - to_mpq(s), t.absolute);
 }
-template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+template <typename S, std::enable_if_t<is_arithmetic_v<S>, bool> = true>
 time_ operator*(const S& s, const time_& t)
 {
     // mult on absolute time makes it a duration
     return time_(t.value * to_mpq(s), false);
 }
-template <typename S, std::enable_if_t<!std::is_same_v<S, time_>, bool> = true>
+template <typename S, std::enable_if_t<is_arithmetic_v<S>, bool> = true>
 time_ operator/(const S& s, const time_& t)
 {
     // div on absolute time makes it a duration
@@ -923,6 +892,8 @@ time_ operator/(const S& s, const time_& t)
 }
 
 using numeric = std::variant<mpz, mpf, mpc, mpq, time_>;
+
+numeric reduce_numeric(const numeric& n, int precision = 0);
 
 static constexpr auto numeric_types = std::to_array<const char*>({
     "mpz",
@@ -953,4 +924,194 @@ static inline mpq to_mpq(const numeric& n)
 static inline mpc to_mpc(const numeric& n)
 {
     return std::visit([](const auto& a) { return to_mpc(a); }, n);
+}
+
+template <typename TypeOut, typename TypeIn>
+TypeOut coerce_variant(const TypeIn& in)
+{
+    if constexpr (std::is_same_v<TypeOut, mpz>)
+    {
+        return to_mpz(in);
+    }
+    else if constexpr (std::is_same_v<TypeOut, mpf>)
+    {
+        return to_mpf(in);
+    }
+    else if constexpr (std::is_same_v<TypeOut, mpc>)
+    {
+        return to_mpc(in);
+    }
+    else if constexpr (std::is_same_v<TypeOut, mpq>)
+    {
+        return to_mpq(in);
+    }
+    static_assert("incorrect argument to coerce_variant");
+    throw std::invalid_argument("incorrect argument to coerce_variant");
+}
+
+// OPERATORS between numerics
+// ADD
+static inline time_ operator+(const mpq& q, const time_& t)
+{
+    time_ nt = t;
+    nt.value += q;
+    return nt;
+}
+static inline time_ operator+(const mpc&, const time_&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+static inline time_ operator+(const time_& t, const mpq& q)
+{
+    time_ nt = t;
+    nt.value += q;
+    return nt;
+}
+static inline time_ operator+(const time_&, const mpc&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+static inline mpc operator+(const mpc& c, const mpz& z)
+{
+    return c + to_mpc(z);
+}
+static inline mpc operator+(const mpc& c, const mpf& f)
+{
+    return c + to_mpc(f);
+}
+static inline mpc operator+(const mpz& z, const mpc& c)
+{
+    return to_mpc(z) + c;
+}
+static inline mpc operator+(const mpq& q, const mpc& c)
+{
+    return to_mpc(q) + c;
+}
+static inline mpc operator+(const mpc& c, const mpq& q)
+{
+    return c + to_mpc(q);
+}
+
+// SUBTRACT
+static inline time_ operator-(const mpq& q, const time_& t)
+{
+    time_ nt = t;
+    nt.value = q - nt.value;
+    return nt;
+}
+static inline time_ operator-(const time_& t, const mpq& q)
+{
+    time_ nt = t;
+    nt.value -= q;
+    return nt;
+}
+static inline time_ operator-(const mpc&, const time_&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+static inline time_ operator-(const time_&, const mpc&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+static inline mpc operator-(const mpc& c, const mpz& z)
+{
+    return c - to_mpc(z);
+}
+static inline mpc operator-(const mpz& z, const mpc& c)
+{
+    return to_mpc(z) - c;
+}
+static inline mpc operator-(const mpq& q, const mpc& c)
+{
+    return to_mpc(q) - c;
+}
+static inline mpc operator-(const mpc& c, const mpq& q)
+{
+    return c - to_mpc(q);
+}
+
+// MULTIPLY
+static inline mpq operator*(const mpz& z, const mpq& q)
+{
+    return to_mpq(z) * q;
+}
+static inline mpq operator*(const mpq& q, const mpz& z)
+{
+    return q * to_mpq(z);
+}
+static inline mpc operator*(const mpq& q, const mpc& c)
+{
+    return to_mpc(q) * c;
+}
+static inline mpc operator*(const mpc& c, const mpq& q)
+{
+    return c * to_mpc(q);
+}
+static inline mpc operator*(const mpc& c, const mpz& z)
+{
+    return c * to_mpc(z);
+}
+static inline mpc operator*(const mpz& z, const mpc& c)
+{
+    return to_mpc(z) * c;
+}
+static inline time_ operator*(const mpq& q, const time_& t)
+{
+    time_ nt = t;
+    nt.value *= q;
+    return nt;
+}
+static inline time_ operator*(const mpc&, const time_&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+static inline time_ operator*(const time_& t, const mpq& q)
+{
+    time_ nt = t;
+    nt.value *= q;
+    return nt;
+}
+static inline time_ operator*(const time_&, const mpc&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+
+// DIVIDE
+static inline time_ operator/(const mpq&, const time_&)
+{
+    throw std::invalid_argument("inverse time not allowed");
+}
+static inline time_ operator/(const mpc&, const time_&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+static inline time_ operator/(const time_&, const mpc&)
+{
+    throw std::invalid_argument("complex time not allowed");
+}
+static inline time_ operator/(const time_& t, const mpq& q)
+{
+    time_ nt = t;
+    nt.value /= q;
+    return nt;
+}
+static inline mpq operator/(const mpq& q, const mpz& z)
+{
+    return q / to_mpq(z);
+}
+static inline mpq operator/(const mpz& z, const mpq& q)
+{
+    return to_mpq(z) / q;
+}
+static inline mpc operator/(const mpc& c, const mpq& q)
+{
+    return c / to_mpc(q);
+}
+static inline mpc operator/(const mpq& q, const mpc& c)
+{
+    return to_mpc(q) / c;
+}
+static inline mpc operator/(const mpz& z, const mpc& c)
+{
+    return to_mpc(z) / c;
 }

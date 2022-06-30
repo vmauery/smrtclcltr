@@ -1,4 +1,6 @@
 Ideas for future development
+ * Config file for preferred settings
+ * Saved state (start back up with last stack and modes)
  * Support for different 'displays'
    * Non-interactive (read input, print final value, no extras)
    * Simple with or without readline
@@ -23,4 +25,3 @@ Ideas for future development
    * Fixed bit math (for debugging C math issues, show over/under-flow bit)
  * Graphing? WTF? That's fancy.
  * Eval of formula ('x^2+2*x+3' 3 $x store eval)?
- * Units. A work in progress.
