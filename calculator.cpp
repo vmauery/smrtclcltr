@@ -104,6 +104,12 @@ bool Calculator::run_one(const std::string& expr)
             std::cout << help_op->first << "\n\t"
                       << std::get<0>(help_op->second) << "\n";
         }
+        // drain the input so stack doesn't get printed
+        std::string nt;
+        do
+        {
+            nt = get_next_token();
+        } while (nt != "\n");
         return true;
     }
     auto op = _operations.find(expr);
