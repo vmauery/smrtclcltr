@@ -1,8 +1,13 @@
 #!/bin/sh
 
 rm -rf .test-builds
+mkdir -p .test-builds
+
+# inform git we should ignore this dir
+echo "*" > .test-builds/.gitignore
+
 while read NAME CC CXX; do
-	for BACKEND in mpfr gmp boost native; do
+	for BACKEND in native boost gmp mpfr; do
 		echo -n "Building $NAME / $BACKEND: "
 		DIR=.test-builds/build-$NAME-$BACKEND
 		mkdir -p $DIR
