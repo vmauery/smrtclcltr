@@ -18,7 +18,6 @@ src = [
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',
   'functions/factorial.cpp',
-  'functions/fn_template.cpp',
   'functions/integer.cpp',
   'functions/log.cpp',
   'functions/modular_funcs.cpp',

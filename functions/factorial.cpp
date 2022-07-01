@@ -8,9 +8,9 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <function.hpp>
 namespace function
 {
-namespace factorial
-{
 
+namespace util
+{
 mpf factorial(const mpf& x)
 {
     // non-int types get gamma treatment
@@ -59,25 +59,34 @@ mpz factorial(const mpz& x)
     }
     return bin_split_factorial(x, 0);
 }
+} //  namespace util
 
-bool impl(Calculator& calc)
+struct factorial : public CalcFunction
 {
-    return one_arg_limited_op<mpz, mpf, mpq>(
-        calc, [](const auto& x) { return factorial(x); });
-}
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"!"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x !\n"
+            "\n"
+            "    Returns the factorial of the bottom item on the stack (x!)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_limited_op<mpz, mpf, mpq>(
+            calc, [](const auto& x) { return util::factorial(x); });
+    }
+};
 
-auto constexpr help =
-    "\n"
-    "    Usage: x !\n"
-    "\n"
-    "    Returns the factorial of the bottom item on the stack (x!)\n";
-
-} // namespace factorial
 } // namespace function
 
-namespace functions
-{
-
-CalcFunction factorial = {function::factorial::help, function::factorial::impl};
-
-}
+register_calc_fn(factorial);

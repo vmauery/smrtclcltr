@@ -4,6 +4,8 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 #ifdef USE_BASIC_TYPES
+#include <math.h>
+
 #include <numeric>
 #else
 #include <boost/integer/common_factor_rt.hpp>
@@ -12,8 +14,13 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace function
 {
-namespace factor
+namespace util
 {
+#ifdef USE_BASIC_TYPES
+#define ceil_fn ceill
+#else
+#define ceil_fn boost::multiprecision::ceil
+#endif
 
 std::vector<mpz> factor_mpz(const mpz& x)
 {
@@ -72,62 +79,85 @@ std::vector<mpz> prime_factor(mpz x)
     return facts;
 }
 
-bool impl(Calculator& calc)
+} // namespace util
+
+struct factor : public CalcFunction
 {
-    stack_entry e = calc.stack.front();
-    mpz* v = std::get_if<mpz>(&e.value());
-    if (!v)
+    virtual const std::string& name() const final
     {
-        return false;
+        static const std::string _name{"factor"};
+        return _name;
     }
-    calc.stack.pop_front();
-    std::vector<mpz> facts = factor_mpz(*v);
-    for (const auto& f : facts)
+    virtual const std::string& help() const final
     {
-        calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x factor\n"
+            "\n"
+            "    Returns the factors of the bottom item on the stack\n"
+            // clang-format on
+        };
+        return _help;
     }
-    return true;
-}
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e = calc.stack.front();
+        mpz* v = std::get_if<mpz>(&e.value());
+        if (!v)
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+        std::vector<mpz> facts = util::factor_mpz(*v);
+        for (const auto& f : facts)
+        {
+            calc.stack.emplace_front(
+                f, calc.config.base, calc.config.fixed_bits,
+                calc.config.precision, calc.config.is_signed);
+        }
+        return true;
+    }
+};
 
-auto constexpr help =
-    "\n"
-    "    Usage: x factor\n"
-    "\n"
-    "    Returns the factors of the bottom item on the stack\n";
-
-} // namespace factor
-
-namespace prime_factor
+struct prime_factor : public CalcFunction
 {
-bool impl(Calculator& calc)
-{
-    stack_entry e = calc.stack.front();
-    mpz* v = std::get_if<mpz>(&e.value());
-    if (!v)
+    virtual const std::string& name() const final
     {
-        return false;
+        static const std::string _name{"prime_factor"};
+        return _name;
     }
-    calc.stack.pop_front();
-    std::vector<mpz> facts = factor::prime_factor(*v);
-    for (const auto& f : facts)
+    virtual const std::string& help() const final
     {
-        calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x prime_factor\n"
+            "\n"
+            "    Returns the prime factors of the bottom item on the stack\n"
+            // clang-format on
+        };
+        return _help;
     }
-    return true;
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: x prime_factor\n"
-    "\n"
-    "    Returns the prime factors of the bottom item on the stack\n";
-
-} // namespace prime_factor
-
-namespace gcd
-{
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e = calc.stack.front();
+        mpz* v = std::get_if<mpz>(&e.value());
+        if (!v)
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+        std::vector<mpz> facts = util::prime_factor(*v);
+        for (const auto& f : facts)
+        {
+            calc.stack.emplace_front(
+                f, calc.config.base, calc.config.fixed_bits,
+                calc.config.precision, calc.config.is_signed);
+        }
+        return true;
+    }
+};
 
 #ifdef USE_BASIC_TYPES
 #define gcd_fn std::gcd
@@ -135,34 +165,44 @@ namespace gcd
 #define gcd_fn boost::math::gcd
 #endif
 
-bool impl(Calculator& calc)
+struct gcd : public CalcFunction
 {
-    stack_entry e1 = calc.stack[1];
-    stack_entry e0 = calc.stack[0];
-    mpz* v = std::get_if<mpz>(&e1.value());
-    mpz* u = std::get_if<mpz>(&e0.value());
-    if (!v || !u)
+    virtual const std::string& name() const final
     {
-        return false;
+        static const std::string _name{"gcd"};
+        return _name;
     }
-    calc.stack.pop_front();
-    calc.stack.pop_front();
-    mpz f = gcd_fn(*v, *u);
-    calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                             calc.config.precision, calc.config.is_signed);
-    return true;
-}
-
-auto constexpr help = "\n"
-                      "    Usage: x y gcd\n"
-                      "\n"
-                      "    Returns the greatest common divisor (GCD) of the "
-                      "bottom two items on the stack: GCD(x,y)\n";
-
-} // namespace gcd
-
-namespace lcm
-{
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y gcd\n"
+            "\n"
+            "    Returns the greatest common divisor (GCD) of the "
+            "bottom two items on the stack: GCD(x,y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e1 = calc.stack[1];
+        stack_entry e0 = calc.stack[0];
+        mpz* v = std::get_if<mpz>(&e1.value());
+        mpz* u = std::get_if<mpz>(&e0.value());
+        if (!v || !u)
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+        mpz f = gcd_fn(*v, *u);
+        calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed);
+        return true;
+    }
+};
 
 #ifdef USE_BASIC_TYPES
 #define lcm_fn std::lcm
@@ -170,40 +210,48 @@ namespace lcm
 #define lcm_fn boost::math::lcm
 #endif
 
-bool impl(Calculator& calc)
+struct lcm : public CalcFunction
 {
-    stack_entry e1 = calc.stack[1];
-    stack_entry e0 = calc.stack[0];
-    mpz* v = std::get_if<mpz>(&e1.value());
-    mpz* u = std::get_if<mpz>(&e0.value());
-    if (!v || !u)
+    virtual const std::string& name() const final
     {
-        return false;
+        static const std::string _name{"lcm"};
+        return _name;
     }
-    calc.stack.pop_front();
-    calc.stack.pop_front();
-    mpz f = lcm_fn(*v, *u);
-    calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                             calc.config.precision, calc.config.is_signed);
-    return true;
-}
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y lcd\n"
+            "\n"
+            "    Returns the least common multiple (LCD) of the "
+            "bottom two items on the stack: LCD(x,y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e1 = calc.stack[1];
+        stack_entry e0 = calc.stack[0];
+        mpz* v = std::get_if<mpz>(&e1.value());
+        mpz* u = std::get_if<mpz>(&e0.value());
+        if (!v || !u)
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+        mpz f = lcm_fn(*v, *u);
+        calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed);
+        return true;
+    }
+};
 
-auto constexpr help = "\n"
-                      "    Usage: x y lcd\n"
-                      "\n"
-                      "    Returns the least common multiple (LCD) of the "
-                      "bottom two items on the stack: LCD(x,y)\n";
-
-} // namespace lcm
 } // namespace function
 
-namespace functions
-{
-
-CalcFunction factor = {function::factor::help, function::factor::impl};
-CalcFunction prime_factor = {function::prime_factor::help,
-                             function::prime_factor::impl};
-CalcFunction gcd = {function::gcd::help, function::gcd::impl};
-CalcFunction lcm = {function::lcm::help, function::lcm::impl};
-
-} // namespace functions
+register_calc_fn(factor);
+register_calc_fn(prime_factor);
+register_calc_fn(gcd);
+register_calc_fn(lcm);

@@ -16,9 +16,326 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <calculator.hpp>
 #include <cmath>
 #include <function.hpp>
-#include <functions.hpp>
 #include <iostream>
 #include <string>
+
+// internal calculator functions
+namespace function
+{
+struct debug : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"debug"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: debug\n"
+            "\n"
+            "    Toggle debug mode\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.debug();
+    }
+};
+
+struct undo : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"undo"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: undo\n"
+            "\n"
+            "    Undo last operation or command line\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.undo();
+    }
+};
+
+struct base : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"base"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x base\n"
+            "\n"
+            "    Sets the numeric base to the bottom item on the stack (x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.base();
+    }
+};
+
+struct cbase : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"cbase"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: cbase\n"
+            "\n"
+            "    Changes the numeric base of the bottom item to be the current base\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.cbase();
+    }
+};
+
+struct fixed_bits : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"fixed_bits"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x fixed_bits\n"
+            "\n"
+            "    Sets the number of fixed bits to the "
+            "bottom item on the stack (x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.fixed_bits();
+    }
+};
+
+struct precision : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"precision"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x precision\n"
+            "\n"
+            "    Sets the precision to the bottom item on the stack (x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.precision();
+    }
+};
+
+struct quotient : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"q"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: q\n"
+            "\n"
+            "    Print quotients as quotients instead of floats\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.mpq_mode(Calculator::e_mpq_mode::q);
+    }
+};
+
+struct floats : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"f"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x f\n"
+            "\n"
+            "    Print quotients as floats instead of quotients\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.mpq_mode(Calculator::e_mpq_mode::f);
+    }
+};
+
+struct unsigned_mode : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"unsigned"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: unsigned\n"
+            "\n"
+            "    Sets unsigned mode for integers\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.unsigned_mode();
+    }
+};
+
+struct radians : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"rad"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: rad\n"
+            "\n"
+            "    Sets radians angle mode\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.angle_mode(Calculator::e_angle_mode::rad);
+    }
+};
+
+struct degrees : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"deg"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: deg\n"
+            "\n"
+            "    Sets degrees angle mode\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.angle_mode(Calculator::e_angle_mode::deg);
+    }
+};
+
+struct gradiens : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"grad"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: grad\n"
+            "\n"
+            "    Sets gradiens degree mode\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.angle_mode(Calculator::e_angle_mode::grad);
+    }
+};
+
+} // namespace function
+register_calc_fn(debug);
+register_calc_fn(undo);
+register_calc_fn(base);
+register_calc_fn(cbase);
+register_calc_fn(fixed_bits);
+register_calc_fn(precision);
+register_calc_fn(quotient);
+register_calc_fn(floats);
+register_calc_fn(unsigned_mode);
+register_calc_fn(radians);
+register_calc_fn(degrees);
+register_calc_fn(gradiens);
 
 Calculator::Calculator()
 {
@@ -101,8 +418,8 @@ bool Calculator::run_one(const std::string& expr)
         auto help_op = _operations.find(fn);
         if (help_op != _operations.end())
         {
-            std::cout << help_op->first << "\n\t"
-                      << std::get<0>(help_op->second) << "\n";
+            std::cout << help_op->second->name() << "\n\t"
+                      << help_op->second->help() << "\n";
         }
         // drain the input so stack doesn't get printed
         std::string nt;
@@ -112,10 +429,10 @@ bool Calculator::run_one(const std::string& expr)
         } while (nt != "\n");
         return true;
     }
-    auto op = _operations.find(expr);
-    if (op != _operations.end())
+    auto calc_fn = _operations.find(expr);
+    if (calc_fn != _operations.end())
     {
-        return std::get<1>(op->second)(*this);
+        return calc_fn->second->op(*this);
     }
     // not a function
     stack_entry e;
@@ -513,115 +830,22 @@ void Calculator::show_stack()
     }
 }
 
+extern const struct CalcFunction* __start_calc_functions;
+extern const struct CalcFunction* __stop_calc_functions;
+
 void Calculator::make_grammar()
 {
 }
 
 void Calculator::make_functions()
 {
-    _operations["debug"] = {
-        "enable debug", [](Calculator& calc) -> bool { return calc.debug(); }};
-    _operations["undo"] = {
-        "undo last operation or command line",
-        [](Calculator& calc) -> bool { return calc.undo(); }};
-    _operations["base"] = {
-        "sets the numeric base",
-        [](Calculator& calc) -> bool { return calc.base(); }};
-    _operations["cbase"] = {
-        "changes the numeric base of the bottom item to be the current base",
-        [](Calculator& calc) -> bool { return calc.cbase(); }};
-    _operations["fixed_bits"] = {
-        "sets the number of fixed bits",
-        [](Calculator& calc) -> bool { return calc.fixed_bits(); }};
-    _operations["precision"] = {
-        "sets the precision",
-        [](Calculator& calc) -> bool { return calc.precision(); }};
-    _operations["q"] = {
-        "prints quotients as quotients",
-        [](Calculator& calc) -> bool { return calc.mpq_mode(e_mpq_mode::q); }};
-    _operations["f"] = {
-        "prints quotients as floats",
-        [](Calculator& calc) -> bool { return calc.mpq_mode(e_mpq_mode::f); }};
-    _operations["unsigned"] = {
-        "sets unsigned mode",
-        [](Calculator& calc) -> bool { return calc.unsigned_mode(); }};
-    _operations["rad"] = {"sets radians angle mode",
-                          [](Calculator& calc) -> bool {
-                              return calc.angle_mode(e_angle_mode::rad);
-                          }};
-    _operations["deg"] = {"sets degrees angle mode",
-                          [](Calculator& calc) -> bool {
-                              return calc.angle_mode(e_angle_mode::deg);
-                          }};
-    _operations["grad"] = {"sets gradians angle mode",
-                           [](Calculator& calc) -> bool {
-                               return calc.angle_mode(e_angle_mode::grad);
-                           }};
-    _operations["clear"] = functions::clear;
-    _operations["depth"] = functions::depth;
-    _operations["drop"] = functions::drop;
-    _operations["drop2"] = functions::drop2;
-    _operations["dropn"] = functions::dropn;
-    _operations["dup"] = functions::dup;
-    _operations["dup2"] = functions::dup2;
-    _operations["dupn"] = functions::dupn;
-    _operations["over"] = functions::over;
-    _operations["swap"] = functions::swap;
-    _operations["roll"] = functions::roll;
-    _operations["rolln"] = functions::rolln;
-    _operations["rolld"] = functions::rolld;
-    _operations["rolldn"] = functions::rolldn;
-    _operations["pick"] = functions::pick;
-    _operations["+"] = functions::add;
-    _operations["-"] = functions::subtract;
-    _operations["*"] = functions::multiply;
-    _operations["/"] = functions::divide;
-    _operations[">>"] = functions::rshift;
-    _operations["<<"] = functions::lshift;
-    _operations["floor"] = functions::floor;
-    _operations["ceil"] = functions::ceil;
-    _operations["round"] = functions::round;
-    _operations["range"] = functions::range;
-    _operations["sum"] = functions::sum;
-    _operations["prod"] = functions::product;
-    _operations["sqrt"] = functions::sqrt;
-    _operations["sin"] = functions::sin;
-    _operations["cos"] = functions::cos;
-    _operations["tan"] = functions::tan;
-    _operations["asin"] = functions::asin;
-    _operations["acos"] = functions::acos;
-    _operations["atan"] = functions::atan;
-    _operations["sinn"] = functions::sinh;
-    _operations["cosh"] = functions::cosh;
-    _operations["tanh"] = functions::tanh;
-    _operations["asinh"] = functions::asinh;
-    _operations["acosh"] = functions::acosh;
-    _operations["atanh"] = functions::atanh;
-    _operations["log"] = functions::log;
-    _operations["ln"] = functions::ln;
-    _operations["!"] = functions::factorial;
-    _operations["e"] = constants::e;
-    _operations["pi"] = constants::pi;
-    _operations["i"] = constants::i;
-    _operations["neg"] = functions::negate;
-    _operations["inv"] = functions::inverse;
-    _operations["%"] = functions::divmod;
-    _operations["&"] = functions::bitwise_and;
-    _operations["|"] = functions::bitwise_or;
-    _operations["xor"] = functions::bitwise_xor;
-    _operations["~"] = functions::bitwise_inv;
-    _operations["^"] = functions::power;
-    _operations["modexp"] = functions::modexp;
-    _operations["modinv"] = functions::modinv;
-    _operations["factor"] = functions::factor;
-    _operations["prime_factor"] = functions::prime_factor;
-    _operations["gcd"] = functions::gcd;
-    _operations["lcm"] = functions::lcm;
-    _operations["comb"] = functions::combination;
-    _operations["perm"] = functions::permutation;
-    _operations["split"] = functions::split;
-    _operations["now"] = functions::unix_ts;
 
+    // add the functions in the __functions__ section
+    for (auto iter = &__start_calc_functions; iter < &__stop_calc_functions;
+         iter++)
+    {
+        _operations[(*iter)->name()] = *iter;
+    }
     _op_names_max_strlen = 1;
     std::transform(_operations.begin(), _operations.end(),
                    std::back_inserter(_op_names), [this](const auto& kv) {

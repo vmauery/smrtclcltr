@@ -7,45 +7,54 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace function
 {
-namespace square_root
-{
 
-bool impl(Calculator& calc)
+struct square_root : public CalcFunction
 {
-    return one_arg_conv_op(
-        calc,
-        [](const auto& a) -> numeric {
-            if constexpr (std::is_same<decltype(a), const mpc&>::value)
-            {
-                return sqrt(a);
-            }
-            else
-            {
-                if (a >= decltype(a)(0))
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"sqrt"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x sqrt\n"
+            "\n"
+            "    Returns the square root of the bottom item on the stack: "
+            "sqrt(x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_conv_op(
+            calc,
+            [](const auto& a) -> numeric {
+                if constexpr (std::is_same<decltype(a), const mpc&>::value)
                 {
-                    return sqrt(mpf{a});
+                    return sqrt(a);
                 }
                 else
                 {
-                    return sqrt(mpc{a});
+                    if (a >= decltype(a)(0))
+                    {
+                        return sqrt(mpf{a});
+                    }
+                    else
+                    {
+                        return sqrt(mpc{a});
+                    }
                 }
-            }
-        },
-        std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
-}
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    }
+};
 
-auto constexpr help =
-    "\n"
-    "    Usage: x sqrt\n"
-    "\n"
-    "    Returns the square root of the bottom item on the stack: sqrt(x)\n";
-
-} // namespace square_root
 } // namespace function
 
-namespace functions
-{
-
-CalcFunction sqrt = {function::square_root::help, function::square_root::impl};
-
-}
+register_calc_fn(square_root);

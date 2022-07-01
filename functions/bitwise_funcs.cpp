@@ -7,85 +7,117 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace function
 {
-namespace bitwise_and
+
+struct bitwise_and : public CalcFunction
 {
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"&"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y &\n"
+            "\n"
+            "    Returns the bitwise AND of the bottom two items on "
+            "the stack (x & y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(
+            calc, [](const auto& a, const auto& b) { return a & b; });
+    }
+};
 
-bool impl(Calculator& calc)
+struct bitwise_or : public CalcFunction
 {
-    return two_arg_limited_op<mpz>(
-        calc, [](const auto& a, const auto& b) { return a & b; });
-}
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"|"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y |\n"
+            "\n"
+            "    Returns the bitwise OR of the bottom "
+            "two items on the stack (x & y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(
+            calc, [](const auto& a, const auto& b) { return a | b; });
+    }
+};
 
-auto constexpr help = "\n"
-                      "    Usage: x y &\n"
-                      "\n"
-                      "    Returns the bitwise AND of the bottom two items on "
-                      "the stack (x & y)\n";
-
-} // namespace bitwise_and
-
-namespace bitwise_or
+struct bitwise_xor : public CalcFunction
 {
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"xor"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y xor\n"
+            "\n"
+            "    Returns the bitwise XOR of the bottom two items on "
+            "the stack (x xor y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(
+            calc, [](const auto& a, const auto& b) { return a % b; });
+    }
+};
 
-bool impl(Calculator& calc)
+struct bitwise_inv : public CalcFunction
 {
-    return two_arg_limited_op<mpz>(
-        calc, [](const auto& a, const auto& b) { return a | b; });
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: x y |\n"
-    "\n"
-    "    Returns the bitwise OR of the bottom two items on the stack (x & y)\n";
-
-} // namespace bitwise_or
-
-namespace bitwise_xor
-{
-
-bool impl(Calculator& calc)
-{
-    return two_arg_limited_op<mpz>(
-        calc, [](const auto& a, const auto& b) { return a % b; });
-}
-
-auto constexpr help = "\n"
-                      "    Usage: x y xor\n"
-                      "\n"
-                      "    Returns the bitwise XOR of the bottom two items on "
-                      "the stack (x xor y)\n";
-
-} // namespace bitwise_xor
-
-namespace bitwise_inv
-{
-
-bool impl(Calculator& calc)
-{
-    return one_arg_limited_op<mpz>(calc, [](const auto& a) { return ~a; });
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: x ~\n"
-    "\n"
-    "    Returns the bitwise negation of the bottom item on the stack (~x)\n";
-
-} // namespace bitwise_inv
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"~"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x ~\n"
+            "\n"
+            "    Returns the bitwise negation of the bottom "
+            "item on the stack (~x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_limited_op<mpz>(calc, [](const auto& a) { return ~a; });
+    }
+};
 
 } // namespace function
 
-namespace functions
-{
-
-CalcFunction bitwise_and = {function::bitwise_and::help,
-                            function::bitwise_and::impl};
-CalcFunction bitwise_or = {function::bitwise_or::help,
-                           function::bitwise_or::impl};
-CalcFunction bitwise_xor = {function::bitwise_xor::help,
-                            function::bitwise_xor::impl};
-CalcFunction bitwise_inv = {function::bitwise_inv::help,
-                            function::bitwise_inv::impl};
-
-} // namespace functions
+register_calc_fn(bitwise_and);
+register_calc_fn(bitwise_or);
+register_calc_fn(bitwise_xor);
+register_calc_fn(bitwise_inv);

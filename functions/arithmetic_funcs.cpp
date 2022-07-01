@@ -5,116 +5,175 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #include <cmath>
 #include <function.hpp>
+#include <functions/common.hpp>
 
 namespace function
 {
-namespace add
-{
 
-bool impl(Calculator& calc)
+// struct add : public CalcFunction
+// {
+const std::string& add::name() const
+{
+    static const std::string _name{"+"};
+    return _name;
+}
+const std::string& add::help() const
+{
+    static const std::string _help{
+        // clang-format off
+            "\n"
+            "    Usage: x y +\n"
+            "\n"
+            "    Returns the sum of the bottom two items on the stack (x + y)\n"
+        // clang-format on
+    };
+    return _help;
+}
+bool add::op(Calculator& calc) const
 {
     return two_arg_op(calc, [](const auto& a, const auto& b) { return a + b; });
 }
+// }; // struct add
 
-auto constexpr help =
-    "\n"
-    "    Usage: x y +\n"
-    "\n"
-    "    Returns the sum of the bottom two items on the stack (x + y)\n";
-
-} // namespace add
-
-namespace subtract
+struct subtract : public CalcFunction
 {
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"-"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y -\n"
+            "\n"
+            "    Returns the difference of the bottom two items "
+            "on the stack (x - y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_op(calc,
+                          [](const auto& a, const auto& b) { return a - b; });
+    }
+};
 
-bool impl(Calculator& calc)
+// struct multiply : public CalcFunction
+// {
+const std::string& multiply::name() const
 {
-    return two_arg_op(calc, [](const auto& a, const auto& b) { return a - b; });
+    static const std::string _name{"*"};
+    return _name;
 }
-
-auto constexpr help =
-    "\n"
-    "    Usage: x y -\n"
-    "\n"
-    "    Returns the difference of the bottom two items on the stack (x - y)\n";
-
-} // namespace subtract
-
-namespace multiply
+const std::string& multiply::help() const
 {
-
-bool impl(Calculator& calc)
+    static const std::string _help{
+        // clang-format off
+            "\n"
+            "    Usage: x y *\n"
+            "\n"
+            "    Returns the product of the bottom two items "
+            "on the stack (x * y)\n"
+        // clang-format on
+    };
+    return _help;
+}
+bool multiply::op(Calculator& calc) const
 {
     return two_arg_op(calc, [](const auto& a, const auto& b) { return a * b; });
 }
+// };
 
-auto constexpr help =
-    "\n"
-    "    Usage: x y *\n"
-    "\n"
-    "    Returns the product of the bottom two items on the stack (x * y)\n";
-
-} // namespace multiply
-
-namespace divide
+struct divide : public CalcFunction
 {
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"/"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y /\n"
+            "\n"
+            "    Returns the quotient of the bottom two items "
+            "on the stack (x / y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_conv_op(
+            calc, [](const auto& a, const auto& b) { return a / b; },
+            std::tuple<mpz>{}, std::tuple<mpq>{},
+            std::tuple<mpq, mpf, mpc, time_>{});
+    }
+};
 
-bool impl(Calculator& calc)
+struct lshift : public CalcFunction
 {
-    return two_arg_conv_op(
-        calc, [](const auto& a, const auto& b) { return a / b; },
-        std::tuple<mpz>{}, std::tuple<mpq>{},
-        std::tuple<mpq, mpf, mpc, time_>{});
-}
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"<<"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y <<\n"
+            "\n"
+            "    Returns the next-to-bottom item left-shifted by the "
+            "bottom item\n"
+            "    on the stack (x << y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(calc, [](const auto& a, const auto& b) {
+            return a << static_cast<unsigned long>(b);
+        });
+    }
+};
 
-auto constexpr help =
-    "\n"
-    "    Usage: x y /\n"
-    "\n"
-    "    Returns the quotient of the bottom two items on the stack (x / y)\n";
-
-} // namespace divide
-
-namespace lshift
+struct rshift : public CalcFunction
 {
-
-bool impl(Calculator& calc)
-{
-    return two_arg_limited_op<mpz>(calc, [](const auto& a, const auto& b) {
-        return a << static_cast<unsigned long>(b);
-    });
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: x y <<\n"
-    "\n"
-    "    Returns the next-to-bottom item left-shifted by the bottom item\n"
-    "    on the stack (x << y)\n";
-
-} // namespace lshift
-
-namespace rshift
-{
-
-bool impl(Calculator& calc)
-{
-    return two_arg_limited_op<mpz>(calc, [](const auto& a, const auto& b) {
-        return a >> static_cast<unsigned long>(b);
-    });
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: x y >>\n"
-    "\n"
-    "    Returns the next-to-bottom item right-shifted by the bottom item\n"
-    "    on the stack (x >> y)\n";
-
-} // namespace rshift
-
-namespace ceil
-{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{">>"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y >>\n"
+            "\n"
+            "    Returns the next-to-bottom item right-shifted by the "
+            "bottom item\n"
+            "    on the stack (x >> y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(calc, [](const auto& a, const auto& b) {
+            return a >> static_cast<unsigned long>(b);
+        });
+    }
+};
 
 #ifdef USE_BASIC_TYPES
 #define ceil_fn ceill
@@ -122,42 +181,51 @@ namespace ceil
 #define ceil_fn boost::multiprecision::ceil
 #endif
 
-bool impl(Calculator& calc)
+struct ceil : public CalcFunction
 {
-    return one_arg_conv_op(
-        calc,
-        [](const auto& a) -> numeric {
-            if constexpr (std::is_same<decltype(a), const mpc&>::value)
-            {
-                // complex adapter doesn't work with ceil
-                mpf rp = ceil_fn(a.real());
-                mpf ip = ceil_fn(a.imag());
-                return mpc(rp, ip);
-            }
-            else if constexpr (std::is_same<decltype(a), const mpz&>::value)
-            {
-                // integers are already there
-                return a;
-            }
-            else
-            {
-                return ceil_fn(a);
-            }
-        },
-        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: x ceil\n"
-    "\n"
-    "    Returns the smallest integer greater than the bottom "
-    "item on the stack (round up)\n";
-
-} // namespace ceil
-
-namespace floor
-{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"ceil"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x ceil\n"
+            "\n"
+            "    Returns the smallest integer greater than the bottom "
+            "item on the stack (round up)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_conv_op(
+            calc,
+            [](const auto& a) -> numeric {
+                if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                {
+                    // complex adapter doesn't work with ceil
+                    mpf rp = ceil_fn(a.real());
+                    mpf ip = ceil_fn(a.imag());
+                    return mpc(rp, ip);
+                }
+                else if constexpr (std::is_same<decltype(a), const mpz&>::value)
+                {
+                    // integers are already there
+                    return a;
+                }
+                else
+                {
+                    return ceil_fn(a);
+                }
+            },
+            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+    }
+};
 
 #ifdef USE_BASIC_TYPES
 #define floor_fn floorl
@@ -165,41 +233,51 @@ namespace floor
 #define floor_fn boost::multiprecision::floor
 #endif
 
-bool impl(Calculator& calc)
+struct floor : public CalcFunction
 {
-    return one_arg_conv_op(
-        calc,
-        [](const auto& a) -> numeric {
-            if constexpr (std::is_same<decltype(a), const mpc&>::value)
-            {
-                // complex adapter doesn't work with floor
-                mpf rp = floor_fn(a.real());
-                mpf ip = floor_fn(a.imag());
-                return mpc(rp, ip);
-            }
-            else if constexpr (std::is_same<decltype(a), const mpz&>::value)
-            {
-                // integers are already there
-                return a;
-            }
-            else
-            {
-                return floor_fn(a);
-            }
-        },
-        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
-}
-
-auto constexpr help = "\n"
-                      "    Usage: x floor\n"
-                      "\n"
-                      "    Returns the smallest integer less than the bottom "
-                      "item on the stack (round down)\n";
-
-} // namespace floor
-
-namespace round
-{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"floor"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x floor\n"
+            "\n"
+            "    Returns the smallest integer less than the bottom "
+            "item on the stack (round down)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_conv_op(
+            calc,
+            [](const auto& a) -> numeric {
+                if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                {
+                    // complex adapter doesn't work with floor
+                    mpf rp = floor_fn(a.real());
+                    mpf ip = floor_fn(a.imag());
+                    return mpc(rp, ip);
+                }
+                else if constexpr (std::is_same<decltype(a), const mpz&>::value)
+                {
+                    // integers are already there
+                    return a;
+                }
+                else
+                {
+                    return floor_fn(a);
+                }
+            },
+            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+    }
+};
 
 #ifdef USE_BASIC_TYPES
 #define round_fn roundl
@@ -207,91 +285,131 @@ namespace round
 #define round_fn boost::multiprecision::round
 #endif
 
-bool impl(Calculator& calc)
+struct round : public CalcFunction
 {
-    return one_arg_conv_op(
-        calc,
-        [](const auto& a) -> numeric {
-            if constexpr (std::is_same<decltype(a), const mpc&>::value)
-            {
-                // complex adapter doesn't work with round
-                mpf rp = round_fn(a.real());
-                mpf ip = round_fn(a.imag());
-                return mpc(rp, ip);
-            }
-            else if constexpr (std::is_same<decltype(a), const mpz&>::value)
-            {
-                // integers are already there
-                return a;
-            }
-            else
-            {
-                return round_fn(a);
-            }
-        },
-        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
-}
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"round"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x round\n"
+            "\n"
+            "    Returns the nearest integer to the bottom "
+            "item on the stack (classic round)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_conv_op(
+            calc,
+            [](const auto& a) -> numeric {
+                if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                {
+                    // complex adapter doesn't work with round
+                    mpf rp = round_fn(a.real());
+                    mpf ip = round_fn(a.imag());
+                    return mpc(rp, ip);
+                }
+                else if constexpr (std::is_same<decltype(a), const mpz&>::value)
+                {
+                    // integers are already there
+                    return a;
+                }
+                else
+                {
+                    return round_fn(a);
+                }
+            },
+            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+    }
+};
 
-auto constexpr help = "\n"
-                      "    Usage: x round\n"
-                      "\n"
-                      "    Returns the nearest integer to the bottom "
-                      "item on the stack (classic round)\n";
-
-} // namespace round
-
-namespace negate
+struct negate : public CalcFunction
 {
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"neg"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x neg\n"
+            "\n"
+            "    Returns the negation of the bottom item on the stack (-x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_op(calc,
+                          [](const auto& a) { return decltype(a){} - a; });
+    }
+};
 
-bool impl(Calculator& calc)
+struct inverse : public CalcFunction
 {
-    return one_arg_op(calc, [](const auto& a) { return decltype(a){} - a; });
-}
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"inv"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x inv\n"
+            "\n"
+            "    Returns the multiplicative inverse of the bottom "
+            "item on the stack (1/x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_limited_op<mpz, mpf, mpq, mpc>(
+            calc, [](const auto& a) { return decltype(a)(1) / a; });
+    }
+};
 
-auto constexpr help =
-    "\n"
-    "    Usage: x neg\n"
-    "\n"
-    "    Returns the negation of the bottom item on the stack (-x)\n";
-
-} // namespace negate
-
-namespace inverse
+struct divmod : public CalcFunction
 {
-
-bool impl(Calculator& calc)
-{
-    return one_arg_limited_op<mpz, mpf, mpq, mpc>(
-        calc, [](const auto& a) { return decltype(a)(1) / a; });
-}
-
-auto constexpr help = "\n"
-                      "    Usage: x inv\n"
-                      "\n"
-                      "    Returns the multiplicative inverse of the bottom "
-                      "item on the stack (1/x)\n";
-
-} // namespace inverse
-
-namespace divmod
-{
-
-bool impl(Calculator& calc)
-{
-    return two_arg_limited_op<mpz>(
-        calc, [](const auto& a, const auto& b) { return a % b; });
-}
-
-auto constexpr help = "\n"
-                      "    Usage: x y %\n"
-                      "\n"
-                      "    Returns the division remainder of the bottom two "
-                      "items on the stack (x mod y)\n";
-
-} // namespace divmod
-
-namespace power
-{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"%"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y %\n"
+            "\n"
+            "    Returns the division remainder of the bottom two "
+            "items on the stack (x mod y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(
+            calc, [](const auto& a, const auto& b) { return a % b; });
+    }
+};
 
 numeric pow(const mpz& base, const mpz& exponent)
 {
@@ -319,38 +437,47 @@ numeric pow(const mpz& base, const mpz& exponent)
     return result;
 }
 
-bool impl(Calculator& calc)
+struct power : public CalcFunction
 {
-    return two_arg_conv_op(
-        calc, [](const auto& a, const auto& b) { return pow(a, b); },
-        std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
-}
-
-auto constexpr help = "\n"
-                      "    Usage: x y ^\n"
-                      "\n"
-                      "    Returns exponentiation of the bottom two items on "
-                      "the stack, e.g., x raised to the y power (x^y)\n";
-
-} // namespace power
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"^"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y ^\n"
+            "\n"
+            "    Returns exponentiation of the bottom two items on "
+            "the stack, e.g., x raised to the y power (x^y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_conv_op(
+            calc, [](const auto& a, const auto& b) { return pow(a, b); },
+            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+        return true;
+    }
+};
 
 } // namespace function
 
-namespace functions
-{
-
-CalcFunction add = {function::add::help, function::add::impl};
-CalcFunction subtract = {function::subtract::help, function::subtract::impl};
-CalcFunction multiply = {function::multiply::help, function::multiply::impl};
-CalcFunction divide = {function::divide::help, function::divide::impl};
-CalcFunction lshift = {function::lshift::help, function::lshift::impl};
-CalcFunction rshift = {function::rshift::help, function::rshift::impl};
-CalcFunction floor = {function::floor::help, function::floor::impl};
-CalcFunction ceil = {function::ceil::help, function::ceil::impl};
-CalcFunction round = {function::round::help, function::round::impl};
-CalcFunction negate = {function::negate::help, function::negate::impl};
-CalcFunction inverse = {function::inverse::help, function::inverse::impl};
-CalcFunction divmod = {function::divmod::help, function::divmod::impl};
-CalcFunction power = {function::power::help, function::power::impl};
-
-} // namespace functions
+register_calc_fn(add);
+register_calc_fn(subtract);
+register_calc_fn(multiply);
+register_calc_fn(divide);
+register_calc_fn(lshift);
+register_calc_fn(rshift);
+register_calc_fn(floor);
+register_calc_fn(ceil);
+register_calc_fn(round);
+register_calc_fn(negate);
+register_calc_fn(inverse);
+register_calc_fn(divmod);
+register_calc_fn(power);

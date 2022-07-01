@@ -19,12 +19,6 @@ struct stack_entry
         _value = reduce(v);
     }
 
-    stack_entry(numeric&& v, int b, int f, int p, bool s) :
-        base(b), fixed_bits(f), precision(p), is_signed(s)
-    {
-        _value = reduce(v);
-    }
-
     numeric& value()
     {
         return _value;

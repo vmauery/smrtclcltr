@@ -8,30 +8,36 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace function
 {
-namespace unix_ts
+
+struct unix_ts : public CalcFunction
 {
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"now"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: now\n"
+            "\n"
+            "    return a unix timestamp with sub-second precision based\n"
+            "    on the system clock"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        time_ now(std::chrono::system_clock::now());
+        calc.stack.emplace_front(now, calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed);
+        return true;
+    }
+};
 
-bool impl(Calculator& calc)
-{
-    time_ now(std::chrono::system_clock::now());
-    calc.stack.emplace_front(now, calc.config.base, calc.config.fixed_bits,
-                             calc.config.precision, calc.config.is_signed);
-    return true;
-}
-
-auto constexpr help =
-    "\n"
-    "    Usage: now\n"
-    "\n"
-    "    return a unix timestamp with sub-second precision based\n"
-    "    on the system clock";
-
-} // namespace unix_ts
 } // namespace function
 
-namespace functions
-{
-
-CalcFunction unix_ts = {function::unix_ts::help, function::unix_ts::impl};
-
-}
+register_calc_fn(unix_ts);

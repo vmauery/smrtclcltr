@@ -7,83 +7,101 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace function
 {
-namespace logarithm
-{
 
-bool impl(Calculator& calc)
+struct logarithm : public CalcFunction
 {
-    return one_arg_conv_op(
-        calc,
-        [](const auto& a) -> numeric {
-            mpf log10 = log(mpf{10});
-            if constexpr (std::is_same<decltype(a), const mpc&>::value)
-            {
-                return log(a) / log10;
-            }
-            else
-            {
-                if (a > decltype(a)(0))
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"log"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x log\n"
+            "\n"
+            "    Returns the base-10 logarithm of the "
+            "bottom item on the stack: log10(x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_conv_op(
+            calc,
+            [](const auto& a) -> numeric {
+                mpf log10 = log(mpf{10});
+                if constexpr (std::is_same<decltype(a), const mpc&>::value)
                 {
-                    return log(mpf{a}) / log10;
+                    return log(a) / log10;
                 }
                 else
                 {
-                    return log(mpc{a}) / log10;
+                    if (a > decltype(a)(0))
+                    {
+                        return log(mpf{a}) / log10;
+                    }
+                    else
+                    {
+                        return log(mpc{a}) / log10;
+                    }
                 }
-            }
-        },
-        std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
-}
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    }
+};
 
-auto constexpr help = "\n"
-                      "    Usage: x log\n"
-                      "\n"
-                      "    Returns the base-10 logarithm of the "
-                      "bottom item on the stack: log10(x)\n";
-
-} // namespace logarithm
-
-namespace natural_logarithm
+struct natural_logarithm : public CalcFunction
 {
-
-bool impl(Calculator& calc)
-{
-    return one_arg_conv_op(
-        calc,
-        [](const auto& a) -> numeric {
-            if constexpr (std::is_same<decltype(a), const mpc&>::value)
-            {
-                return log(a);
-            }
-            else
-            {
-                if (a > decltype(a)(0))
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"ln"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x ln\n"
+            "\n"
+            "    Returns the base-e logarithm of the "
+            "bottom item on the stack: ln(x)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_conv_op(
+            calc,
+            [](const auto& a) -> numeric {
+                if constexpr (std::is_same<decltype(a), const mpc&>::value)
                 {
-                    return log(mpf{a});
+                    return log(a);
                 }
                 else
                 {
-                    return log(mpc{a});
+                    if (a > decltype(a)(0))
+                    {
+                        return log(mpf{a});
+                    }
+                    else
+                    {
+                        return log(mpc{a});
+                    }
                 }
-            }
-        },
-        std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{}, std::tuple<mpf, mpc>{});
-}
+            },
+            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
+            std::tuple<mpf, mpc>{});
+    }
+};
 
-auto constexpr help = "\n"
-                      "    Usage: x ln\n"
-                      "\n"
-                      "    Returns the base-e logarithm of the "
-                      "bottom item on the stack: ln(x)\n";
-
-} // namespace natural_logarithm
 } // namespace function
 
-namespace functions
-{
-
-CalcFunction log = {function::logarithm::help, function::logarithm::impl};
-CalcFunction ln = {function::natural_logarithm::help,
-                   function::natural_logarithm::impl};
-
-} // namespace functions
+register_calc_fn(logarithm);
+register_calc_fn(natural_logarithm);

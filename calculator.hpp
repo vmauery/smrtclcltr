@@ -16,7 +16,20 @@ SPDX-License-Identifier: BSD-3-Clause
 
 class Calculator;
 
-using CalcFunction = std::tuple<std::string, std::function<bool(Calculator&)>>;
+struct CalcFunction
+{
+    virtual ~CalcFunction() = default;
+    virtual const std::string& name() const = 0;
+    virtual const std::string& help() const = 0;
+    virtual bool op(Calculator&) const = 0;
+};
+
+// All functions will register by adding an object to the __functions__ section
+#define register_calc_fn(__cls)                                                \
+    const static function::__cls __calc_fn_impl__##__cls;                      \
+    const static CalcFunction* __calc_fn_##__cls                               \
+        __attribute((__section__("calc_functions"))) __attribute((__used__)) = \
+            &__calc_fn_impl__##__cls;
 
 class Calculator
 {
@@ -51,6 +64,17 @@ class Calculator
     Calculator();
     bool run();
 
+    // used by functions
+    bool undo();
+    bool debug();
+    bool base();
+    bool cbase();
+    bool fixed_bits();
+    bool precision();
+    bool unsigned_mode();
+    bool angle_mode(e_angle_mode);
+    bool mpq_mode(e_mpq_mode);
+
   protected:
     std::deque<Stack> saved_stacks;
 
@@ -61,19 +85,9 @@ class Calculator
     std::optional<std::string> get_input();
     std::string get_next_token();
     bool run_one(const std::string& expr);
-    bool undo();
-
-    bool debug();
-    bool base();
-    bool cbase();
-    bool fixed_bits();
-    bool precision();
-    bool unsigned_mode();
-    bool angle_mode(e_angle_mode);
-    bool mpq_mode(e_mpq_mode);
     bool _running = true;
 
-    std::map<std::string, CalcFunction> _operations;
+    std::map<std::string, const CalcFunction*> _operations;
     std::vector<std::string> _op_names;
     size_t _op_names_max_strlen;
 };
