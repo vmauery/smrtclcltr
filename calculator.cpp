@@ -614,6 +614,7 @@ void Calculator::make_functions()
     _operations["modexp"] = functions::modexp;
     _operations["modinv"] = functions::modinv;
     _operations["factor"] = functions::factor;
+    _operations["prime_factor"] = functions::prime_factor;
     _operations["gcd"] = functions::gcd;
     _operations["lcm"] = functions::lcm;
     _operations["comb"] = functions::combination;
