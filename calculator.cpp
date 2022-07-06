@@ -194,11 +194,12 @@ std::optional<std::string> Calculator::get_input()
         {
             nextline = buf;
             free(buf);
-            if (*buf)
+            if (nextline.size())
             {
-                add_history(buf);
+                add_history(nextline.c_str());
                 return nextline;
             }
+            return "\n";
         }
 #else
         // for non-interactive, std::getline() works fine

@@ -58,7 +58,7 @@ add_project_arguments(
     '-Wmisleading-indentation',
     '-Wno-reorder',
     '-Wnon-virtual-dtor',
-    '-Wnull-dereference',
+    # '-Wnull-dereference', # gcc gives false positives
     '-Wold-style-cast',
     '-Woverloaded-virtual',
     '-Wunused',
