@@ -383,3 +383,26 @@ std::ostream& operator<<(std::ostream& out, const units::unit& n)
     out << "(" << n.id << ", " << n.exp << ", " << n.scale << ")";
     return out;
 }
+
+/*
+
+Reimagine units....
+
+* each 'units' object contains a vector of 'unit' object
+* each unit object has:
+  * mpq id - one of the base units defined in this file
+  * mpq exp - for si scaling
+  * mpq scale - for non-si scaling
+  * mpq power - for kg^-1 or kg^2 or kg^(1/2) and the like
+* when printing a units, just loop through the units vector and
+  print the unit (* or / based on sign of power)
+* multiply or divide is just adding a new thing to the vector
+* units::pow() will adjust the power of each item in the vector
+* compat means that all the ids and powers are the same
+  (can be expressed in terms of the other)
+* reduce() will express vector in lowest terms, combining like
+  terms by adding powers, replacing groups of terms with single
+  composite terms (like kg*m/s^2 replaced with N, starting with
+  searching for more complex terms and finishing with base SI)
+
+*/

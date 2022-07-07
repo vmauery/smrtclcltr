@@ -25,3 +25,8 @@ Ideas for future development
    * Fixed bit math (for debugging C math issues, show over/under-flow bit)
  * Graphing? WTF? That's fancy.
  * Eval of formula ('x^2+2*x+3' 3 $x store eval)?
+ * More debug support
+   * logging ?
+   * debug for types
+   * debug for units
+ * Multi-processor support for things that can run in parallel
