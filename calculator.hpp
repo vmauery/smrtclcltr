@@ -61,7 +61,25 @@ class Calculator
     Config config;
     Stack stack;
 
-    Calculator();
+    // enforce singleton
+  protected:
+    struct no_touchy
+    {
+    };
+
+  public:
+    Calculator(const no_touchy&) : Calculator()
+    {
+    }
+    static Calculator& get()
+    {
+        static std::unique_ptr<Calculator> _this{};
+        if (!_this)
+        {
+            _this = std::make_unique<Calculator>(no_touchy{});
+        }
+        return *_this;
+    }
     bool run();
 
     // used by functions
@@ -76,6 +94,8 @@ class Calculator
     bool mpq_mode(e_mpq_mode);
 
   protected:
+    Calculator();
+
     std::deque<Stack> saved_stacks;
 
     void make_grammar();

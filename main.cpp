@@ -12,7 +12,17 @@ SPDX-License-Identifier: BSD-3-Clause
 
 int main()
 {
-    Calculator calc;
-    calc.run();
+    Calculator& calc = Calculator::get();
+    try
+    {
+        calc.run();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "uncaught exception: " << e.what()
+                  << "\nPress Enter to continue...\n";
+        std::string nextline;
+        std::getline(std::cin, nextline);
+    }
     return 0;
 }

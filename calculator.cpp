@@ -596,7 +596,14 @@ bool Calculator::run()
         }
         else if (token == "\n")
         {
-            show_stack();
+            try
+            {
+                show_stack();
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "Exception: " << e.what() << "\n";
+            }
         }
         else
         {
@@ -632,8 +639,12 @@ bool Calculator::undo()
 
 bool Calculator::debug()
 {
-    std::cout << "using " << MATH_BACKEND << " for numeric backend\n";
     config.debug = !config.debug;
+    std::cout << "debug mode " << (config.debug ? "on" : "off") << "\n";
+    if (config.debug)
+    {
+        std::cout << "using " << MATH_BACKEND << " for numeric backend\n";
+    }
     return true;
 }
 

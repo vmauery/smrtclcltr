@@ -312,16 +312,24 @@ unit pow(const unit& u, const mpf& p)
 
 std::ostream& operator<<(std::ostream& out, const units::unit& n)
 {
+    bool debug = Calculator::get().config.debug;
     if (n.id == units::id_None)
     {
-        out << "_<>(" << n.id << ", " << n.exp << ", " << n.scale << ")";
+        if (debug)
+        {
+            out << "_<>(" << n.id << ", " << n.exp << ", " << n.scale << ")";
+        }
         return out;
     }
     auto units_it = units::units_map.right.find(n);
     if (units_it != units::units_map.right.end())
     {
-        return out << "_" << units_it->second << "(" << n.id << ", " << n.exp
-                   << ", " << n.scale << ")";
+        out << "_" << units_it->second;
+        if (debug)
+        {
+            out << "(" << n.id << ", " << n.exp << ", " << n.scale << ")";
+        }
+        return out;
     }
     // factor numerator and denominator of id
     std::vector<mpz> num_factors =
@@ -380,7 +388,10 @@ std::ostream& operator<<(std::ostream& out, const units::unit& n)
             out << "?";
         }
     }
-    out << "(" << n.id << ", " << n.exp << ", " << n.scale << ")";
+    if (debug)
+    {
+        out << "(" << n.id << ", " << n.exp << ", " << n.scale << ")";
+    }
     return out;
 }
 
