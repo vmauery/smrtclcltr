@@ -15,7 +15,21 @@ struct add : public CalcFunction
     virtual bool op(Calculator& calc) const final;
 };
 
+struct subtract : public CalcFunction
+{
+    virtual const std::string& name() const final;
+    virtual const std::string& help() const final;
+    virtual bool op(Calculator& calc) const final;
+};
+
 struct multiply : public CalcFunction
+{
+    virtual const std::string& name() const final;
+    virtual const std::string& help() const final;
+    virtual bool op(Calculator& calc) const final;
+};
+
+struct divide : public CalcFunction
 {
     virtual const std::string& name() const final;
     virtual const std::string& help() const final;

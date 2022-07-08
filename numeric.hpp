@@ -926,6 +926,11 @@ static inline mpc to_mpc(const numeric& n)
     return std::visit([](const auto& a) { return to_mpc(a); }, n);
 }
 
+static inline bool operator<(const numeric& a, const numeric& b)
+{
+    return std::visit([](const auto& a, const auto& b) { return a < b; }, a, b);
+}
+
 template <typename TypeOut, typename TypeIn>
 TypeOut coerce_variant(const TypeIn& in)
 {

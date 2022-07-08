@@ -44,40 +44,40 @@ bool add::op(Calculator& calc) const
 }
 // }; // struct add
 
-struct subtract : public CalcFunction
+// struct subtract : public CalcFunction
+// {
+const std::string& subtract::name() const
 {
-    virtual const std::string& name() const final
-    {
-        static const std::string _name{"-"};
-        return _name;
-    }
-    virtual const std::string& help() const final
-    {
-        static const std::string _help{
-            // clang-format off
+    static const std::string _name{"-"};
+    return _name;
+}
+const std::string& subtract::help() const
+{
+    static const std::string _help{
+        // clang-format off
             "\n"
             "    Usage: x y -\n"
             "\n"
             "    Returns the difference of the bottom two items "
             "on the stack (x - y)\n"
-            // clang-format on
-        };
-        return _help;
-    }
-    virtual bool op(Calculator& calc) const final
-    {
-        return two_arg_uconv_op(
-            calc,
-            [](const auto& a, const auto& b, const units::unit& ua,
-               const units::unit& ub) -> std::tuple<numeric, units::unit> {
-                if (ua != ub)
-                {
-                    throw std::invalid_argument("units do not match");
-                }
-                return {a - b, ua};
-            });
-    }
-};
+        // clang-format on
+    };
+    return _help;
+}
+bool subtract::op(Calculator& calc) const
+{
+    return two_arg_uconv_op(
+        calc,
+        [](const auto& a, const auto& b, const units::unit& ua,
+           const units::unit& ub) -> std::tuple<numeric, units::unit> {
+            if (ua != ub)
+            {
+                throw std::invalid_argument("units do not match");
+            }
+            return {a - b, ua};
+        });
+}
+// };
 
 // struct multiply : public CalcFunction
 // {
@@ -110,38 +110,38 @@ bool multiply::op(Calculator& calc) const
 }
 // };
 
-struct divide : public CalcFunction
+// struct divide : public CalcFunction
+// {
+const std::string& divide::name() const
 {
-    virtual const std::string& name() const final
-    {
-        static const std::string _name{"/"};
-        return _name;
-    }
-    virtual const std::string& help() const final
-    {
-        static const std::string _help{
-            // clang-format off
+    static const std::string _name{"/"};
+    return _name;
+}
+const std::string& divide::help() const
+{
+    static const std::string _help{
+        // clang-format off
             "\n"
             "    Usage: x y /\n"
             "\n"
             "    Returns the quotient of the bottom two items "
             "on the stack (x / y)\n"
-            // clang-format on
-        };
-        return _help;
-    }
-    virtual bool op(Calculator& calc) const final
-    {
-        return two_arg_conv_op(
-            calc,
-            [](const auto& a, const auto& b, const units::unit& ua,
-               const units::unit& ub) -> std::tuple<numeric, units::unit> {
-                return {a / b, ua / ub};
-            },
-            std::tuple<mpz>{}, std::tuple<mpq>{},
-            std::tuple<mpq, mpf, mpc, time_>{});
-    }
-};
+        // clang-format on
+    };
+    return _help;
+}
+bool divide::op(Calculator& calc) const
+{
+    return two_arg_conv_op(
+        calc,
+        [](const auto& a, const auto& b, const units::unit& ua,
+           const units::unit& ub) -> std::tuple<numeric, units::unit> {
+            return {a / b, ua / ub};
+        },
+        std::tuple<mpz>{}, std::tuple<mpq>{},
+        std::tuple<mpq, mpf, mpc, time_>{});
+}
+// };
 
 struct lshift : public CalcFunction
 {
