@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <deque>
 #include <functional>
+#include <input.hpp>
 #include <map>
 #include <numeric.hpp>
 #include <optional>
@@ -100,9 +101,9 @@ class Calculator
 
     void make_grammar();
     void make_functions();
+    std::optional<std::string> auto_complete(const std::string& in, int state);
 
     void show_stack();
-    std::optional<std::string> get_input();
     std::string get_next_token();
     bool run_one(std::string expr);
 
@@ -111,4 +112,5 @@ class Calculator
     std::map<std::string, const CalcFunction*> _operations;
     std::vector<std::string> _op_names;
     size_t _op_names_max_strlen;
+    std::shared_ptr<Input> input;
 };

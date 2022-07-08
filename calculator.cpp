@@ -4,11 +4,6 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
-#if HAVE_READLINE == 1
-#include <readline/history.h>
-#include <readline/readline.h>
-#endif // HAVE_READLINE
-
 #include <unistd.h>
 
 #include <boost/algorithm/string.hpp>
@@ -16,6 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <calculator.hpp>
 #include <cmath>
 #include <function.hpp>
+#include <input.hpp>
 #include <iostream>
 #include <string>
 
@@ -340,10 +336,10 @@ register_calc_fn(gradiens);
 Calculator::Calculator()
 {
     config.interactive = isatty(STDIN_FILENO);
-#if HAVE_READLINE == 1
-    // don't forget to disable tab completion for now
-    rl_bind_key('\t', rl_insert);
-#endif // HAVE_READLINE
+    input = Input::make_shared(config.interactive,
+                               [this](const std::string& in, int state) {
+                                   return auto_complete(in, state);
+                               });
 
     config.precision = builtin_default_precision;
     set_default_precision(builtin_default_precision);
@@ -519,56 +515,13 @@ bool Calculator::run_one(std::string expr)
     return true;
 }
 
-std::optional<std::string> Calculator::get_input()
-{
-    if (config.interactive)
-    {
-        // for interactive, use readline
-#if HAVE_READLINE == 1
-        char* buf = readline("> ");
-        std::string nextline;
-        if (buf)
-        {
-            nextline = buf;
-            free(buf);
-            if (nextline.size())
-            {
-                add_history(nextline.c_str());
-                return nextline;
-            }
-            return "\n";
-        }
-#else
-        // for non-interactive, std::getline() works fine
-        // std::cerr << "<waiting for input>\n";
-        std::cout << "> ";
-        std::cout.flush();
-        if (std::string nextline; std::getline(std::cin, nextline))
-        {
-            return nextline;
-        }
-#endif // HAVE_READLINE
-        return std::nullopt;
-    }
-    else
-    {
-        // for non-interactive, std::getline() works fine
-        // std::cerr << "<waiting for input>\n";
-        if (std::string nextline; std::getline(std::cin, nextline))
-        {
-            return nextline;
-        }
-        return std::nullopt;
-    }
-}
-
 std::string Calculator::get_next_token()
 {
     static std::deque<std::string> current_line;
     if (current_line.size() == 0)
     {
         // std::cerr << "<waiting for input>\n";
-        std::optional<std::string> nextline = get_input();
+        std::optional<std::string> nextline = input->readline();
         if (!nextline)
         {
             // std::cerr << "end of input\n";
@@ -877,4 +830,29 @@ void Calculator::make_functions()
                        return kv.first;
                    });
     std::sort(_op_names.begin(), _op_names.end());
+}
+
+std::optional<std::string> Calculator::auto_complete(const std::string& in,
+                                                     int state)
+{
+    static size_t last_idx = 0;
+    static std::vector<std::string> matches;
+    if (state == 0)
+    {
+        last_idx = 0;
+        matches.clear();
+        // find all the new matches
+        for (auto kv : _operations)
+        {
+            if (kv.first.starts_with(in))
+            {
+                matches.emplace_back(kv.first);
+            }
+        }
+    }
+    if (last_idx < matches.size())
+    {
+        return matches[last_idx++];
+    }
+    return std::nullopt;
 }

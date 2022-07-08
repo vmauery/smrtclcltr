@@ -11,10 +11,11 @@ project('smrtclcltr', 'cpp',
   )
 
 src = [
+  'calculator.cpp',
+  'constants.cpp',
+  'input.cpp',
   'main.cpp',
   'numeric.cpp',
-  'constants.cpp',
-  'calculator.cpp',
   'units.cpp',
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',

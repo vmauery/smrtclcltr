@@ -8,7 +8,6 @@ Ideas for future development
      * Show modes rad/deg, polar/rect
 	 * Show error messages
 	 * Memory usage? CPU usage?
- * Tab completion of function names
  * Better parsing of input (spirit? or maybe just more regexes?)
  * Constants library (interactive lookup for lesser-known constants)
  * More functions (long list)
