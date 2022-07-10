@@ -10,31 +10,12 @@ project('smrtclcltr', 'cpp',
     ]
   )
 
-src = [
-  'calculator.cpp',
-  'constants.cpp',
-  'input.cpp',
-  'main.cpp',
-  'numeric.cpp',
-  'units.cpp',
-  'functions/arithmetic_funcs.cpp',
-  'functions/bitwise_funcs.cpp',
-  'functions/factorial.cpp',
-  'functions/integer.cpp',
-  'functions/log.cpp',
-  'functions/modular_funcs.cpp',
-  'functions/probability.cpp',
-  'functions/product.cpp',
-  'functions/range.cpp',
-  'functions/sqr.cpp',
-  'functions/sqrt.cpp',
-  'functions/stack_funcs.cpp',
-  'functions/sum.cpp',
-  'functions/time_funcs.cpp',
-  'functions/trig_funcs.cpp',
-  'functions/unit_funcs.cpp',
-  'functions/util_funcs.cpp',
-  ]
+version_src = vcs_tag(
+  command: 'git-show-version.sh',
+  input: 'version.cpp.in',
+  output: 'version.cpp',
+  replace_string: 'GIT_VERSION_STRING',
+  )
 
 cxx = meson.get_compiler('cpp')
 build = get_option('buildtype')
@@ -109,6 +90,33 @@ add_project_arguments(
     '-DBOOST_SYSTEM_NO_DEPRECATED'
     ],
   language : 'cpp')
+
+src = [
+  'calculator.cpp',
+  'constants.cpp',
+  'input.cpp',
+  'main.cpp',
+  'numeric.cpp',
+  'units.cpp',
+  version_src, 
+  'functions/arithmetic_funcs.cpp',
+  'functions/bitwise_funcs.cpp',
+  'functions/factorial.cpp',
+  'functions/integer.cpp',
+  'functions/log.cpp',
+  'functions/modular_funcs.cpp',
+  'functions/probability.cpp',
+  'functions/product.cpp',
+  'functions/range.cpp',
+  'functions/sqr.cpp',
+  'functions/sqrt.cpp',
+  'functions/stack_funcs.cpp',
+  'functions/sum.cpp',
+  'functions/time_funcs.cpp',
+  'functions/trig_funcs.cpp',
+  'functions/unit_funcs.cpp',
+  'functions/util_funcs.cpp',
+  ]
 
 
 executable('smrtclcltr',

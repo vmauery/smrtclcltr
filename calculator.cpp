@@ -14,10 +14,37 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <input.hpp>
 #include <iostream>
 #include <string>
+#include <version.hpp>
 
 // internal calculator functions
 namespace function
 {
+struct version : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"version"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: version\n"
+            "\n"
+            "    Display version info\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator&) const final
+    {
+        std::cout << "Version: " << Version::full() << "\n";
+        return true;
+    }
+};
+
 struct debug : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -320,6 +347,7 @@ struct gradiens : public CalcFunction
 };
 
 } // namespace function
+register_calc_fn(version);
 register_calc_fn(debug);
 register_calc_fn(undo);
 register_calc_fn(base);

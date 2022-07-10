@@ -1,0 +1,24 @@
+/*
+Copyright © 2020 Vernon Mauery; All rights reserved.
+
+SPDX-License-Identifier: BSD-3-Clause
+*/
+
+#include <version.hpp>
+
+const char* Version::version()
+{
+    static const char* version_str = "GIT_VERSION_STRING";
+    return version_str;
+}
+
+const char* Version::timestamp()
+{
+    static const char* timestamp_str = __TIMESTAMP__;
+    return timestamp_str;
+}
+
+std::string Version::full()
+{
+    return std::string(version()) + ", built " + timestamp();
+}
