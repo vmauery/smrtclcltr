@@ -6,8 +6,11 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <boost/math/constants/constants.hpp>
 #include <chrono>
+#include <debug.hpp>
 #include <iostream>
 #include <variant>
 
@@ -326,15 +329,20 @@ struct rational
     explicit rational(const std::string& r)
     {
         auto d = r.find("/");
-        if (d != std::string::npos)
+        if (d == std::string::npos)
         {
             num = std::stoll(r);
+            lg::debug("mpq({}): num: {}, den: 1\n", r, num);
             den = 1;
         }
         else
         {
-            num = std::stoll(r.substr(0, d));
-            den = std::stoll(r.substr(d + 1));
+            auto numstr = r.substr(0, d);
+            auto denstr = r.substr(d + 1);
+            num = std::stoll(numstr);
+            lg::debug("mpq({}): num: {} -> {}\n", r, numstr, num);
+            den = std::stoll(denstr);
+            lg::debug("mpq({}): den: {} -> {}\n", r, den, den);
         }
         reduce();
     }
@@ -349,11 +357,11 @@ struct rational
         }
     }
 
-    const T& numerator() const
+    const T numerator() const
     {
         return num;
     }
-    const T& denominator() const
+    const T denominator() const
     {
         return den;
     }
@@ -561,11 +569,11 @@ static inline mpz parse_mpz(const std::string& s)
     }
     catch (std::invalid_argument const& e)
     {
-        std::cerr << "std::invalid_argument::what(): " << e.what() << '\n';
+        // std::cerr << "std::invalid_argument::what(): " << e.what() << '\n';
     }
     catch (std::out_of_range const& e)
     {
-        std::cerr << "std::out_of_range::what(): " << e.what() << '\n';
+        // std::cerr << "std::out_of_range::what(): " << e.what() << '\n';
     }
     // possible exponent?
     if (end != s.size())
@@ -1120,3 +1128,218 @@ static inline mpc operator/(const mpz& z, const mpc& c)
 {
     return to_mpc(z) / c;
 }
+
+struct binary_wrapper
+{
+    explicit binary_wrapper(const mpz& v) : v(v)
+    {
+    }
+    const mpz& v;
+};
+
+std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw);
+
+#ifndef USE_BASIC_TYPES
+template <>
+struct fmt::formatter<mpz>
+{
+    char presentation = 'd';
+
+    // Parses format specifications of the form ['b' | 'd' | 'o' | 'x'].
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+    {
+        auto it = ctx.begin(), end = ctx.end();
+        if (it != end && (*it == 'b' || *it == 'd' || *it == 'o' || *it == 'x'))
+            presentation = *it++;
+
+        // Check if reached the end of the range:
+        if (it != end && *it != '}')
+            throw format_error("invalid format");
+
+        // Return an iterator past the end of the parsed range:
+        return it;
+    }
+
+    // Formats the point p using the parsed format specification (presentation)
+    // stored in this formatter.
+    template <typename FormatContext>
+    auto format(const mpz& z, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        // ctx.out() is an output iterator to write to.
+        std::stringstream ss;
+        if (presentation == 'b')
+        {
+            ss << binary_wrapper{z};
+            return format_to(ctx.out(), "0b{}", ss.str());
+        }
+        else if (presentation == 'o')
+        {
+            ss << std::oct << z;
+            return format_to(ctx.out(), "0{}", ss.str());
+        }
+        else if (presentation == 'x')
+        {
+            ss << std::hex << z;
+            return format_to(ctx.out(), "0x{}", ss.str());
+        }
+        else // if (presentation == 'd')
+        {
+            ss << z;
+            return format_to(ctx.out(), "{}", ss.str());
+        }
+    }
+};
+
+template <typename Char>
+struct fmt::formatter<mpf, Char>
+{
+    detail::dynamic_format_specs<Char> specs_;
+    const Char* format_str_;
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        format_str_ = ctx.begin();
+        // Checks are deferred to formatting time when the argument type is
+        // known.
+        detail::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
+        return detail::parse_format_specs(ctx.begin(), ctx.end(), handler);
+    }
+
+    // Formats the point p using the parsed format specification (presentation)
+    // stored in this formatter.
+    // FormatContext is something like basic_format_context
+    template <typename FormatContext>
+    auto format(const mpf& f, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        auto specs = specs_;
+        detail::handle_dynamic_spec<detail::width_checker>(
+            specs.width, specs.width_ref, ctx);
+        detail::handle_dynamic_spec<detail::precision_checker>(
+            specs.precision, specs.precision_ref, ctx);
+        if (specs.precision < 1)
+        {
+            specs.precision = default_precision;
+        }
+        return format_to(ctx.out(), "{}", f.str(specs.precision));
+    }
+};
+#endif
+
+template <typename Char>
+struct fmt::formatter<mpq, Char>
+{
+    detail::dynamic_format_specs<Char> specs_;
+    const Char* format_str_;
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        format_str_ = ctx.begin();
+        // Checks are deferred to formatting time when the argument type is
+        // known.
+        detail::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
+        return detail::parse_format_specs(ctx.begin(), ctx.end(), handler);
+    }
+
+    // Formats the point p using the parsed format specification (presentation)
+    // stored in this formatter.
+    // FormatContext is something like basic_format_context
+    template <typename FormatContext>
+    auto format(const mpq& q, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        auto specs = specs_;
+        if (specs.type == fmt::presentation_type::fixed_lower)
+        {
+            detail::handle_dynamic_spec<detail::width_checker>(
+                specs.width, specs.width_ref, ctx);
+            detail::handle_dynamic_spec<detail::precision_checker>(
+                specs.precision, specs.precision_ref, ctx);
+            if (specs.precision < 1)
+            {
+                specs.precision = default_precision;
+            }
+            mpf f =
+                to_mpf(helper::numerator(q)) / to_mpf(helper::denominator(q));
+#ifdef USE_BASIC_TYPES
+            return format_to(ctx.out(), "{}", std::to_string(f));
+#else
+            return format_to(ctx.out(), "{}", f.str(specs.precision));
+#endif
+        }
+        // q form is chosen by 'g' (general_lower) presentation type
+        mpz num = helper::numerator(q);
+        mpz den = helper::denominator(q);
+        return format_to(ctx.out(), "{}/{}", num, den);
+    }
+};
+
+template <>
+struct fmt::formatter<mpc>
+{
+    char presentation = 'r';
+
+    // Parses format specifications of the form ['r' | 'p' | 'i'].
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+    {
+        auto it = ctx.begin(), end = ctx.end();
+        if (it != end && (*it == 'r' || *it == 'p' || *it == 'i'))
+            presentation = *it++;
+
+        // Check if reached the end of the range:
+        if (it != end && *it != '}')
+            throw format_error("invalid format");
+
+        // Return an iterator past the end of the parsed range:
+        return it;
+    }
+
+    // Formats the point p using the parsed format specification (presentation)
+    // stored in this formatter.
+    template <typename FormatContext>
+    auto format(const mpc& c, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        // ctx.out() is an output iterator to write to.
+        if (presentation == 'r')
+        {
+            return format_to(ctx.out(), "({}, {})", c.real(), c.imag());
+        }
+        else if (presentation == 'p')
+        {
+            return format_to(ctx.out(), "({}, <{})", abs(c),
+                             atan2(c.real(), c.imag()));
+        }
+        else
+        {
+            return format_to(ctx.out(), "{}{}{}i", c.real(),
+                             (c.imag() > 0 ? '+' : '-'), c.imag());
+        }
+    }
+};
+
+template <>
+struct fmt::formatter<time_>
+{
+    // Parses format specifications of the form
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+    {
+        auto it = ctx.begin(), end = ctx.end();
+        // Check if reached the end of the range:
+        if (it != end && *it != '}')
+            throw format_error("invalid format");
+
+        // Return an iterator past the end of the parsed range:
+        return it;
+    }
+
+    // Formats the point p using the parsed format specification (presentation)
+    // stored in this formatter.
+    template <typename FormatContext>
+    auto format(const time_& t, FormatContext& ctx) -> decltype(ctx.out())
+    {
+        // ctx.out() is an output iterator to write to.
+        std::stringstream ss;
+        ss << t;
+        return format_to(ctx.out(), "{}", ss.str());
+    }
+};

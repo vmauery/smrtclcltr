@@ -201,10 +201,8 @@ numeric unit::conv(unit& o, const numeric& v) const
 {
     if (id == o.id)
     {
-        /*
-        std::cerr << "conv: exp = " << exp << ", scale = " << scale
-                  << ", o.exp = " << o.exp << ", o.scale = " << o.scale << "\n";
-        */
+        lg::debug("conv: exp = {}, scale = {}, o.exp = {}, o.scale = {}\n", exp,
+                  scale, o.exp, o.scale);
         numeric vc = std::visit(
             [&o, this](const auto& n) -> numeric {
                 return n * (o.exp / exp) * (o.scale / scale);

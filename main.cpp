@@ -5,7 +5,6 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 
 #include <calculator.hpp>
-//#include <input.hpp>
 #include <iostream>
 #include <string>
 #include <vector>

@@ -8,6 +8,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <boost/multiprecision/number.hpp>
 #include <calculator.hpp>
 #include <cmath>
+#include <debug.hpp>
 #include <deque>
 #include <functional>
 #include <map>
@@ -155,8 +156,8 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
     std::variant<Ltypes...> lca;
     if (!reduce(ca, lca)())
     {
-        std::cerr << "wtf, we converted and now it doesn't reduce? Eat "
-                     "shit c++.\n";
+        lg::error("wtf, we converted and now it doesn't reduce? Eat "
+                  "shit c++.\n");
         return false;
     }
 
@@ -295,8 +296,8 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
     std::variant<Ltypes...> lcb;
     if (!reduce(ca, lca)() || !reduce(cb, lcb)())
     {
-        std::cerr << "wtf, we converted and now it doesn't reduce? Eat "
-                     "shit c++.\n";
+        lg::error("wtf, we converted and now it doesn't reduce? Eat "
+                  "shit c++.\n");
         return false;
     }
     auto [cv, nu] = std::visit(

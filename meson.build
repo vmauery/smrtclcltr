@@ -33,7 +33,9 @@ elif (get_option('numeric') == 'native')
   add_project_arguments(['-DUSE_BASIC_TYPES'], language: 'cpp')
 endif
 
-all_dependencies = [ numeric ]
+fmt = dependency('fmt')
+
+all_dependencies = [ numeric, fmt ]
 
 add_project_arguments(
   cxx.get_supported_arguments([
@@ -94,11 +96,12 @@ add_project_arguments(
 src = [
   'calculator.cpp',
   'constants.cpp',
+  'debug.cpp',
   'input.cpp',
   'main.cpp',
   'numeric.cpp',
   'units.cpp',
-  version_src, 
+  version_src,
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',
   'functions/factorial.cpp',

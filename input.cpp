@@ -69,8 +69,7 @@ std::optional<std::string> Input::readline()
             return "\n";
         }
 #else  // ! HAVE_READLINE
-        std::cout << "> ";
-        std::cout.flush();
+        ui::get()->out("> ")->flush();
         if (std::string nextline; std::getline(std::cin, nextline))
         {
             if (nextline.size())
@@ -85,7 +84,6 @@ std::optional<std::string> Input::readline()
     else
     {
         // for non-interactive, std::getline() works fine
-        // std::cerr << "<waiting for input>\n";
         if (std::string nextline; std::getline(std::cin, nextline))
         {
             if (nextline.size())

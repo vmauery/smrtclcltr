@@ -10,10 +10,12 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <boost/multiprecision/number.hpp>
 #include <calculator.hpp>
 #include <cmath>
+#include <debug.hpp>
 #include <function.hpp>
 #include <input.hpp>
 #include <iostream>
 #include <string>
+#include <ui.hpp>
 #include <version.hpp>
 
 // internal calculator functions
@@ -40,7 +42,7 @@ struct version : public CalcFunction
     }
     virtual bool op(Calculator&) const final
     {
-        std::cout << "Version: " << Version::full() << "\n";
+        ui::get()->out("Version: {}\n", Version::full());
         return true;
     }
 };
@@ -67,6 +69,43 @@ struct debug : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return calc.debug();
+    }
+};
+
+struct verbose : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"verbose"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: n verbose\n"
+            "\n"
+            "    Set verbosity to level n (0-7)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e = calc.stack.front();
+        const mpz* v = std::get_if<mpz>(&e.value());
+        if (v)
+        {
+            auto lvl = static_cast<lg::level>(static_cast<int>(*v));
+            if (lvl >= lg::level::emergency && lvl <= lg::level::debug)
+            {
+                lg::debug_level = lvl;
+                calc.stack.pop_front();
+                return true;
+            }
+        }
+        throw std::invalid_argument("Invalid verbosity: must be 0..7");
     }
 };
 
@@ -349,6 +388,7 @@ struct gradiens : public CalcFunction
 } // namespace function
 register_calc_fn(version);
 register_calc_fn(debug);
+register_calc_fn(verbose);
 register_calc_fn(undo);
 register_calc_fn(base);
 register_calc_fn(cbase);
@@ -423,6 +463,7 @@ bool Calculator::run_one(std::string expr)
 {
     if (expr == "help")
     {
+        auto ui = ui::get();
         // if no arguments follow,
         auto fn = get_next_token();
         if (fn == "" || fn == "\n")
@@ -431,10 +472,10 @@ bool Calculator::run_one(std::string expr)
             size_t cols = 80 / mxlen;
             for (size_t idx = 0; idx < _op_names.size(); idx++)
             {
-                std::cout << std::left << std::setw(mxlen) << _op_names[idx];
+                ui->out("{0: <{1}}", _op_names[idx], mxlen);
                 if (idx % cols == (cols - 1) || idx == (_op_names.size() - 1))
                 {
-                    std::cout << "\n";
+                    ui->out("\n");
                 }
             }
             return true;
@@ -442,8 +483,8 @@ bool Calculator::run_one(std::string expr)
         auto help_op = _operations.find(fn);
         if (help_op != _operations.end())
         {
-            std::cout << help_op->second->name() << "\n\t"
-                      << help_op->second->help() << "\n";
+            ui->out("{}\n\t{}\n", help_op->second->name(),
+                    help_op->second->help());
         }
         // drain the input so stack doesn't get printed
         std::string nt;
@@ -482,30 +523,30 @@ bool Calculator::run_one(std::string expr)
         }
         else if (expr.starts_with("(") || expr.ends_with("i"))
         {
-            // std::cerr << "mpc(\"" << expr << "\")\n";
+            lg::debug("mpc(\"{}\")\n", expr);
             e.value(parse_mpc(expr));
         }
         else if (expr.find(".") != std::string::npos)
         {
-            // std::cerr << "mpf(\"" << expr << "\")\n";
+            lg::debug("mpf(\"{}\")\n", expr);
             e.value(parse_mpf(expr));
         }
         else if (expr.find("/") != std::string::npos)
         {
-            // std::cerr << "mpq(\"" << expr << "\")\n";
+            lg::debug("mpq(\"{}\")\n", expr);
             e.value(mpq(expr));
         }
         else
         {
             if (config.fixed_bits)
             {
-                // std::cerr << "make_fixed(mpz(\"" << expr << "\"))\n";
+                lg::debug("mpz(\"{}\") {fixed}\n", expr);
                 auto v = parse_mpz(expr);
                 e.value(make_fixed(v, config.fixed_bits, config.is_signed));
             }
             else
             {
-                // std::cerr << "mpz(\"" << expr << "\")\n";
+                lg::debug("mpz(\"{}\")\n", expr);
                 std::string num;
                 if (expr[0] == '0' && expr.size() > 1)
                 {
@@ -536,7 +577,7 @@ bool Calculator::run_one(std::string expr)
     }
     catch (const std::exception& e)
     {
-        std::cerr << "bad expression '" << expr << "': " << e.what() << "\n";
+        lg::error("bad expression '{}: {}\n", expr, e.what());
         return false;
     }
     stack.push_front(std::move(e));
@@ -548,11 +589,9 @@ std::string Calculator::get_next_token()
     static std::deque<std::string> current_line;
     if (current_line.size() == 0)
     {
-        // std::cerr << "<waiting for input>\n";
         std::optional<std::string> nextline = input->readline();
         if (!nextline)
         {
-            // std::cerr << "end of input\n";
             _running = false;
             return "";
         }
@@ -562,7 +601,7 @@ std::string Calculator::get_next_token()
     }
     std::string next = current_line.front();
     current_line.pop_front();
-    // std::cerr << "next token is :'" << next << "'\n";
+    lg::debug("next token is :'{}'\n", next);
     return next;
 }
 
@@ -583,7 +622,7 @@ bool Calculator::run()
             }
             catch (const std::exception& e)
             {
-                std::cerr << "Exception: " << e.what() << "\n";
+                lg::error("Exception: {}\n", e.what());
             }
         }
         else
@@ -596,7 +635,7 @@ bool Calculator::run()
             }
             catch (const std::exception& e)
             {
-                std::cerr << "Exception: " << e.what() << "\n";
+                lg::error("Exception: {}\n", e.what());
             }
         }
     }
@@ -620,11 +659,12 @@ bool Calculator::undo()
 
 bool Calculator::debug()
 {
+    auto ui = ui::get();
     config.debug = !config.debug;
-    std::cout << "debug mode " << (config.debug ? "on" : "off") << "\n";
+    ui->out("debug mode {}\n", (config.debug ? "on" : "off"));
     if (config.debug)
     {
-        std::cout << "using " << MATH_BACKEND << " for numeric backend\n";
+        ui->out("using {} for numeric backend\n", MATH_BACKEND);
     }
     return true;
 }
@@ -710,78 +750,21 @@ bool Calculator::precision()
     return false;
 }
 
-struct binary_wrapper
-{
-    explicit binary_wrapper(const mpz& v) : v(v)
-    {
-    }
-    const mpz& v;
-};
-
-std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw)
-{
-    const mpz& v = bw.v;
-    // limit binary prints to 64k bits?
-    size_t bits = 0;
-    mpz mask(v);
-    if (mask < 0)
-    {
-        mask = -mask;
-    }
-    while (mask > 0)
-    {
-        mask >>= 1;
-        bits++;
-    }
-    if (bits >= 64 * 1024)
-    {
-        std::stringstream ss;
-        ss << v;
-        os << ss.str();
-        return os;
-    }
-    mask = 1;
-    mask <<= bits;
-    std::string out;
-    out.reserve(bits + 3);
-    if (os.flags() & std::ios_base::showbase)
-    {
-        out.push_back('0');
-        out.push_back(os.flags() & std::ios_base::uppercase ? 'B' : 'b');
-    }
-    while (mask && !(mask & v))
-    {
-        mask >>= 1;
-    }
-    if (mask)
-    {
-        for (; mask; mask >>= 1)
-        {
-            out.push_back(v & mask ? '1' : '0');
-        }
-    }
-    else
-    {
-        out.push_back('0');
-    }
-    os << out;
-    return os;
-}
-
 void Calculator::show_stack()
 {
     // on higher lines; truncate?
     // only show n lines where n is the screen height
+    auto ui = ui::get();
     size_t c = stack.size();
     for (auto it = stack.rbegin(); it != stack.rend(); it++)
     {
         if (config.debug)
         {
-            std::cout << numeric_types[it->value().index()] << " | ";
+            ui->out("{} | ", numeric_types[it->value().index()]);
         }
         if (config.interactive)
         {
-            std::cout << std::dec << c << ": ";
+            ui->out("{:d}: ", c);
             c--;
         }
         auto& v = it->value();
@@ -791,42 +774,40 @@ void Calculator::show_stack()
             // mpq gets special treatment to print a quotient or float
             if (config.mpq_mode == e_mpq_mode::f)
             {
-                auto f = to_mpf(*q);
-                std::cout << std::setprecision(it->precision) << f << it->unit()
-                          << "\n";
+                ui->out("{0:.{1}f}{2}\n", *q, it->precision, it->unit());
             }
             else
             {
-                std::cout << std::setprecision(it->precision) << *q
-                          << it->unit() << "\n";
+                ui->out("{:g}{}\n", *q, it->unit());
             }
         }
-        else
+        else if (auto f = std::get_if<mpf>(&v); f)
+        {
+            ui->out("{0:.{1}f}{2}\n", *f, it->precision, it->unit());
+        }
+        else if (auto z = std::get_if<mpz>(&v); z)
         {
             switch (it->base)
             {
                 case 2:
-                    std::cout << std::showbase;
-                    // only ints, only base 2, special case
-                    if (auto z = std::get_if<mpz>(&v); z)
-                    {
-                        std::cout << std::setprecision(it->precision)
-                                  << binary_wrapper(*z) << it->unit() << "\n";
-                        continue;
-                    }
+                    ui->out("{:b}{}\n", *z, it->unit());
                     break;
                 case 8:
-                    std::cout << std::showbase << std::oct;
+                    ui->out("{:o}{}\n", *z, it->unit());
                     break;
                 case 10:
-                    std::cout << std::showbase << std::dec;
+                    ui->out("{:d}{}\n", *z, it->unit());
                     break;
                 case 16:
-                    std::cout << std::showbase << std::hex;
+                    ui->out("{:x}{}\n", *z, it->unit());
                     break;
             }
-            std::cout << std::setprecision(it->precision) << v << it->unit()
-                      << "\n";
+        }
+        else
+        {
+            std::visit(
+                [it, ui](const auto& a) { ui->out("{}{}\n", a, it->unit()); },
+                v);
         }
     }
 }

@@ -101,7 +101,6 @@ mpq make_quotient(const mpf& f, int digits)
     const mpf one(1.0l);
     // require error of at least original precision
     const mpf max_error = pow_fn(mpf(10.0l), -orig_prec);
-    // std::cerr << "looking for max_error < " << max_error << "\n";
 
     mpz m[2][2];
     mpf x(f);
@@ -130,7 +129,7 @@ mpq make_quotient(const mpf& f, int digits)
     mpq result(m[0][0], m[1][0]);
     // throw something; not a perfect representation
     mpf error = abs(f - to_mpf(result));
-    // std::cerr << result << ", error = " << error << "\n";
+    lg::debug("Q: {}, error = {}\n", result, error);
 
     /* now try other possibility */
     ai = (maxden - m[1][1]) / m[1][0];
@@ -138,11 +137,11 @@ mpq make_quotient(const mpf& f, int digits)
     m[1][0] = m[1][0] * ai + m[1][1];
     mpq result2(m[0][0], m[1][0]);
     mpf error2 = abs(f - to_mpf(result2));
-    // std::cerr << result2 << ", error2 = " << error2 << "\n";
+    lg::debug("Q: {}, error2 = {}\n", result2, error2);
     set_default_precision(orig_prec);
     if (error > max_error && error2 > max_error)
     {
-        // std::cerr << "lossy mpf->mpq; not into it.\n";
+        lg::info("lossy mpf->mpq; not into it.\n");
         throw std::invalid_argument("Unable to convert mpf to mpq");
     }
     if (error <= error2)
@@ -287,7 +286,7 @@ numeric reduce_numeric(const numeric& n, int precision)
     {
         precision = default_precision;
     }
-    // std::visit([](auto& a) { std::cerr << "reduce(" << a << ")\n"; }, n);
+    std::visit([](auto& a) { lg::debug("reduce({})\n", a); }, n);
     /*
      * may be lossy if precision is low... mpf to mpq/mpz might be a lie
      * mpc -> mpf for imaginary = 0
@@ -346,4 +345,54 @@ numeric reduce_numeric(const numeric& n, int precision)
         return n;
     }
     return n;
+}
+
+std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw)
+{
+    const mpz& v = bw.v;
+    // limit binary prints to 64k bits?
+    size_t bits = 0;
+    mpz mask(v);
+    if (mask < 0)
+    {
+        mask = -mask;
+    }
+    while (mask > 0)
+    {
+        mask >>= 1;
+        bits++;
+    }
+    if (bits >= 64 * 1024)
+    {
+        std::stringstream ss;
+        ss << v;
+        os << ss.str();
+        return os;
+    }
+    mask = 1;
+    mask <<= bits;
+    std::string out;
+    out.reserve(bits + 3);
+    if (os.flags() & std::ios_base::showbase)
+    {
+        out.push_back('0');
+        out.push_back(os.flags() & std::ios_base::uppercase ? 'B' : 'b');
+    }
+    while (mask && !(mask & v))
+    {
+        mask >>= 1;
+    }
+    if (mask)
+    {
+        for (; mask; mask >>= 1)
+        {
+            out.push_back(v & mask ? '1' : '0');
+        }
+    }
+    else
+    {
+        out.push_back('0');
+    }
+    os << out;
+    return os;
 }
