@@ -49,10 +49,10 @@ struct reduce
 {
     constexpr static size_t A_size = std::variant_size<Vin>::value;
 
-    Vin& _vin;
+    const Vin& _vin;
     Vout& _vout;
 
-    reduce(Vin& vin, Vout& vout) : _vin(vin), _vout(vout)
+    reduce(const Vin& vin, Vout& vout) : _vin(vin), _vout(vout)
     {
     }
 
@@ -126,7 +126,7 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
 {
     if (calc.stack.size() < 1)
     {
-        return false;
+        throw std::invalid_argument("Requires 1 argument");
     }
     stack_entry a = calc.stack.front();
 
@@ -148,7 +148,7 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
 {
     if (calc.stack.size() < 1)
     {
-        return false;
+        throw std::invalid_argument("Requires 1 argument");
     }
     stack_entry a = calc.stack.front();
     numeric ca = a.value();
@@ -156,9 +156,7 @@ bool one_arg_conv_op(Calculator& calc, const Fn& fn,
     std::variant<Ltypes...> lca;
     if (!reduce(ca, lca)())
     {
-        lg::error("wtf, we converted and now it doesn't reduce? Eat "
-                  "shit c++.\n");
-        return false;
+        throw std::runtime_error("Argument failed to reduce after conversion");
     }
 
     auto [cv, nu] = std::visit(
@@ -176,17 +174,17 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
 {
     if (calc.stack.size() < 1)
     {
-        return false;
+        throw std::invalid_argument("Requires 1 argument");
     }
     stack_entry a = calc.stack.front();
     std::variant<AllowedTypes...> la;
     if (!variant_holds_type<AllowedTypes...>(a.value()))
     {
-        return false;
+        throw std::invalid_argument("Invalid argument type");
     }
     if (!reduce(a.value(), la)())
     {
-        return false;
+        throw std::runtime_error("Argument failed to reduce after conversion");
     }
 
     auto [cv, nu] = std::visit(
@@ -204,7 +202,7 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
 {
     if (calc.stack.size() < 2)
     {
-        return false;
+        throw std::invalid_argument("Requires 2 arguments");
     }
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
@@ -234,7 +232,7 @@ bool two_arg_uconv_op(Calculator& calc, const Fn& fn)
 {
     if (calc.stack.size() < 2)
     {
-        return false;
+        throw std::invalid_argument("Requires 2 arguments");
     }
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
@@ -278,7 +276,7 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
 {
     if (calc.stack.size() < 2)
     {
-        return false;
+        throw std::invalid_argument("Requires 2 arguments");
     }
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
@@ -296,9 +294,8 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
     std::variant<Ltypes...> lcb;
     if (!reduce(ca, lca)() || !reduce(cb, lcb)())
     {
-        lg::error("wtf, we converted and now it doesn't reduce? Eat "
-                  "shit c++.\n");
-        return false;
+        throw std::runtime_error(
+            "Argument(s) failed to reduce after conversion");
     }
     auto [cv, nu] = std::visit(
         [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
@@ -320,7 +317,7 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
 {
     if (calc.stack.size() < 2)
     {
-        return false;
+        throw std::invalid_argument("Requires 2 arguments");
     }
 
     stack_entry a = calc.stack[1];
@@ -329,13 +326,14 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
     if (!variant_holds_type<AllowedTypes...>(a.value()) ||
         !variant_holds_type<AllowedTypes...>(b.value()))
     {
-        return false;
+        throw std::invalid_argument("Invalid argument type");
     }
     std::variant<AllowedTypes...> la;
     std::variant<AllowedTypes...> lb;
     if (!reduce(a.value(), la)() || !reduce(b.value(), lb)())
     {
-        return false;
+        throw std::runtime_error(
+            "Argument(s) failed to reduce after conversion");
     }
 
     if (a.unit().compat(b.unit()))
@@ -363,7 +361,7 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
 {
     if (calc.stack.size() < 3)
     {
-        return false;
+        throw std::invalid_argument("Requires 3 arguments");
     }
 
     stack_entry a = calc.stack[2];
@@ -384,7 +382,7 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
         !variant_holds_type<AllowedTypes...>(b.value()) ||
         !variant_holds_type<AllowedTypes...>(c.value()))
     {
-        return false;
+        throw std::invalid_argument("Invalid argument type");
     }
     std::variant<AllowedTypes...> la;
     std::variant<AllowedTypes...> lb;
@@ -392,7 +390,8 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
     if (!reduce(a.value(), la)() || !reduce(b.value(), lb)() ||
         !reduce(c.value(), lc)())
     {
-        return false;
+        throw std::runtime_error(
+            "Argument(s) failed to reduce after conversion");
     }
 
     auto [cv, nu] =

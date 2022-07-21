@@ -497,6 +497,7 @@ bool Calculator::run_one(std::string expr)
     auto calc_fn = _operations.find(expr);
     if (calc_fn != _operations.end())
     {
+        lg::debug("executing function '{}'\n", expr);
         return calc_fn->second->op(*this);
     }
     // not a function
