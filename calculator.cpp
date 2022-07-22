@@ -577,7 +577,7 @@ bool Calculator::run_one(std::string expr)
     }
     catch (const std::exception& e)
     {
-        lg::error("bad expression '{}: {}\n", expr, e.what());
+        lg::error("bad expression '{}': {}\n", expr, e.what());
         return false;
     }
     stack.push_front(std::move(e));
@@ -758,57 +758,66 @@ void Calculator::show_stack()
     size_t c = stack.size();
     for (auto it = stack.rbegin(); it != stack.rend(); it++)
     {
-        if (config.debug)
+        try
         {
-            ui->out("{} | ", numeric_types[it->value().index()]);
-        }
-        if (config.interactive)
-        {
-            ui->out("{:d}: ", c);
-            c--;
-        }
-        auto& v = it->value();
-
-        if (auto q = std::get_if<mpq>(&v); q)
-        {
-            // mpq gets special treatment to print a quotient or float
-            if (config.mpq_mode == e_mpq_mode::f)
+            if (config.debug)
             {
-                ui->out("{0:.{1}f}{2}\n", *q, it->precision, it->unit());
+                ui->out("{} | ", numeric_types[it->value().index()]);
+            }
+            if (config.interactive)
+            {
+                ui->out("{:d}: ", c);
+            }
+            auto& v = it->value();
+
+            if (auto q = std::get_if<mpq>(&v); q)
+            {
+                // mpq gets special treatment to print a quotient or float
+                if (config.mpq_mode == e_mpq_mode::f)
+                {
+                    ui->out("{0:.{1}f}{2}\n", *q, it->precision, it->unit());
+                }
+                else
+                {
+                    ui->out("{:g}{}\n", *q, it->unit());
+                }
+            }
+            else if (auto f = std::get_if<mpf>(&v); f)
+            {
+                ui->out("{0:.{1}f}{2}\n", *f, it->precision, it->unit());
+            }
+            else if (auto z = std::get_if<mpz>(&v); z)
+            {
+                switch (it->base)
+                {
+                    case 2:
+                        ui->out("{:b}{}\n", *z, it->unit());
+                        break;
+                    case 8:
+                        ui->out("{:o}{}\n", *z, it->unit());
+                        break;
+                    case 10:
+                        ui->out("{:d}{}\n", *z, it->unit());
+                        break;
+                    case 16:
+                        ui->out("{:x}{}\n", *z, it->unit());
+                        break;
+                }
             }
             else
             {
-                ui->out("{:g}{}\n", *q, it->unit());
+                std::visit(
+                    [it, ui](const auto& a) {
+                        ui->out("{}{}\n", a, it->unit());
+                    },
+                    v);
             }
         }
-        else if (auto f = std::get_if<mpf>(&v); f)
+        catch (const std::exception& e)
         {
-            ui->out("{0:.{1}f}{2}\n", *f, it->precision, it->unit());
+            lg::error("show_stack[{}]: {}\n", c, e.what());
         }
-        else if (auto z = std::get_if<mpz>(&v); z)
-        {
-            switch (it->base)
-            {
-                case 2:
-                    ui->out("{:b}{}\n", *z, it->unit());
-                    break;
-                case 8:
-                    ui->out("{:o}{}\n", *z, it->unit());
-                    break;
-                case 10:
-                    ui->out("{:d}{}\n", *z, it->unit());
-                    break;
-                case 16:
-                    ui->out("{:x}{}\n", *z, it->unit());
-                    break;
-            }
-        }
-        else
-        {
-            std::visit(
-                [it, ui](const auto& a) { ui->out("{}{}\n", a, it->unit()); },
-                v);
-        }
+        c--;
     }
 }
 

@@ -48,15 +48,11 @@ enum class level
 };
 extern level debug_level;
 
-static inline void _log(level lvl, const source_location& sl,
-                        const std::string& message)
+static inline void _log(const source_location& sl, const std::string& message)
 {
-    if (lvl <= debug_level)
-    {
-        std::string msg =
-            fmt::format("{:s}:{:d}: {:s}", sl.file_name(), sl.line(), message);
-        ui::get()->err(msg);
-    }
+    std::string msg =
+        fmt::format("{:s}:{:d}: {:s}", sl.file_name(), sl.line(), message);
+    ui::get()->err(msg);
 }
 
 template <level L = level::debug, any_but<source_location>... Args>
@@ -64,8 +60,11 @@ struct log
 {
     explicit log(const source_location& loc, std::string_view f, Args... args)
     {
-        std::string msg = fmt::vformat(f, fmt::make_format_args(args...));
-        _log(L, loc, msg);
+        if (L <= debug_level)
+        {
+            std::string msg = fmt::vformat(f, fmt::make_format_args(args...));
+            _log(loc, msg);
+        }
     }
     explicit log(std::string_view f, Args... args,
                  const source_location& loc = source_location::current()) :
