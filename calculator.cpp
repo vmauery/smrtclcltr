@@ -515,12 +515,11 @@ bool Calculator::run_one(std::string expr)
             expr = expr.substr(0, ubar);
             e.unit(unitstr);
         }
-        // time literals ns, us, ms, s, m, h, d
-        if (expr.ends_with("ns") || expr.ends_with("us") ||
-            expr.ends_with("ms") || expr.ends_with("s") ||
-            expr.ends_with("m") || expr.ends_with("h") || expr.ends_with("d"))
+        // time literals ns, us, ms, s, m, h, d, or
+        // absolute times of the ISO8601 format: yyyy-mm-dd[Thh:mm:ss]
+        if (std::optional<time_> t = parse_time(expr); t)
         {
-            e.value(parse_time(expr));
+            e.value(*t);
         }
         else if (expr.starts_with("(") || expr.ends_with("i"))
         {

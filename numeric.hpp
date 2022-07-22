@@ -856,9 +856,10 @@ struct time_
     {
         if (t.absolute)
         {
-            unsigned long long nanos = static_cast<unsigned long long>(
-                (helper::numerator(t.value) * mpz(1'000'000'000ull)) /
+            long long nanos = static_cast<long long>(
+                (helper::numerator(t.value) * mpz(1'000'000'000ll)) /
                 helper::denominator(t.value));
+            lg::debug("value={}, nanos={}\n", t.value, nanos);
             std::chrono::duration d = std::chrono::nanoseconds(nanos);
             std::chrono::time_point<std::chrono::system_clock> tp(d);
             const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
@@ -915,7 +916,7 @@ std::ostream& operator<<(std::ostream& out, const numeric& n);
 
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
 mpq parse_mpf(const std::string& s);
-time_ parse_time(const std::string& s);
+std::optional<time_> parse_time(const std::string& s);
 
 static inline mpz to_mpz(const numeric& n)
 {

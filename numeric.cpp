@@ -221,7 +221,7 @@ mpc parse_mpc(const std::string& s)
     return mpc(complex_parts[0], complex_parts[1]);
 }
 
-time_ parse_time(const std::string& s)
+std::optional<time_> parse_time(const std::string& s)
 {
     static std::regex time_literal("("           // start of value capture
                                    "[-+.eE\\d]+" // number bits
@@ -237,47 +237,152 @@ time_ parse_time(const std::string& s)
                                    ")"           // end of units capture
                                    ,
                                    std::regex::ECMAScript);
+    static std::regex iso_8601("([\\d]{4})-"  // year
+                               "([\\d]{2})-"  // month
+                               "([\\d]{2})"   // day
+                               "(?:"          // non-capturing time group
+                               "T([\\d]{2}):" // hour
+                               "([\\d]{2}):"  // minute
+                               "([\\d]{2})"   // second
+                               "([.][\\d]+)?" // optional sub-seconds
+                               ")?"           // end of non-capturing time group
+                               ,
+                               std::regex::ECMAScript);
+    static std::regex dmmyyyy("([\\d]+)-?"   // day
+                              "("            // month group
+                              "jan|feb|mar|" // months
+                              "apr|may|jun|" // months
+                              "jul|aug|sep|" // months
+                              "oct|nov|dec"  // months
+                              ")-?"          // end month group
+                              "([\\d]{4})"   // year
+                              "(?:"          // non-capturing time group
+                              "T([\\d]{2}):" // hour
+                              "([\\d]{2}):"  // minute
+                              "([\\d]{2})"   // second
+                              "([.][\\d]+)?" // optional sub-seconds
+                              ")?"           // end of non-capturing time group
+                              ,
+                              std::regex::ECMAScript);
     std::smatch parts;
-    if (!std::regex_match(s, parts, time_literal))
+    if (std::regex_match(s, parts, time_literal))
     {
-        throw std::invalid_argument("input failed to match time literal regex");
+        // [0] entire number
+        // [1] value
+        // [2] units
+        mpq value = parse_mpf(parts[1].str());
+        std::string units = parts[2].str();
+        if (units == "ns")
+        {
+            // no-op
+        }
+        else if (units == "us")
+        {
+            value *= mpq(1'000ull, 1);
+        }
+        else if (units == "ms")
+        {
+            value *= mpq(1'000'000ull, 1);
+        }
+        else if (units == "s")
+        {
+            value *= mpq(1'000'000'000ull, 1);
+        }
+        else if (units == "m")
+        {
+            value *= mpq(60ull * 1'000'000'000ull, 1);
+        }
+        else if (units == "h")
+        {
+            value *= mpq(60ull * 60ull * 1'000'000'000ull, 1);
+        }
+        else if (units == "d")
+        {
+            value *= mpq(24ull * 60ull * 60ull * 1'000'000'000ull, 1);
+        }
+        // all values are in terms of nanoseconds
+        value /= mpq(1'000'000'000ull, 1);
+        return time_(value, false);
     }
-    // [0] entire number
-    // [1] value
-    // [2] units
-    mpq value = parse_mpf(parts[1].str());
-    std::string units = parts[2].str();
-    if (units == "ns")
+    else if (std::regex_match(s, parts, iso_8601))
     {
-        // no-op
+        // [0] entire date
+        // [1] year
+        // [2] month
+        // [3] day
+        // [4] hour
+        // [5] minute
+        // [6] second
+        // [7] sub-second
+        std::tm tm{};
+        std::stringstream ss(s);
+        time_ subsecond{};
+        if (parts[4].matched)
+        {
+            ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+            if (parts[7].matched)
+            {
+                if (std::optional<time_> s = parse_time(parts[7].str() + "s");
+                    s)
+                {
+                    subsecond = *s;
+                }
+            }
+        }
+        else
+        {
+            ss >> std::get_time(&tm, "%Y-%m-%d");
+        }
+        if (ss.fail())
+        {
+            throw std::invalid_argument("Failed to parse ISO 8601 date");
+        }
+        lg::debug("tm{{ sec:{}, min:{}, hour:{}, mday:{}, mon:{}, "
+                  "year:{}, wday:{}, yday:{}, dst:{} }}\n",
+                  tm.tm_sec, tm.tm_min, tm.tm_hour, tm.tm_mday, tm.tm_mon,
+                  tm.tm_year, tm.tm_wday, tm.tm_yday, tm.tm_isdst);
+        auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+        time_ t(tp);
+        return t + subsecond;
     }
-    else if (units == "us")
+    else if (std::regex_match(s, parts, dmmyyyy))
     {
-        value *= mpq(1'000ull, 1);
+        std::tm tm{};
+        std::stringstream ss;
+        ss << parts[1].str() << '-' << parts[2].str() << '-' << parts[3].str();
+        time_ subsecond{};
+        if (parts[4].matched)
+        {
+            ss << 'T' << parts[4].str() << ':' << parts[5].str() << ':'
+               << parts[6].str();
+            ss >> std::get_time(&tm, "%d-%b-%YT%H:%M:%S");
+            if (parts[7].matched)
+            {
+                if (std::optional<time_> s = parse_time(parts[7].str() + "s");
+                    s)
+                {
+                    subsecond = *s;
+                }
+            }
+        }
+        else
+        {
+            ss >> std::get_time(&tm, "%d-%b-%Y");
+        }
+        if (ss.fail())
+        {
+            throw std::invalid_argument("Failed to parse dd-mmm-yyyy date");
+        }
+        lg::debug("tm{{ sec:{}, min:{}, hour:{}, mday:{}, mon:{}, "
+                  "year:{}, wday:{}, yday:{}, dst:{} }}\n",
+                  tm.tm_sec, tm.tm_min, tm.tm_hour, tm.tm_mday, tm.tm_mon,
+                  tm.tm_year, tm.tm_wday, tm.tm_yday, tm.tm_isdst);
+        auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+        time_ t(tp);
+        return t + subsecond;
     }
-    else if (units == "ms")
-    {
-        value *= mpq(1'000'000ull, 1);
-    }
-    else if (units == "s")
-    {
-        value *= mpq(1'000'000'000ull, 1);
-    }
-    else if (units == "m")
-    {
-        value *= mpq(60ull * 1'000'000'000ull, 1);
-    }
-    else if (units == "h")
-    {
-        value *= mpq(60ull * 60ull * 1'000'000'000ull, 1);
-    }
-    else if (units == "d")
-    {
-        value *= mpq(24ull * 60ull * 60ull * 1'000'000'000ull, 1);
-    }
-    // all values are in terms of nanoseconds
-    value /= mpq(1'000'000'000ull, 1);
-    return time_(value, false);
+    lg::debug("not a date\n");
+    return std::nullopt;
 }
 
 numeric reduce_numeric(const numeric& n, int precision)
