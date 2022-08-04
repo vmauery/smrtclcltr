@@ -1,6 +1,6 @@
 project('smrtclcltr', 'cpp',
   version : '1.0',
-  meson_version: '>=0.53.2',
+  meson_version: '>=0.63.0',
   default_options : [
     'werror=true',
     'warning_level=3',
@@ -20,7 +20,7 @@ version_src = vcs_tag(
 cxx = meson.get_compiler('cpp')
 build = get_option('buildtype')
 
-numeric = dependency('boost')
+numeric = dependency('mpfr')
 if (get_option('numeric') == 'mpfr')
   numeric = dependency('mpfr')
   add_project_arguments(['-DUSE_MPFR_BACKEND'], language: 'cpp')
@@ -35,7 +35,7 @@ endif
 
 fmt = dependency('fmt')
 
-all_dependencies = [ numeric, fmt ]
+base_deps = [ numeric, fmt ]
 
 add_project_arguments(
   cxx.get_supported_arguments([
@@ -46,7 +46,6 @@ add_project_arguments(
     '-Wno-reorder',
     '-Wnon-virtual-dtor',
     # '-Wnull-dereference', # gcc gives false positives
-    '-Wold-style-cast',
     '-Woverloaded-virtual',
     '-Wunused',
     ]),
@@ -67,7 +66,7 @@ security_flags = [
 rldep = dependency('readline', required: false)
 if rldep.found() and get_option('readline') == true
   add_project_arguments(['-DHAVE_READLINE'], language: 'cpp')
-  all_dependencies += [ rldep ]
+  base_deps += [ rldep ]
 endif
 
 ## Add security flags for builds of type 'release','debugoptimized' and 'minsize'
@@ -93,12 +92,11 @@ add_project_arguments(
     ],
   language : 'cpp')
 
-src = [
+smrty_src = [
   'calculator.cpp',
   'constants.cpp',
   'debug.cpp',
   'input.cpp',
-  'main.cpp',
   'numeric.cpp',
   'units.cpp',
   version_src,
@@ -121,8 +119,15 @@ src = [
   'functions/util_funcs.cpp',
   ]
 
+smrty_lib = static_library('smtrty', smrty_src)
+
+cli_deps = base_deps
+cli_src = [
+  'main_cli.cpp',
+  ]
 
 executable('smrtclcltr',
-  sources: src,
-  dependencies: all_dependencies
+  sources: cli_src,
+  dependencies: cli_deps,
+  link_whole: smrty_lib,
   )
