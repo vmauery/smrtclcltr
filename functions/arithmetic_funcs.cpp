@@ -143,6 +143,42 @@ bool divide::op(Calculator& calc) const
 }
 // };
 
+struct percent_change : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"%ch"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y %ch\n"
+            "\n"
+            "    Returns the percent change from x to y\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_conv_op(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw std::invalid_argument("units do not match");
+                }
+                return {(b - a) / a, units::unit{}};
+            },
+            std::tuple<mpz>{}, std::tuple<mpq>{},
+            std::tuple<mpq, mpf, mpc, time_>{});
+    }
+};
+
 struct lshift : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -534,6 +570,7 @@ register_calc_fn(add);
 register_calc_fn(subtract);
 register_calc_fn(multiply);
 register_calc_fn(divide);
+register_calc_fn(percent_change);
 register_calc_fn(lshift);
 register_calc_fn(rshift);
 register_calc_fn(floor);
