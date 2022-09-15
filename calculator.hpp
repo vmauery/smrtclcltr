@@ -105,6 +105,7 @@ class Calculator
 
     void show_stack();
     std::string get_next_token();
+    bool run_help();
     bool run_one(std::string expr);
 
     bool _running = true;

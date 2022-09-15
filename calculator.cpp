@@ -14,6 +14,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <function.hpp>
 #include <input.hpp>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <ui.hpp>
 #include <version.hpp>
@@ -401,6 +402,67 @@ register_calc_fn(radians);
 register_calc_fn(degrees);
 register_calc_fn(gradiens);
 
+struct column_layout
+{
+    explicit column_layout(size_t n) : cols(n), len(0), valid(true)
+    {
+    }
+    std::vector<size_t> cols;
+    size_t len;
+    bool valid;
+};
+
+column_layout find_best_layout(const std::vector<std::string>& words,
+                               size_t width)
+{
+    constexpr size_t PADDING_SIZE = 2; // 2 spaces
+    // max columns should be less than the ideal if there is minimal padding
+    size_t total_chars = std::accumulate(
+        words.begin(), words.end(), 0, [](size_t sum, const std::string& w) {
+            return sum + w.size() + PADDING_SIZE;
+        });
+    size_t max_columns = words.size() * width / total_chars;
+    std::vector<column_layout> layouts;
+    layouts.reserve(max_columns);
+    for (size_t i = 0; i < max_columns; i++)
+    {
+        layouts.emplace_back(i + 1);
+    }
+    // place each word in each layout
+    for (size_t idx = 0; idx < words.size(); idx++)
+    {
+        size_t w_len = words[idx].size() + PADDING_SIZE;
+        for (auto& layout : layouts)
+        {
+            size_t col_count = layout.cols.size();
+            size_t row_count =
+                ceil(static_cast<double>(words.size()) / col_count);
+            size_t this_col = idx / row_count;
+            if (layout.valid)
+            {
+                if (w_len > layout.cols[this_col])
+                {
+                    layout.len += w_len - layout.cols[this_col];
+                    layout.cols[this_col] = w_len;
+                    if (layout.len > width)
+                    {
+                        layout.valid = false;
+                    }
+                }
+            }
+        }
+    }
+    // return the best layout
+    for (auto l = layouts.rbegin(); l != layouts.rend(); l++)
+    {
+        if (l->valid)
+        {
+            return *l;
+        }
+    }
+    return column_layout(1);
+}
+
 Calculator::Calculator()
 {
     config.interactive = isatty(STDIN_FILENO);
@@ -459,40 +521,52 @@ std::string binary_to_hex(const std::string& v)
     return out;
 }
 
+bool Calculator::run_help()
+{
+    auto ui = ui::get();
+    // if no arguments follow,
+    auto fn = get_next_token();
+    if (fn == "" || fn == "\n")
+    {
+        constexpr size_t WIDTH = 80; // FIXME: get this from the window
+        column_layout l = find_best_layout(_op_names, WIDTH);
+        size_t col_count = l.cols.size();
+        size_t row_count =
+            ceil(static_cast<double>(_op_names.size()) / col_count);
+        for (size_t i = 0; i < row_count; i++)
+        {
+            for (size_t j = 0; j < col_count; j++)
+            {
+                size_t idx = row_count * j + i;
+                if (idx >= _op_names.size())
+                {
+                    break;
+                }
+                ui->out("{0: <{1}}", _op_names[idx], l.cols[j]);
+            }
+            ui->out("\n");
+        }
+        return true;
+    }
+    auto help_op = _operations.find(fn);
+    if (help_op != _operations.end())
+    {
+        ui->out("{}\n\t{}\n", help_op->second->name(), help_op->second->help());
+    }
+    // drain the input so stack doesn't get printed
+    std::string nt;
+    do
+    {
+        nt = get_next_token();
+    } while (nt != "\n");
+    return true;
+}
+
 bool Calculator::run_one(std::string expr)
 {
     if (expr == "help")
     {
-        auto ui = ui::get();
-        // if no arguments follow,
-        auto fn = get_next_token();
-        if (fn == "" || fn == "\n")
-        {
-            size_t mxlen = _op_names_max_strlen + 4;
-            size_t cols = 80 / mxlen;
-            for (size_t idx = 0; idx < _op_names.size(); idx++)
-            {
-                ui->out("{0: <{1}}", _op_names[idx], mxlen);
-                if (idx % cols == (cols - 1) || idx == (_op_names.size() - 1))
-                {
-                    ui->out("\n");
-                }
-            }
-            return true;
-        }
-        auto help_op = _operations.find(fn);
-        if (help_op != _operations.end())
-        {
-            ui->out("{}\n\t{}\n", help_op->second->name(),
-                    help_op->second->help());
-        }
-        // drain the input so stack doesn't get printed
-        std::string nt;
-        do
-        {
-            nt = get_next_token();
-        } while (nt != "\n");
-        return true;
+        return run_help();
     }
     auto calc_fn = _operations.find(expr);
     if (calc_fn != _operations.end())
