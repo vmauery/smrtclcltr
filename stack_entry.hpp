@@ -35,6 +35,11 @@ struct stack_entry
     }
     void value(const numeric& n)
     {
+        std::visit(
+            [](const auto& v) {
+                lg::debug("value(): type(n) = {}, n = {}\n", DEBUG_TYPE(v), v);
+            },
+            n);
         _value = reduce_numeric(n, precision);
     }
 

@@ -155,90 +155,6 @@ static inline mpz denominator(const mpq& q)
 }
 } // namespace helper
 
-// implicit conversions are a nightmare, make it all explicit
-// to_mpz
-static inline mpz to_mpz(const mpz& v)
-{
-    return v;
-}
-static inline mpz to_mpz(const mpf& v)
-{
-    return static_cast<mpz>(v);
-}
-
-static inline mpz to_mpz(const mpq& v)
-{
-    return static_cast<mpz>(static_cast<mpf>(v));
-}
-static inline mpz to_mpz(const mpc& v)
-{
-    return static_cast<mpz>(v.real());
-}
-// to_mpf
-static inline mpf to_mpf(const mpz& v)
-{
-    return mpf(v);
-}
-static inline mpf to_mpf(const mpf& v)
-{
-    return v;
-}
-static inline mpf to_mpf(const mpq& v)
-{
-    return mpf(helper::numerator(v)) / mpf(helper::denominator(v));
-}
-static inline mpf to_mpf(const mpc& v)
-{
-    return v.real();
-}
-// to_mpq
-static inline mpq to_mpq(const mpz& v)
-{
-    return v;
-}
-static inline mpq to_mpq(const mpf& v)
-{
-    try
-    {
-        // try an exact quotient first
-        return make_quotient(v, default_precision);
-    }
-    catch (const std::exception& e)
-    {
-        // do the best with our precision (we cannot fail)
-        mpz den(1);
-        den <<= default_precision;
-        return mpq(to_mpz(v * mpf(den)), den);
-    }
-}
-static inline mpq to_mpq(const mpq& v)
-{
-    return v;
-}
-static inline mpq to_mpq(const mpc& v)
-{
-    // magnitude here instead?
-    mpf vmag = abs(v);
-    return to_mpq(vmag);
-}
-// to_mpc
-static inline mpc to_mpc(const mpz& v)
-{
-    return mpc(mpf(v), 0);
-}
-static inline mpc to_mpc(const mpf& v)
-{
-    return v;
-}
-static inline mpc to_mpc(const mpq& v)
-{
-    return mpc(to_mpf(v), 0);
-}
-static inline mpc to_mpc(const mpc& v)
-{
-    return v;
-}
-
 // explicit string parsers
 static inline mpz parse_mpz(const std::string& s)
 {
@@ -309,12 +225,10 @@ inline constexpr bool is_arithmetic_v = std::is_arithmetic<T>::value;
 template <typename T>
 struct rational
 {
-    T num;
-    T den;
+    T num = 0;
+    T den = 1;
 
-    rational() : num(0), den(1)
-    {
-    }
+    rational() = default;
 
     rational(const rational&) = default;
     rational(rational&&) = default;
@@ -376,19 +290,19 @@ struct rational
     }
     bool operator<(const rational& r) const
     {
-        return double(num) / double(den) < double(r.num) / double(r.den);
+        return num * r.den < r.num * den;
     }
     bool operator>(const rational& r) const
     {
-        return double(num) / double(den) > double(r.num) / double(r.den);
+        return num * r.den > r.num * den;
     }
     bool operator<=(const rational& r) const
     {
-        return double(num) / double(den) <= double(r.num) / double(r.den);
+        return num * r.den >= r.num * den;
     }
     bool operator>=(const rational& r) const
     {
-        return double(num) / double(den) >= double(r.num) / double(r.den);
+        return num * r.den >= r.num * den;
     }
     /* ops with other ratios */
     rational operator+(const rational& r) const
@@ -471,93 +385,6 @@ static inline mpz denominator(const mpq& q)
 }
 } // namespace helper
 
-// implicit conversions are a nightmare, make it all explicit
-// to_mpz
-static inline mpz to_mpz(const mpz& v)
-{
-    return v;
-}
-static inline mpz to_mpz(const mpf& v)
-{
-    return static_cast<mpz>(v);
-}
-
-static inline mpz to_mpz(const mpq& v)
-{
-    return helper::numerator(v) / helper::denominator(v);
-}
-static inline mpz to_mpz(const mpc& v)
-{
-    return static_cast<mpz>(v.real());
-}
-// to_mpf
-static inline mpf to_mpf(const mpz& v)
-{
-    return v;
-}
-static inline mpf to_mpf(const mpf& v)
-{
-    return v;
-}
-static inline mpf to_mpf(const mpq& v)
-{
-    return static_cast<mpf>(helper::numerator(v)) /
-           static_cast<mpf>(helper::denominator(v));
-}
-static inline mpf to_mpf(const mpc& v)
-{
-    return v.real();
-}
-// to_mpq
-static inline mpq to_mpq(const mpz& v)
-{
-    return mpq(v, 1);
-}
-static inline mpq to_mpq(const mpf& v)
-{
-    try
-    {
-        // try an exact quotient first
-        return make_quotient(v, default_precision);
-    }
-    catch (const std::exception& e)
-    {
-        // do the best with our precision (we cannot fail)
-        mpz den(1);
-        den <<= default_precision;
-        return mpq(to_mpz(v * mpf(den)), den);
-    }
-}
-static inline mpq to_mpq(const mpq& v)
-{
-    return v;
-}
-static inline mpq to_mpq(const mpc& v)
-{
-    // magnitude here instead?
-    mpf vmag = abs(v);
-    return to_mpq(vmag);
-}
-// to_mpc
-static inline mpc to_mpc(const mpz& v)
-{
-    return mpc(v);
-}
-static inline mpc to_mpc(const mpf& v)
-{
-    return v;
-}
-static inline mpc to_mpc(const mpq& v)
-{
-    mpf r = static_cast<mpf>(helper::numerator(v)) /
-            static_cast<mpf>(helper::denominator(v));
-    return mpc(r, 0);
-}
-static inline mpc to_mpc(const mpc& v)
-{
-    return v;
-}
-
 // string parsers
 static inline mpz parse_mpz(const std::string& s)
 {
@@ -620,6 +447,90 @@ static inline mpq parse_mpq(const std::string& s)
 
 #endif // USE_BASIC_TYPES
 
+// implicit conversions are a nightmare, make it all explicit
+// to_mpz
+static inline mpz to_mpz(const mpz& v)
+{
+    return v;
+}
+static inline mpz to_mpz(const mpf& v)
+{
+    return static_cast<mpz>(v);
+}
+
+static inline mpz to_mpz(const mpq& v)
+{
+    return helper::numerator(v) / helper::denominator(v);
+}
+static inline mpz to_mpz(const mpc& v)
+{
+    return static_cast<mpz>(v.real());
+}
+// to_mpf
+static inline mpf to_mpf(const mpz& v)
+{
+    return mpf(v);
+}
+static inline mpf to_mpf(const mpf& v)
+{
+    return v;
+}
+static inline mpf to_mpf(const mpq& v)
+{
+    return mpf(helper::numerator(v)) / mpf(helper::denominator(v));
+}
+static inline mpf to_mpf(const mpc& v)
+{
+    return v.real();
+}
+// to_mpq
+static inline mpq to_mpq(const mpz& v)
+{
+    return mpq(v, 1);
+}
+static inline mpq to_mpq(const mpf& v)
+{
+    try
+    {
+        // try an exact quotient first
+        return make_quotient(v, default_precision);
+    }
+    catch (const std::exception& e)
+    {
+        // do the best with our precision (we cannot fail)
+        mpz den(1);
+        den <<= default_precision;
+        return mpq(to_mpz(v * mpf(den)), den);
+    }
+}
+static inline mpq to_mpq(const mpq& v)
+{
+    return v;
+}
+static inline mpq to_mpq(const mpc& v)
+{
+    // magnitude here instead?
+    mpf vmag = abs(v);
+    return to_mpq(vmag);
+}
+// to_mpc
+static inline mpc to_mpc(const mpz& v)
+{
+    return mpc(mpf(v), 0);
+}
+static inline mpc to_mpc(const mpf& v)
+{
+    return v;
+}
+static inline mpc to_mpc(const mpq& v)
+{
+    return mpc(to_mpf(v), 0);
+}
+static inline mpc to_mpc(const mpc& v)
+{
+    return v;
+}
+
 struct time_
 {
     time_() : value(0, 0), absolute(false)
@@ -642,19 +553,6 @@ struct time_
     // parse time_ from string
     explicit time_(const std::string& t) :
         value(make_quotient(t)), absolute(false)
-    {
-    }
-
-    explicit time_(const mpz& t) : value(to_mpq(t)), absolute(true)
-    {
-    }
-    explicit time_(const mpq& t) : value(to_mpq(t)), absolute(true)
-    {
-    }
-    explicit time_(const mpf& t) : value(to_mpq(t)), absolute(true)
-    {
-    }
-    explicit time_(const mpc& t) : value(to_mpq(t)), absolute(true)
     {
     }
 
@@ -835,23 +733,6 @@ struct time_
         return *this;
     }
 
-    /*
-    operator mpz() const
-    {
-        return static_cast<mpz>(helper::numerator(value) /
-                                helper::denominator(value));
-    }
-    operator mpf() const
-    {
-        return static_cast<mpf>(helper::numerator(value)) /
-               static_cast<mpf>(helper::denominator(value));
-    }
-    operator mpc() const
-    {
-        return static_cast<mpf>(helper::numerator(value)) /
-               static_cast<mpf>(helper::denominator(value));
-    }
-    */
     friend std::ostream& operator<<(std::ostream& output, const time_& t)
     {
         if (t.absolute)
@@ -902,7 +783,7 @@ time_ operator/(const S& s, const time_& t)
 
 using numeric = std::variant<mpz, mpf, mpc, mpq, time_>;
 
-numeric reduce_numeric(const numeric& n, int precision = 0);
+numeric reduce_numeric(const numeric& n, int precision = 2);
 
 static constexpr auto numeric_types = std::to_array<const char*>({
     "mpz",
@@ -917,6 +798,11 @@ std::ostream& operator<<(std::ostream& out, const numeric& n);
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
 mpq parse_mpf(const std::string& s);
 std::optional<time_> parse_time(const std::string& s);
+
+static inline bool operator<(const numeric& a, const numeric& b)
+{
+    return std::visit([](const auto& a, const auto& b) { return a < b; }, a, b);
+}
 
 static inline mpz to_mpz(const numeric& n)
 {
@@ -933,11 +819,6 @@ static inline mpq to_mpq(const numeric& n)
 static inline mpc to_mpc(const numeric& n)
 {
     return std::visit([](const auto& a) { return to_mpc(a); }, n);
-}
-
-static inline bool operator<(const numeric& a, const numeric& b)
-{
-    return std::visit([](const auto& a, const auto& b) { return a < b; }, a, b);
 }
 
 template <typename TypeOut, typename TypeIn>
@@ -1109,10 +990,6 @@ static inline time_ operator/(const time_& t, const mpq& q)
     nt.value /= q;
     return nt;
 }
-static inline mpq operator/(const mpq& q, const mpz& z)
-{
-    return q / to_mpq(z);
-}
 static inline mpq operator/(const mpz& z, const mpq& q)
 {
     return to_mpq(z) / q;
@@ -1128,6 +1005,18 @@ static inline mpc operator/(const mpq& q, const mpc& c)
 static inline mpc operator/(const mpz& z, const mpc& c)
 {
     return to_mpc(z) / c;
+}
+static inline mpc operator/(const mpc& c, const mpz& z)
+{
+    return c / to_mpc(z);
+}
+static inline mpf operator/(const mpq& q, const mpf& f)
+{
+    return to_mpf(q) / f;
+}
+static inline mpf operator/(const mpf& f, const mpq& q)
+{
+    return f / to_mpf(q);
 }
 
 struct binary_wrapper
@@ -1342,5 +1231,33 @@ struct fmt::formatter<time_>
         std::stringstream ss;
         ss << t;
         return format_to(ctx.out(), "{}", ss.str());
+    }
+};
+
+template <typename... Args>
+struct fmt::formatter<std::variant<Args...>>
+{
+    // Parses format specifications of the form
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+    {
+        auto it = ctx.begin(), end = ctx.end();
+        // Check if reached the end of the range:
+        if (it != end && *it != '}')
+            throw format_error("invalid format");
+
+        // Return an iterator past the end of the parsed range:
+        return it;
+    }
+
+    // Formats the point p using the parsed format specification (presentation)
+    // stored in this formatter.
+    template <typename FormatContext>
+    auto format(const std::variant<Args...>& t, FormatContext& ctx)
+        -> decltype(ctx.out())
+    {
+        // ctx.out() is an output iterator to write to.
+        auto s =
+            std::visit([](const auto& v) { return fmt::format("{}", v); }, t);
+        return format_to(ctx.out(), "{}", s);
     }
 };

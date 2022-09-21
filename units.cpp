@@ -80,6 +80,7 @@ static boost::bimap<std::string, unit> units_map =
                                    {"", unitless},
                                    {"s", s},
                                    {"m", m},
+                                   {"m", m},
                                    {"dm", dm},
                                    {"cm", cm},
                                    {"mm", mm},
@@ -109,6 +110,9 @@ static boost::bimap<std::string, unit> units_map =
                                    {"lm", lm},
                                    {"lx", lx},
                                    {"Hz", Hz},
+                                   // other scaled units
+                                   {"min", min},
+                                   {"hr", hr},
                                    // imperial units
                                    {"in", in},
                                    {"ft", ft},
@@ -201,11 +205,27 @@ numeric unit::conv(unit& o, const numeric& v) const
 {
     if (id == o.id)
     {
-        lg::debug("conv: exp = {}, scale = {}, o.exp = {}, o.scale = {}\n", exp,
-                  scale, o.exp, o.scale);
+        std::visit(
+            [this, &o](const auto& n) {
+                lg::debug(
+                    "conv: type(v) = {}, v = {}, exp = {}, scale = {}, o.exp = "
+                    "{}, o.scale = {}\n",
+                    DEBUG_TYPE(n), n, exp, scale, o.exp, o.scale);
+            },
+            v);
+
         numeric vc = std::visit(
             [&o, this](const auto& n) -> numeric {
-                return n * (o.exp / exp) * (o.scale / scale);
+                lg::debug("type(v) = {}, v = {}, (mpf={})\n", DEBUG_TYPE(n), n,
+                          DEBUG_TYPE(mpf{}));
+                if constexpr (std::is_same_v<decltype(n), const mpf&>)
+                {
+                    return n * to_mpf((o.exp / exp) * (o.scale / scale));
+                }
+                else
+                {
+                    return n * (o.exp / exp) * (o.scale / scale);
+                }
             },
             v);
         o = *this;

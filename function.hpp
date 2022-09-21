@@ -237,19 +237,22 @@ bool two_arg_uconv_op(Calculator& calc, const Fn& fn)
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
 
-    if (a.unit().compat(b.unit()))
+    if (a.unit() != b.unit())
     {
-        // convert b to a units
-        b.value(units::convert(b.value(), b.unit(), a.unit()));
-    }
-    else if (units::are_temp_units(a.unit(), b.unit()))
-    {
-        b.value(std::visit(
-            [ub{b.unit()}, ua{a.unit()}](const auto& v) {
-                return units::scale_temp_units(v, ub, ua);
-            },
-            b.value()));
-        b.unit(a.unit());
+        if (a.unit().compat(b.unit()))
+        {
+            // convert b to a units
+            b.value(units::convert(b.value(), b.unit(), a.unit()));
+        }
+        else if (units::are_temp_units(a.unit(), b.unit()))
+        {
+            b.value(std::visit(
+                [ub{b.unit()}, ua{a.unit()}](const auto& v) {
+                    return units::scale_temp_units(v, ub, ua);
+                },
+                b.value()));
+            b.unit(a.unit());
+        }
     }
 
     auto [cv, nu] = std::visit(
@@ -281,11 +284,15 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
     stack_entry a = calc.stack[1];
     stack_entry b = calc.stack[0];
 
-    if (a.unit().compat(b.unit()))
+    lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
+    lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
+    if (a.unit() != b.unit() && a.unit().compat(b.unit()))
     {
         // convert b to a units
         b.value(units::convert(b.value(), b.unit(), a.unit()));
     }
+    lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
+    lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
     numeric ca = a.value();
     conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
     numeric cb = b.value();
@@ -297,8 +304,12 @@ bool two_arg_conv_op(Calculator& calc, const Fn& fn,
         throw std::runtime_error(
             "Argument(s) failed to reduce after conversion");
     }
+    lg::debug("a: ({} (type {}))\n", lca, DEBUG_TYPE(lca));
+    lg::debug("b: ({} (type {}))\n", lcb, DEBUG_TYPE(lcb));
     auto [cv, nu] = std::visit(
         [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
+            lg::debug("a: ({} (type {}))\n", a, DEBUG_TYPE(a));
+            lg::debug("b: ({} (type {}))\n", b, DEBUG_TYPE(b));
             return fn(a, b, ua, ub);
         },
         lca, lcb);

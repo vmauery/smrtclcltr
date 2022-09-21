@@ -5,11 +5,18 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #pragma once
 
+#include <cxxabi.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
+#include <iomanip>
+#include <iostream>
+#include <string>
 #include <string_view>
+#include <type_traits>
+#include <typeinfo>
 #include <ui.hpp>
+#include <variant>
 
 #if 0 // __has_builtin(__builtin_source_location)
 #include <source_location>
@@ -108,3 +115,57 @@ MK_LOG_LVL(debug);
 #undef MK_LOG_LVL
 
 } // namespace lg
+
+template <typename T>
+struct is_variant : std::false_type
+{
+};
+
+template <typename... Args>
+struct is_variant<std::variant<Args...>> : std::true_type
+{
+};
+
+template <typename T>
+inline constexpr bool is_variant_v = is_variant<T>::value;
+
+template <typename T>
+struct debug_type
+{
+    std::string name{};
+    debug_type(const T&)
+    {
+        char* dname = 0;
+        int status;
+        dname = abi::__cxa_demangle(typeid(T).name(), 0, 0, &status);
+        if (dname != nullptr)
+        {
+            name = dname;
+        }
+        else
+        {
+            name = typeid(T).name();
+        }
+        free(dname);
+    }
+};
+
+static inline std::string DEBUG_TYPE(const auto& x)
+{
+    if constexpr (is_variant_v<typename std::decay_t<decltype(x)>>)
+    {
+        return "variant<" +
+               std::visit(
+                   [](const auto& x) {
+                       debug_type t(x);
+                       return t.name;
+                   },
+                   x) +
+               ">";
+    }
+    else
+    {
+        debug_type t(x);
+        return t.name;
+    }
+}

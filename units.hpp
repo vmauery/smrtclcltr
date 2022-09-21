@@ -59,13 +59,11 @@ const Id id_next(43, 1);
 
 struct unit
 {
-    Id id;       // some composite of primes that specifies num/denom ids
-    Scale exp;   // SI prefixes (only for base-10 scaling)
-    Scale scale; // scaling from SI units to non-SI units
+    Id id = id_None;   // some composite of primes that specifies num/denom ids
+    Scale exp{1, 1};   // SI prefixes (only for base-10 scaling)
+    Scale scale{1, 1}; // scaling from SI units to non-SI units
 
-    unit() : id(id_None), exp(1, 1), scale(1, 1)
-    {
-    }
+    unit() = default;
 
     explicit unit(const Id& id) : id(id), exp(1, 1), scale(1, 1)
     {
@@ -145,11 +143,11 @@ struct unit
     // exp scaling
     unit operator*(const int& o) const
     {
-        return unit(id, exp * o, scale);
+        return unit(id, exp * mpq(o, 1), scale);
     }
     unit operator/(const int& o) const
     {
-        return unit(id, exp / o, scale);
+        return unit(id, exp / mpq(o, 1), scale);
     }
 
     // foreign unit scaling
@@ -227,10 +225,10 @@ static inline numeric scale_temp_units(const T& v, const unit& ua,
 }
 
 // helper function that makes unit conversions more readable
-// Convert value from units a to units b
-static inline numeric convert(const numeric& v, unit& a, unit& b)
+// Convert value vb from units ub to units ua
+static inline numeric convert(const numeric& vb, unit& ub, unit& ua)
 {
-    return b.conv(a, v);
+    return ua.conv(ub, vb);
 }
 
 // unit op functions

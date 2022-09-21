@@ -391,7 +391,11 @@ numeric reduce_numeric(const numeric& n, int precision)
     {
         precision = default_precision;
     }
-    std::visit([](auto& a) { lg::debug("reduce({})\n", a); }, n);
+    std::visit(
+        [](const auto& v) {
+            lg::debug("reduce({} (type {}))\n", v, DEBUG_TYPE(v));
+        },
+        n);
     /*
      * may be lossy if precision is low... mpf to mpq/mpz might be a lie
      * mpc -> mpf for imaginary = 0

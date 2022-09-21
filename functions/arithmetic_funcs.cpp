@@ -136,7 +136,11 @@ bool divide::op(Calculator& calc) const
         calc,
         [](const auto& a, const auto& b, const units::unit& ua,
            const units::unit& ub) -> std::tuple<numeric, units::unit> {
-            return {a / b, ua / ub};
+            lg::debug("a: ({} (type {}))\n", a, DEBUG_TYPE(a));
+            lg::debug("b: ({} (type {}))\n", b, DEBUG_TYPE(b));
+            auto r = a / b;
+            lg::debug("r: ({} (type {}))\n", r, DEBUG_TYPE(r));
+            return {r, ua / ub};
         },
         std::tuple<mpz>{}, std::tuple<mpq>{},
         std::tuple<mpq, mpf, mpc, time_>{});
