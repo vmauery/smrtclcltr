@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-3-Clause
 namespace function
 {
 
-struct unix_ts : public CalcFunction
+struct date_time : public CalcFunction
 {
     virtual const std::string& name() const final
     {
@@ -23,7 +23,7 @@ struct unix_ts : public CalcFunction
             "\n"
             "    Usage: now\n"
             "\n"
-            "    return a unix timestamp with sub-second precision based\n"
+            "    return a date-time with sub-second precision based\n"
             "    on the system clock"
             // clang-format on
         };
@@ -33,6 +33,39 @@ struct unix_ts : public CalcFunction
     {
         time_ now(std::chrono::system_clock::now());
         calc.stack.emplace_front(now, calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed);
+        return true;
+    }
+};
+
+struct unix_ts : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"unix"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: unix\n"
+            "\n"
+            "    return a unix timestamp with sub-second precision based\n"
+            "    on the system clock"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        auto now = std::chrono::system_clock::now();
+        auto now_ns =
+            std::chrono::time_point_cast<std::chrono::nanoseconds>(now);
+        auto value = now_ns.time_since_epoch();
+        mpq ts(value.count(), 1ul * 1000 * 1000 * 1000);
+        calc.stack.emplace_front(ts, calc.config.base, calc.config.fixed_bits,
                                  calc.config.precision, calc.config.is_signed);
         return true;
     }
@@ -163,4 +196,5 @@ struct calendar : public CalcFunction
 } // namespace function
 
 register_calc_fn(unix_ts);
+register_calc_fn(date_time);
 register_calc_fn(calendar);
