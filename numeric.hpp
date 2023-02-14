@@ -538,14 +538,15 @@ struct time_
     }
 
     template <typename Rep, typename Period>
-    time_(const std::chrono::duration<Rep, Period>& d, bool absolute = false) :
+    explicit time_(const std::chrono::duration<Rep, Period>& d,
+                   bool absolute = false) :
         value(std::chrono::nanoseconds(d).count(), 1'000'000'000ull),
         absolute(absolute)
     {
     }
 
     template <typename Clock, typename Duration>
-    time_(const std::chrono::time_point<Clock, Duration>& tp) :
+    explicit time_(const std::chrono::time_point<Clock, Duration>& tp) :
         time_(tp.time_since_epoch(), true)
     {
     }

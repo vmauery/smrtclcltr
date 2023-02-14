@@ -71,6 +71,103 @@ struct unix_ts : public CalcFunction
     }
 };
 
+struct to_date_time : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"2date"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x 2date\n"
+            "\n"
+            "    return a date-time based on the unix timestamp x"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        if (calc.stack.size() < 1)
+        {
+            return false;
+        }
+        stack_entry e = calc.stack.front();
+        if (e.unit() != units::unit())
+        {
+            return false;
+        }
+        mpq ts;
+        if (const mpq* v = std::get_if<mpq>(&e.value()); v)
+        {
+            ts = *v;
+        }
+        else if (const mpz* v = std::get_if<mpz>(&e.value()); v)
+        {
+            ts = *v;
+        }
+        else
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+
+        time_ t{ts, true};
+        calc.stack.emplace_front(std::move(t), calc.config.base,
+                                 calc.config.fixed_bits, calc.config.precision,
+                                 calc.config.is_signed);
+        return true;
+    }
+};
+
+struct to_unix_ts : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"2unix"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: 2unix\n"
+            "\n"
+            "    return a unix timestamp based on the date-time x"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        if (calc.stack.size() < 1)
+        {
+            return false;
+        }
+        stack_entry e = calc.stack.front();
+        if (e.unit() != units::unit())
+        {
+            return false;
+        }
+        const time_* v = std::get_if<time_>(&e.value());
+        if (!v)
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+
+        mpq ts = v->value;
+        calc.stack.emplace_front(ts, calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed);
+        return true;
+    }
+};
+
 struct calendar : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -197,4 +294,6 @@ struct calendar : public CalcFunction
 
 register_calc_fn(unix_ts);
 register_calc_fn(date_time);
+register_calc_fn(to_unix_ts);
+register_calc_fn(to_date_time);
 register_calc_fn(calendar);
