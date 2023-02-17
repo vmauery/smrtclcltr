@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 
 #include <boost/math/constants/constants.hpp>
 #include <chrono>
@@ -1232,33 +1233,5 @@ struct fmt::formatter<time_>
         std::stringstream ss;
         ss << t;
         return format_to(ctx.out(), "{}", ss.str());
-    }
-};
-
-template <typename... Args>
-struct fmt::formatter<std::variant<Args...>>
-{
-    // Parses format specifications of the form
-    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
-    {
-        auto it = ctx.begin(), end = ctx.end();
-        // Check if reached the end of the range:
-        if (it != end && *it != '}')
-            throw format_error("invalid format");
-
-        // Return an iterator past the end of the parsed range:
-        return it;
-    }
-
-    // Formats the point p using the parsed format specification (presentation)
-    // stored in this formatter.
-    template <typename FormatContext>
-    auto format(const std::variant<Args...>& t, FormatContext& ctx)
-        -> decltype(ctx.out())
-    {
-        // ctx.out() is an output iterator to write to.
-        auto s =
-            std::visit([](const auto& v) { return fmt::format("{}", v); }, t);
-        return format_to(ctx.out(), "{}", s);
     }
 };
