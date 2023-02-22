@@ -23,23 +23,23 @@ std::ostream& operator<<(std::ostream& out, const numeric& n)
 mpq make_quotient(const std::string& s)
 {
     static std::regex real{
-        "([-+])?" // optional sign
-        "(\\d+)?" // optional whole part
-        "(?:"     // start of non-capturing group
-        "\\."     // period
-        "("       // start of float capture
-        "[0]*"    // optional leading zeros
-        "(\\d*)"  // truncated floating part
-        ")"       // end of float capture
-        ")?"      // end of non-capturing group
-        "(?:"     // start of non-capturing group
-        "[eE]"    // exponent marker
-        "("       // start of exponent capture
-        "[+-]?"   // optional sign
-        "[0]*"    // optional leading zeros
-        "\\d+"    // exponent digits
-        ")"       // end of exponent capture
-        ")?"      // end of non-capturing group
+        "([-+])?"    // optional sign
+        "([,\\d]+)?" // optional whole part
+        "(?:"        // start of non-capturing group
+        "\\."        // period
+        "("          // start of float capture
+        "[0]*"       // optional leading zeros
+        "(\\d*)"     // truncated floating part
+        ")"          // end of float capture
+        ")?"         // end of non-capturing group
+        "(?:"        // start of non-capturing group
+        "[eE]"       // exponent marker
+        "("          // start of exponent capture
+        "[+-]?"      // optional sign
+        "[0]*"       // optional leading zeros
+        "\\d+"       // exponent digits
+        ")"          // end of exponent capture
+        ")?"         // end of non-capturing group
     };
     std::smatch parts;
     if (!std::regex_match(s, parts, real))
@@ -177,6 +177,36 @@ mpz make_fixed(const mpz& v, int bits, bool is_signed)
         s1 = v & max_mask;
     }
     return s1;
+}
+
+mpz parse_mpz(std::string s)
+{
+    // remove any commas
+    s.erase(std::remove(s.begin(), s.end(), ','), s.end());
+
+    // if s is base 10 (does not start with 0), and has an e
+    // peel off the e and handle that separately.
+    if (size_t epos{}; s[0] != '0' && (epos = s.find('e')) != std::string::npos)
+    {
+        mpz ret(s.substr(0, epos));
+        std::string exps = s.substr(epos + 1);
+        unsigned int exp{};
+        size_t end{};
+        try
+        {
+            exp = std::stoll(exps, &end);
+        }
+        catch (const std::exception& e)
+        {
+        }
+        if (end != exps.size())
+        {
+            throw std::invalid_argument("input has an invalid exponent");
+        }
+        ret *= mpz(pow_fn(mpf(10), exp));
+        return ret;
+    }
+    return mpz(s);
 }
 
 // accept the form 3.2e7+4.3e6i or (3.2e7,4.3e6)

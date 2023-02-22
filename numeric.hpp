@@ -157,32 +157,7 @@ static inline mpz denominator(const mpq& q)
 } // namespace helper
 
 // explicit string parsers
-static inline mpz parse_mpz(const std::string& s)
-{
-    // if s is base 10 (does not start with 0), and has an e
-    // peel off the e and handle that separately.
-    if (size_t epos{}; s[0] != '0' && (epos = s.find('e')) != std::string::npos)
-    {
-        mpz ret(s.substr(0, epos));
-        std::string exps = s.substr(epos + 1);
-        unsigned int exp{};
-        size_t end{};
-        try
-        {
-            exp = std::stoll(exps, &end);
-        }
-        catch (const std::exception& e)
-        {
-        }
-        if (end != exps.size())
-        {
-            throw std::invalid_argument("input has an invalid exponent");
-        }
-        ret *= mpz(pow_fn(mpf(10), exp));
-        return ret;
-    }
-    return mpz(s);
-}
+extern mpz parse_mpz(std::string s);
 
 extern mpc parse_mpc(const std::string& s);
 

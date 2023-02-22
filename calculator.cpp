@@ -595,11 +595,13 @@ bool Calculator::run_one(std::string expr)
         {
             e.value(*t);
         }
-        else if (expr.starts_with("(") || expr.ends_with("i"))
+        else if (expr.starts_with("(") || expr.ends_with("i") ||
+                 expr.ends_with("j"))
         {
             lg::debug("mpc(\"{}\")\n", expr);
             e.value(parse_mpc(expr));
         }
+        // FIXME: how to use locale-based decimal radix separator
         else if (expr.find(".") != std::string::npos)
         {
             lg::debug("mpf(\"{}\")\n", expr);
@@ -629,6 +631,11 @@ bool Calculator::run_one(std::string expr)
                     {
                         e.base = 16;
                         num = expr;
+                    }
+                    else if (expr.starts_with("0d"))
+                    {
+                        e.base = 10;
+                        num = expr.substr(2);
                     }
                     else if (expr.starts_with("0b"))
                     {
