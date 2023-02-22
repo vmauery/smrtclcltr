@@ -4,6 +4,7 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <charconv>
 #include <chrono>
 #include <cmath>
 #include <functions/common.hpp>
@@ -20,7 +21,7 @@ std::ostream& operator<<(std::ostream& out, const numeric& n)
         [&out](const auto& nn) -> std::ostream& { return out << nn; }, n);
 }
 
-mpq make_quotient(const std::string& s)
+mpq make_quotient(std::string_view s)
 {
     static std::regex real{
         "([-+])?"    // optional sign
@@ -42,7 +43,10 @@ mpq make_quotient(const std::string& s)
         ")?"         // end of non-capturing group
     };
     std::smatch parts;
-    if (!std::regex_match(s, parts, real))
+    // FIXME: when regex gets its shit together and supports string_view, remove
+    //        the temporary std::string below
+    std::string ss{s};
+    if (!std::regex_match(ss, parts, real))
     {
         throw std::runtime_error("input failed to match float regex");
     }
@@ -151,7 +155,7 @@ mpq make_quotient(const mpf& f, int digits)
     return result2;
 }
 
-mpq parse_mpf(const std::string& s)
+mpq parse_mpf(std::string_view s)
 {
     return make_quotient(s);
 }
@@ -179,27 +183,26 @@ mpz make_fixed(const mpz& v, int bits, bool is_signed)
     return s1;
 }
 
-mpz parse_mpz(std::string s)
+mpz parse_mpz(std::string_view s)
 {
     // remove any commas
-    s.erase(std::remove(s.begin(), s.end(), ','), s.end());
+    if (s.find(",") != std::string::npos)
+    {
+        std::string nc{s};
+        nc.erase(std::remove(nc.begin(), nc.end(), ','), nc.end());
+        s = nc;
+    }
 
     // if s is base 10 (does not start with 0), and has an e
     // peel off the e and handle that separately.
     if (size_t epos{}; s[0] != '0' && (epos = s.find('e')) != std::string::npos)
     {
         mpz ret(s.substr(0, epos));
-        std::string exps = s.substr(epos + 1);
+        auto exps = s.substr(epos + 1);
         unsigned int exp{};
-        size_t end{};
-        try
-        {
-            exp = std::stoll(exps, &end);
-        }
-        catch (const std::exception& e)
-        {
-        }
-        if (end != exps.size())
+        auto [ptr, ec] =
+            std::from_chars(exps.data(), exps.data() + exps.size(), exp);
+        if (ec != std::errc() || ptr != (exps.data() + exps.size()))
         {
             throw std::invalid_argument("input has an invalid exponent");
         }
@@ -219,13 +222,16 @@ const std::regex cmplx_regex[] = {
                "-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)[)]$",
                std::regex::ECMAScript),
 };
-mpc parse_mpc(const std::string& s)
+mpc parse_mpc(std::string_view s)
 {
     mpf complex_parts[2]{};
     for (int j = 0; j < 2; j++)
     {
         std::smatch parts;
-        if (std::regex_search(s, parts, cmplx_regex[j]))
+        // FIXME: when regex gets its shit together and supports string_view,
+        // remove the temporary std::string below
+        std::string ss{s};
+        if (std::regex_search(ss, parts, cmplx_regex[j]))
         {
             for (unsigned long i = 0; i < 2; i++)
             {
@@ -251,7 +257,7 @@ mpc parse_mpc(const std::string& s)
     return mpc(complex_parts[0], complex_parts[1]);
 }
 
-std::optional<time_> parse_time(const std::string& s)
+std::optional<time_> parse_time(std::string_view s)
 {
     static std::regex time_literal("("           // start of value capture
                                    "[-+.eE\\d]+" // number bits
@@ -295,7 +301,10 @@ std::optional<time_> parse_time(const std::string& s)
                               ,
                               std::regex::ECMAScript);
     std::smatch parts;
-    if (std::regex_match(s, parts, time_literal))
+    // FIXME: when regex gets its shit together and supports string_view,
+    // remove the temporary std::string below
+    std::string ss{s};
+    if (std::regex_match(ss, parts, time_literal))
     {
         // [0] entire number
         // [1] value
@@ -334,7 +343,9 @@ std::optional<time_> parse_time(const std::string& s)
         value /= mpq(1'000'000'000ull, 1);
         return time_(value, false);
     }
-    else if (std::regex_match(s, parts, iso_8601))
+    // FIXME: when regex gets its shit together and supports string_view,
+    // remove the temporary std::string below
+    else if (std::regex_match(ss, parts, iso_8601))
     {
         // [0] entire date
         // [1] year
@@ -345,11 +356,11 @@ std::optional<time_> parse_time(const std::string& s)
         // [6] second
         // [7] sub-second
         std::tm tm{};
-        std::stringstream ss(s);
+        std::stringstream strs(ss);
         time_ subsecond{};
         if (parts[4].matched)
         {
-            ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+            strs >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
             if (parts[7].matched)
             {
                 if (std::optional<time_> s = parse_time(parts[7].str() + "s");
@@ -361,9 +372,9 @@ std::optional<time_> parse_time(const std::string& s)
         }
         else
         {
-            ss >> std::get_time(&tm, "%Y-%m-%d");
+            strs >> std::get_time(&tm, "%Y-%m-%d");
         }
-        if (ss.fail())
+        if (strs.fail())
         {
             throw std::invalid_argument("Failed to parse ISO 8601 date");
         }
@@ -375,7 +386,9 @@ std::optional<time_> parse_time(const std::string& s)
         time_ t(tp);
         return t + subsecond;
     }
-    else if (std::regex_match(s, parts, dmmyyyy))
+    // FIXME: when regex gets its shit together and supports string_view,
+    // remove the temporary std::string below
+    else if (std::regex_match(ss, parts, dmmyyyy))
     {
         std::tm tm{};
         std::stringstream ss;

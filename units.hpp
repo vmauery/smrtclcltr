@@ -99,7 +99,7 @@ struct unit
         return *this;
     }
 
-    explicit unit(const std::string& u);
+    explicit unit(std::string_view u);
 
     // handle conversions between units
     // change this into o, and modify the accompanying

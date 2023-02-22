@@ -101,17 +101,18 @@ class Calculator
 
     void make_grammar();
     void make_functions();
-    std::optional<std::string> auto_complete(const std::string& in, int state);
+    std::optional<std::string_view> auto_complete(std::string_view in,
+                                                  int state);
 
     void show_stack();
     std::string get_next_token();
     bool run_help();
-    bool run_one(std::string expr);
+    bool run_one(std::string_view expr);
 
     bool _running = true;
 
-    std::map<std::string, const CalcFunction*> _operations;
-    std::vector<std::string> _op_names;
+    std::map<std::string_view, const CalcFunction*> _operations;
+    std::vector<std::string_view> _op_names;
     size_t _op_names_max_strlen;
     std::shared_ptr<Input> input;
 };

@@ -51,7 +51,7 @@ struct stack_entry
     {
         _unit = u;
     }
-    void unit(const std::string& u)
+    void unit(std::string_view u)
     {
         _unit = units::unit(u);
     }

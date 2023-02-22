@@ -142,7 +142,7 @@ template <class T>
 inline constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
 
 mpq make_quotient(const mpf& f, int digits);
-mpq make_quotient(const std::string& s);
+mpq make_quotient(std::string_view s);
 
 namespace helper
 {
@@ -157,11 +157,11 @@ static inline mpz denominator(const mpq& q)
 } // namespace helper
 
 // explicit string parsers
-extern mpz parse_mpz(std::string s);
+extern mpz parse_mpz(std::string_view s);
 
-extern mpc parse_mpc(const std::string& s);
+extern mpc parse_mpc(std::string_view s);
 
-static inline mpq parse_mpq(const std::string& s)
+static inline mpq parse_mpq(std::string_view s)
 {
     return mpq(s);
 }
@@ -216,7 +216,7 @@ struct rational
         reduce();
     }
 
-    explicit rational(const std::string& r)
+    explicit rational(std::string_view r)
     {
         auto d = r.find("/");
         if (d == std::string::npos)
@@ -347,7 +347,7 @@ struct rational
 };
 
 mpq make_quotient(const mpf& f, int digits);
-mpq make_quotient(const std::string& s);
+mpq make_quotient(std::string_view s);
 
 namespace helper
 {
@@ -362,7 +362,7 @@ static inline mpz denominator(const mpq& q)
 } // namespace helper
 
 // string parsers
-static inline mpz parse_mpz(const std::string& s)
+static inline mpz parse_mpz(std::string_view s)
 {
     size_t end = 0;
     mpz ret{};
@@ -414,9 +414,9 @@ static inline mpz parse_mpz(const std::string& s)
     return ret;
 }
 
-extern mpc parse_mpc(const std::string& s);
+extern mpc parse_mpc(std::string_view s);
 
-static inline mpq parse_mpq(const std::string& s)
+static inline mpq parse_mpq(std::string_view s)
 {
     return mpq(s);
 }
@@ -528,7 +528,7 @@ struct time_
     }
 
     // parse time_ from string
-    explicit time_(const std::string& t) :
+    explicit time_(std::string_view t) :
         value(make_quotient(t)), absolute(false)
     {
     }
@@ -773,8 +773,8 @@ static constexpr auto numeric_types = std::to_array<const char*>({
 std::ostream& operator<<(std::ostream& out, const numeric& n);
 
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
-mpq parse_mpf(const std::string& s);
-std::optional<time_> parse_time(const std::string& s);
+mpq parse_mpf(std::string_view s);
+std::optional<time_> parse_time(std::string_view s);
 
 static inline bool operator<(const numeric& a, const numeric& b)
 {

@@ -23,7 +23,7 @@ namespace input
 char* generator_linkage(
     const char* text, int state,
     std::optional<
-        std::function<std::optional<std::string>(const std::string&, int)>>
+        std::function<std::optional<std::string_view>(std::string_view, int)>>
         set_generator);
 extern "C" char** c_input_completion(const char* text, int, int);
 } // namespace input
@@ -69,6 +69,6 @@ class Input
 
   protected:
     bool interactive;
-    std::function<std::optional<std::string>(const std::string&, int)>
+    std::function<std::optional<std::string_view>(std::string_view, int)>
         auto_complete;
 };

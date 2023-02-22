@@ -412,15 +412,16 @@ struct column_layout
     bool valid;
 };
 
-column_layout find_best_layout(const std::vector<std::string>& words,
+column_layout find_best_layout(const std::vector<std::string_view>& words,
                                size_t width)
 {
     constexpr size_t PADDING_SIZE = 2; // 2 spaces
     // max columns should be less than the ideal if there is minimal padding
-    size_t total_chars = std::accumulate(
-        words.begin(), words.end(), 0, [](size_t sum, const std::string& w) {
-            return sum + w.size() + PADDING_SIZE;
-        });
+    size_t total_chars =
+        std::accumulate(words.begin(), words.end(), 0,
+                        [](size_t sum, const std::string_view& w) {
+                            return sum + w.size() + PADDING_SIZE;
+                        });
     size_t max_columns = words.size() * width / total_chars;
     std::vector<column_layout> layouts;
     layouts.reserve(max_columns);
@@ -467,7 +468,7 @@ Calculator::Calculator()
 {
     config.interactive = isatty(STDIN_FILENO);
     input = Input::make_shared(config.interactive,
-                               [this](const std::string& in, int state) {
+                               [this](std::string_view in, int state) {
                                    return auto_complete(in, state);
                                });
 
@@ -481,7 +482,7 @@ Calculator::Calculator()
     make_grammar();
 }
 
-std::string binary_to_hex(const std::string& v)
+std::string binary_to_hex(std::string_view v)
 {
     std::string out;
     out.reserve(v.size() / 4 + 4);
@@ -562,7 +563,7 @@ bool Calculator::run_help()
     return true;
 }
 
-bool Calculator::run_one(std::string expr)
+bool Calculator::run_one(std::string_view expr)
 {
     if (expr == "help")
     {
@@ -585,7 +586,7 @@ bool Calculator::run_one(std::string expr)
         if (auto ubar = expr.find("_"); ubar != std::string::npos)
         {
             // parse units off the end and then let the numeric get parsed below
-            std::string unitstr = expr.substr(ubar + 1);
+            std::string_view unitstr = expr.substr(ubar + 1);
             expr = expr.substr(0, ubar);
             e.unit(unitstr);
         }
@@ -623,7 +624,7 @@ bool Calculator::run_one(std::string expr)
             else
             {
                 lg::debug("mpz(\"{}\")\n", expr);
-                std::string num;
+                std::string_view num;
                 if (expr[0] == '0' && expr.size() > 1)
                 {
                     // check for base prefix
@@ -931,11 +932,11 @@ void Calculator::make_functions()
     std::sort(_op_names.begin(), _op_names.end());
 }
 
-std::optional<std::string> Calculator::auto_complete(const std::string& in,
-                                                     int state)
+std::optional<std::string_view> Calculator::auto_complete(std::string_view in,
+                                                          int state)
 {
     static size_t last_idx = 0;
-    static std::vector<std::string> matches;
+    static std::vector<std::string_view> matches;
     if (state == 0)
     {
         last_idx = 0;

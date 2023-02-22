@@ -11,10 +11,11 @@ namespace input
 char* generator_linkage(
     const char* text, int state,
     std::optional<
-        std::function<std::optional<std::string>(const std::string&, int)>>
+        std::function<std::optional<std::string_view>(std::string_view, int)>>
         set_generator)
 {
-    static std::function<std::optional<std::string>(const std::string&, int)>
+    static std::function<std::optional<std::string_view>(const std::string_view,
+                                                         int)>
         _input_generator;
     if (set_generator)
     {
@@ -25,10 +26,18 @@ char* generator_linkage(
     {
         return nullptr;
     }
-    std::optional<std::string> next = _input_generator(text, state);
+    std::optional<std::string_view> next = _input_generator(text, state);
     if (next)
     {
-        return strdup(next->c_str());
+        // need to strdup the string_view, but don't want to copy to string
+        size_t sz = (*next).size();
+        auto copy = reinterpret_cast<char*>(malloc(sz + 1));
+        if (copy != nullptr)
+        {
+            (*next).copy(copy, sz);
+            copy[sz] = 0;
+            return copy;
+        }
     }
     return nullptr;
 }

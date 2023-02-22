@@ -55,7 +55,7 @@ enum class level
 };
 extern level debug_level;
 
-static inline void _log(const source_location& sl, const std::string& message)
+static inline void _log(const source_location& sl, std::string_view message)
 {
     std::string msg =
         fmt::format("{:s}:{:d}: {:s}", sl.file_name(), sl.line(), message);

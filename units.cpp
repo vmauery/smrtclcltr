@@ -4,6 +4,7 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 #include <algorithm>
+#include <charconv>
 #include <functions/common.hpp>
 #include <units.hpp>
 #include <vector>
@@ -75,65 +76,65 @@ const unit hp = W * Scale(746, 1);                      // horsepower
 
 } // namespace
 
-static boost::bimap<std::string, unit> units_map =
-    make_bimap<std::string, unit>({// si units
-                                   {"", unitless},
-                                   {"s", s},
-                                   {"m", m},
-                                   {"m", m},
-                                   {"dm", dm},
-                                   {"cm", cm},
-                                   {"mm", mm},
-                                   {"kg", kg},
-                                   {"g", g},
-                                   {"A", A},
-                                   {"K", K},
-                                   {"mol", mol},
-                                   {"cd", cd},
-                                   {"rad", rad},
-                                   {"deg", deg},
-                                   {"grad", grad},
-                                   {"degC", degC},
-                                   {"degF", degF},
-                                   {"N", N},
-                                   {"Pa", Pa},
-                                   {"J", J},
-                                   {"W", W},
-                                   {"C", C},
-                                   {"V", V},
-                                   {"F", F},
-                                   {"Ohm", Ohm},
-                                   {"S", S},
-                                   {"Wb", Wb},
-                                   {"T", T},
-                                   {"H", H},
-                                   {"lm", lm},
-                                   {"lx", lx},
-                                   {"Hz", Hz},
-                                   // other scaled units
-                                   {"min", min},
-                                   {"hr", hr},
-                                   // imperial units
-                                   {"in", in},
-                                   {"ft", ft},
-                                   {"yd", yd},
-                                   {"mi", mi},
-                                   {"acre", acre},
-                                   {"oz", oz},
-                                   {"lb", lb},
-                                   {"ton", ton},
-                                   {"floz", fl_oz},
-                                   {"tbsp", tbsp},
-                                   {"tsp", tsp},
-                                   {"cup", cup},
-                                   {"pt", pt},
-                                   {"qt", qt},
-                                   {"gal", gal},
-                                   {"degF", degF},
-                                   {"mph", mph},
-                                   {"hp", hp}});
+static boost::bimap<std::string_view, unit> units_map =
+    make_bimap<std::string_view, unit>({// si units
+                                        {"", unitless},
+                                        {"s", s},
+                                        {"m", m},
+                                        {"m", m},
+                                        {"dm", dm},
+                                        {"cm", cm},
+                                        {"mm", mm},
+                                        {"kg", kg},
+                                        {"g", g},
+                                        {"A", A},
+                                        {"K", K},
+                                        {"mol", mol},
+                                        {"cd", cd},
+                                        {"rad", rad},
+                                        {"deg", deg},
+                                        {"grad", grad},
+                                        {"degC", degC},
+                                        {"degF", degF},
+                                        {"N", N},
+                                        {"Pa", Pa},
+                                        {"J", J},
+                                        {"W", W},
+                                        {"C", C},
+                                        {"V", V},
+                                        {"F", F},
+                                        {"Ohm", Ohm},
+                                        {"S", S},
+                                        {"Wb", Wb},
+                                        {"T", T},
+                                        {"H", H},
+                                        {"lm", lm},
+                                        {"lx", lx},
+                                        {"Hz", Hz},
+                                        // other scaled units
+                                        {"min", min},
+                                        {"hr", hr},
+                                        // imperial units
+                                        {"in", in},
+                                        {"ft", ft},
+                                        {"yd", yd},
+                                        {"mi", mi},
+                                        {"acre", acre},
+                                        {"oz", oz},
+                                        {"lb", lb},
+                                        {"ton", ton},
+                                        {"floz", fl_oz},
+                                        {"tbsp", tbsp},
+                                        {"tsp", tsp},
+                                        {"cup", cup},
+                                        {"pt", pt},
+                                        {"qt", qt},
+                                        {"gal", gal},
+                                        {"degF", degF},
+                                        {"mph", mph},
+                                        {"hp", hp}});
 
-unit::unit(const std::string& u) : id(1, 1), exp(1, 1), scale(1, 1)
+unit::unit(std::string_view u) : id(1, 1), exp(1, 1), scale(1, 1)
 {
     constexpr const std::array<char, 2> tokens = {'*', '/'};
     // parse unit string to turn it into an id
@@ -164,9 +165,10 @@ unit::unit(const std::string& u) : id(1, 1), exp(1, 1), scale(1, 1)
         {
             ustr = ustr.substr(0, p);
             auto expview = ustr.substr(p + 1);
-            pval = std::stoi(std::string(expview.begin(), expview.end()));
+            std::from_chars(expview.data(), expview.data() + expview.size(),
+                            pval);
         }
-        auto units_it = units_map.left.find(std::string(ustr));
+        auto units_it = units_map.left.find(ustr);
         if (units_it == units_map.left.end())
         {
             // failed to parse; a unit with id 0 is an error
