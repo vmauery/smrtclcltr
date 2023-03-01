@@ -58,6 +58,10 @@ struct combination : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
+        if (calc.stack.size() < 2)
+        {
+            throw std::invalid_argument("Requires 2 argument");
+        }
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
         if (e0.unit() != units::unit() || e1.unit() != units::unit())
@@ -109,6 +113,10 @@ struct permutation : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
+        if (calc.stack.size() < 2)
+        {
+            throw std::invalid_argument("Requires 2 argument");
+        }
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
         if (e0.unit() != units::unit() || e1.unit() != units::unit())
@@ -151,6 +159,10 @@ struct mean : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
+        if (calc.stack.size() < 2)
+        {
+            throw std::invalid_argument("Requires more than 1 argument");
+        }
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
@@ -162,10 +174,15 @@ struct mean : public CalcFunction
         {
             return false;
         }
+        size_t count = static_cast<size_t>(*v);
+        if (calc.stack.size() < (count + 1))
+        {
+            throw std::invalid_argument("Insufficient arguments");
+        }
         calc.stack.pop_front();
-        size_t count = static_cast<size_t>(*v - 1);
         add add_fn{};
-        for (; count > 0; count--)
+        // only go from count to 1 because each op takes two items
+        for (; count > 1; count--)
         {
             if (!add_fn.op(calc))
             {
@@ -201,6 +218,10 @@ struct median : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
+        if (calc.stack.size() < 2)
+        {
+            throw std::invalid_argument("Requires more than 1 argument");
+        }
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
@@ -212,10 +233,14 @@ struct median : public CalcFunction
         {
             return false;
         }
-        calc.stack.pop_front();
         std::vector<numeric> items;
         units::unit first_unit = calc.stack.front().unit();
         size_t count = static_cast<size_t>(*v);
+        if (calc.stack.size() < (count + 1))
+        {
+            throw std::invalid_argument("Insufficient arguments");
+        }
+        calc.stack.pop_front();
         for (; count > 0; count--)
         {
             stack_entry e = calc.stack.front();
