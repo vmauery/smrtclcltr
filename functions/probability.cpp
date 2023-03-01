@@ -3,8 +3,12 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/seed_seq.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <function.hpp>
 #include <functions/common.hpp>
+#include <random>
 
 namespace function
 {
@@ -20,6 +24,36 @@ mpz perm(const mpz& x, const mpz& y)
 {
     return factorial(x) / factorial(x - y);
 }
+
+// private namespace for generator used by random functions
+namespace
+{
+boost::random::mt19937& gen(void)
+{
+    static std::shared_ptr<boost::random::mt19937> _gen;
+    if (!_gen)
+    {
+        std::random_device rd;
+        _gen = std::make_shared<boost::random::mt19937>(rd());
+    }
+    return *_gen;
+}
+} // namespace
+
+mpz rand_dist(const mpz& low, const mpz& high)
+{
+    boost::random::uniform_int_distribution<mpz> dist(low, high);
+    return dist(gen());
+}
+
+mpq rand(unsigned long bits)
+{
+    mpz high = 1;
+    high <<= bits;
+    boost::random::uniform_int_distribution<mpz> dist(0, high - 1);
+    return mpq(dist(gen()), high);
+}
+
 } // namespace util
 
 struct combination : public CalcFunction
@@ -282,9 +316,88 @@ struct median : public CalcFunction
     }
 };
 
+struct rand : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"rand"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: rand\n"
+            "\n"
+            "    Returns a uniformly distributed random float between 0 and 1\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        mpq r = util::rand(calc.config.precision);
+        calc.stack.emplace_front(r, calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed);
+        return true;
+    }
+};
+
+struct rand_dist : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"rand_dist"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y rand_dist\n"
+            "\n"
+            "    Returns a uniformly distributed random integer in the range of [x, y]\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        if (calc.stack.size() < 2)
+        {
+            throw std::invalid_argument("Requires 2 arguments");
+        }
+        stack_entry e1 = calc.stack[1];
+        stack_entry e0 = calc.stack[0];
+        if (e0.unit() != units::unit() || e1.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* x = std::get_if<mpz>(&e1.value());
+        const mpz* y = std::get_if<mpz>(&e0.value());
+        if (!x || !y)
+        {
+            return false;
+        }
+        if (*y <= *x)
+        {
+            throw std::invalid_argument("y must be >= x");
+        }
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+        mpz r = util::rand_dist(*x, *y);
+        calc.stack.emplace_front(r, calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed);
+        return true;
+    }
+};
 } // namespace function
 
 register_calc_fn(combination);
 register_calc_fn(permutation);
 register_calc_fn(mean);
 register_calc_fn(median);
+register_calc_fn(rand);
+register_calc_fn(rand_dist);
