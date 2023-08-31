@@ -292,6 +292,6 @@ struct fmt::formatter<units::unit>
         // ctx.out() is an output iterator to write to.
         std::stringstream ss;
         ss << u;
-        return format_to(ctx.out(), "{}", ss.str());
+        return fmt::format_to(ctx.out(), "{}", ss.str());
     }
 };

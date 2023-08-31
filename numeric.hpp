@@ -1037,22 +1037,22 @@ struct fmt::formatter<mpz>
         if (presentation == 'b')
         {
             ss << binary_wrapper{z};
-            return format_to(ctx.out(), "0b{}", ss.str());
+            return fmt::format_to(ctx.out(), "0b{}", ss.str());
         }
         else if (presentation == 'o')
         {
             ss << std::oct << z;
-            return format_to(ctx.out(), "0{}", ss.str());
+            return fmt::format_to(ctx.out(), "0{}", ss.str());
         }
         else if (presentation == 'x')
         {
             ss << std::hex << z;
-            return format_to(ctx.out(), "0x{}", ss.str());
+            return fmt::format_to(ctx.out(), "0x{}", ss.str());
         }
         else // if (presentation == 'd')
         {
             ss << z;
-            return format_to(ctx.out(), "{}", ss.str());
+            return fmt::format_to(ctx.out(), "{}", ss.str());
         }
     }
 };
@@ -1088,7 +1088,7 @@ struct fmt::formatter<mpf, Char>
         {
             specs.precision = default_precision;
         }
-        return format_to(ctx.out(), "{}", f.str(specs.precision));
+        return fmt::format_to(ctx.out(), "{}", f.str(specs.precision));
     }
 };
 #endif
@@ -1129,15 +1129,15 @@ struct fmt::formatter<mpq, Char>
             mpf f =
                 to_mpf(helper::numerator(q)) / to_mpf(helper::denominator(q));
 #ifdef USE_BASIC_TYPES
-            return format_to(ctx.out(), "{}", std::to_string(f));
+            return fmt::format_to(ctx.out(), "{}", std::to_string(f));
 #else
-            return format_to(ctx.out(), "{}", f.str(specs.precision));
+            return fmt::format_to(ctx.out(), "{}", f.str(specs.precision));
 #endif
         }
         // q form is chosen by 'g' (general_lower) presentation type
         mpz num = helper::numerator(q);
         mpz den = helper::denominator(q);
-        return format_to(ctx.out(), "{}/{}", num, den);
+        return fmt::format_to(ctx.out(), "{}/{}", num, den);
     }
 };
 
@@ -1169,17 +1169,17 @@ struct fmt::formatter<mpc>
         // ctx.out() is an output iterator to write to.
         if (presentation == 'r')
         {
-            return format_to(ctx.out(), "({}, {})", c.real(), c.imag());
+            return fmt::format_to(ctx.out(), "({}, {})", c.real(), c.imag());
         }
         else if (presentation == 'p')
         {
-            return format_to(ctx.out(), "({}, <{})", abs(c),
-                             atan2(c.real(), c.imag()));
+            return fmt::format_to(ctx.out(), "({}, <{})", abs(c),
+                                  atan2(c.real(), c.imag()));
         }
         else
         {
-            return format_to(ctx.out(), "{}{}{}i", c.real(),
-                             (c.imag() > 0 ? '+' : '-'), c.imag());
+            return fmt::format_to(ctx.out(), "{}{}{}i", c.real(),
+                                  (c.imag() > 0 ? '+' : '-'), c.imag());
         }
     }
 };
@@ -1207,6 +1207,6 @@ struct fmt::formatter<time_>
         // ctx.out() is an output iterator to write to.
         std::stringstream ss;
         ss << t;
-        return format_to(ctx.out(), "{}", ss.str());
+        return fmt::format_to(ctx.out(), "{}", ss.str());
     }
 };
