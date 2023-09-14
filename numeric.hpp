@@ -998,32 +998,58 @@ static inline mpf operator/(const mpf& f, const mpq& q)
 
 struct binary_wrapper
 {
-    explicit binary_wrapper(const mpz& v) : v(v)
+    explicit binary_wrapper(const mpz& v, int bits) : v(v), bits(bits)
     {
     }
     const mpz& v;
+    int bits;
+};
+
+struct oct_wrapper
+{
+    explicit oct_wrapper(const mpz& v, int bits) : v(v), bits(bits)
+    {
+    }
+    const mpz& v;
+    int bits;
+};
+
+struct hex_wrapper
+{
+    explicit hex_wrapper(const mpz& v, int bits) : v(v), bits(bits)
+    {
+    }
+    const mpz& v;
+    int bits;
 };
 
 std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw);
+std::ostream& operator<<(std::ostream& os, const oct_wrapper& bw);
+std::ostream& operator<<(std::ostream& os, const hex_wrapper& bw);
 
 #ifndef USE_BASIC_TYPES
 template <>
 struct fmt::formatter<mpz>
 {
-    char presentation = 'd';
+    fmt::detail::dynamic_format_specs<char> specs;
 
-    // Parses format specifications of the form ['b' | 'd' | 'o' | 'x'].
-    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
+    // Parses format like the standard int formatter
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
     {
-        auto it = ctx.begin(), end = ctx.end();
-        if (it != end && (*it == 'b' || *it == 'd' || *it == 'o' || *it == 'x'))
-            presentation = *it++;
+        // this is a simplification of integer format parsing from fmt/core.h
+        auto begin = ctx.begin(), end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        using handler_type = fmt::detail::dynamic_specs_handler<ParseContext>;
+        auto checker = fmt::detail::specs_checker<handler_type>(
+            handler_type(specs, ctx), fmt::detail::type::int_type);
+        auto it = fmt::detail::parse_format_specs(begin, end, checker);
+        auto eh = ctx.error_handler();
+        fmt::detail::check_int_type_spec(specs.type, eh);
 
-        // Check if reached the end of the range:
-        if (it != end && *it != '}')
-            throw format_error("invalid format");
-
-        // Return an iterator past the end of the parsed range:
         return it;
     }
 
@@ -1032,28 +1058,33 @@ struct fmt::formatter<mpz>
     template <typename FormatContext>
     auto format(const mpz& z, FormatContext& ctx) -> decltype(ctx.out())
     {
+        // this part was found in fmt/format.h
+        if (specs.width_ref.kind != fmt::detail::arg_id_kind::none)
+        {
+            fmt::detail::handle_dynamic_spec<fmt::detail::width_checker>(
+                specs.width, specs.width_ref, ctx);
+        }
         // ctx.out() is an output iterator to write to.
         std::stringstream ss;
-        if (presentation == 'b')
+        if (specs.type == fmt::presentation_type::bin_lower)
         {
-            ss << binary_wrapper{z};
-            return fmt::format_to(ctx.out(), "0b{}", ss.str());
+            ss << binary_wrapper{z, specs.width};
         }
-        else if (presentation == 'o')
+        else if (specs.type == fmt::presentation_type::oct)
         {
-            ss << std::oct << z;
-            return fmt::format_to(ctx.out(), "0{}", ss.str());
+            ss << oct_wrapper{z, specs.width};
         }
-        else if (presentation == 'x')
+        else if (specs.type == fmt::presentation_type::hex_lower)
         {
-            ss << std::hex << z;
-            return fmt::format_to(ctx.out(), "0x{}", ss.str());
+            ss << hex_wrapper{z, specs.width};
         }
-        else // if (presentation == 'd')
+        else // if (specs.type == fmt::presentation_type::dec)
         {
             ss << z;
-            return fmt::format_to(ctx.out(), "{}", ss.str());
         }
+        auto s = ss.str();
+        std::copy(s.begin(), s.end(), ctx.out());
+        return ctx.out();
     }
 };
 

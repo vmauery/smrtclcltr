@@ -286,6 +286,31 @@ struct floats : public CalcFunction
     }
 };
 
+struct signed_mode : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"signed"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: signed\n"
+            "\n"
+            "    Sets signed mode for integers\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.signed_mode(true);
+    }
+};
+
 struct unsigned_mode : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -307,7 +332,7 @@ struct unsigned_mode : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.unsigned_mode();
+        return calc.signed_mode(false);
     }
 };
 
@@ -397,6 +422,7 @@ register_calc_fn(fixed_bits);
 register_calc_fn(precision);
 register_calc_fn(quotient);
 register_calc_fn(floats);
+register_calc_fn(signed_mode);
 register_calc_fn(unsigned_mode);
 register_calc_fn(radians);
 register_calc_fn(degrees);
@@ -751,9 +777,9 @@ bool Calculator::debug()
     return true;
 }
 
-bool Calculator::unsigned_mode()
+bool Calculator::signed_mode(bool is_signed)
 {
-    config.is_signed = !config.is_signed;
+    config.is_signed = is_signed;
     return true;
 }
 
@@ -805,7 +831,7 @@ bool Calculator::fixed_bits()
     {
         stack.pop_front();
         auto iv = static_cast<int>(*v);
-        if (iv >= 0 && iv <= 8192)
+        if (iv >= 0 && iv <= 64 * 1024)
         {
             config.fixed_bits = iv;
             return true;
@@ -844,7 +870,25 @@ void Calculator::show_stack()
         {
             if (config.debug)
             {
-                ui->out("{} | ", numeric_types[it->value().index()]);
+                const char* base;
+                switch (it->base)
+                {
+                    case 2:
+                        base = "bin";
+                        break;
+                    case 8:
+                        base = "oct";
+                        break;
+                    case 10:
+                        base = "dec";
+                        break;
+                    case 16:
+                        base = "hex";
+                        break;
+                }
+                ui->out("{}{},p:{},{},{} | ", it->is_signed ? 's' : 'u',
+                        it->fixed_bits, it->precision, base,
+                        numeric_types[it->value().index()]);
             }
             if (config.interactive)
             {
@@ -873,16 +917,16 @@ void Calculator::show_stack()
                 switch (it->base)
                 {
                     case 2:
-                        ui->out("{:b}{}\n", *z, it->unit());
+                        ui->out("{:{}b}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                     case 8:
-                        ui->out("{:o}{}\n", *z, it->unit());
+                        ui->out("{:{}o}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                     case 10:
-                        ui->out("{:d}{}\n", *z, it->unit());
+                        ui->out("{:{}d}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                     case 16:
-                        ui->out("{:x}{}\n", *z, it->unit());
+                        ui->out("{:{}x}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                 }
             }

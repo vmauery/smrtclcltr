@@ -90,7 +90,7 @@ class Calculator
     bool cbase();
     bool fixed_bits();
     bool precision();
-    bool unsigned_mode();
+    bool signed_mode(bool);
     bool angle_mode(e_angle_mode);
     bool mpq_mode(e_mpq_mode);
 
