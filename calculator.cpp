@@ -185,11 +185,20 @@ bool Calculator::run_one(std::string_view expr)
     {
         return run_help();
     }
-    auto calc_fn = _operations.find(expr);
-    if (calc_fn != _operations.end())
+    for (const auto& [name, op] : _operations)
     {
-        lg::debug("executing function '{}'\n", expr);
-        return calc_fn->second->op(*this);
+        if (name == expr)
+        {
+            lg::debug("executing function '{}'\n", name);
+            return op->op(*this);
+        }
+        const std::optional<std::regex>& re = op->regex();
+        std::cmatch match{};
+        if (re && std::regex_match(expr.begin(), expr.end(), match, re.value()))
+        {
+            lg::debug("executing function '{}'\n", name);
+            return op->reop(*this, match);
+        }
     }
     // not a function
     stack_entry e;

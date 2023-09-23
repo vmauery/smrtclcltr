@@ -11,6 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <map>
 #include <numeric.hpp>
 #include <optional>
+#include <regex>
 #include <stack_entry.hpp>
 #include <string>
 #include <tuple>
@@ -23,6 +24,15 @@ struct CalcFunction
     virtual const std::string& name() const = 0;
     virtual const std::string& help() const = 0;
     virtual bool op(Calculator&) const = 0;
+    virtual bool reop(Calculator&, const std::cmatch&) const
+    {
+        return false;
+    };
+    virtual const std::optional<std::regex>& regex() const
+    {
+        static std::optional<std::regex> _regex{};
+        return _regex;
+    }
 };
 
 // All functions will register by adding an object to the __functions__ section

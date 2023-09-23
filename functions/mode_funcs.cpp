@@ -4,6 +4,7 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 #include <cmath>
+#include <charconv>
 #include <function.hpp>
 #include <functions/common.hpp>
 #include <version.hpp>
@@ -349,6 +350,70 @@ struct unsigned_mode : public CalcFunction
     }
 };
 
+struct int_type : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"int_type"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y int_type\n"
+            "\n"
+            "    Sets integer type for new integers where x is 0 or 1\n"
+            "    and denotes unsigned (0) or signed (1) and\n"
+            "    y denotes the number of bits\n"
+            "\n"
+            "    Alternate mechanism is of the form [su][0-9]+ where\n"
+            "    the signed/unsigned and bits are put together, e.g. s32\n"
+            "    for 32-bit signed, or u16 for 16-bit unsigned\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        if (calc.stack.size() < 2)
+        {
+            return false;
+        }
+        stack_entry y = calc.stack.front();
+        calc.stack.pop_front();
+        stack_entry x = calc.stack.front();
+        calc.stack.pop_front();
+        const mpz* su = std::get_if<mpz>(&x.value());
+        const mpz* bits = std::get_if<mpz>(&y.value());
+        if (su && bits && ((*su == 0) || (*su == 1)) && (*bits > 0))
+        {
+            bool mode = (*su == 1);
+            auto ibits = static_cast<unsigned int>(*bits);
+            return calc.signed_mode(mode) && calc.fixed_bits(ibits);
+        }
+        return false;
+    }
+    virtual bool reop(Calculator& calc, const std::cmatch& match) const final
+    {
+        bool mode = match[1].str() == "s";
+        unsigned int bits{};
+        const std::string x = match[2].str();
+        if (std::from_chars(x.data(), x.data() + x.size(), bits).ec !=
+            std::errc{})
+        {
+            return false;
+        }
+        return calc.signed_mode(mode) && calc.fixed_bits(bits);
+    }
+    virtual const std::optional<std::regex>& regex() const final
+    {
+        static const std::optional<std::regex> _regex{"([us])([0-9]+)"};
+        return _regex;
+    }
+};
+
 struct radians : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -437,6 +502,7 @@ register_calc_fn(quotient);
 register_calc_fn(floats);
 register_calc_fn(signed_mode);
 register_calc_fn(unsigned_mode);
+register_calc_fn(int_type);
 register_calc_fn(radians);
 register_calc_fn(degrees);
 register_calc_fn(gradiens);
