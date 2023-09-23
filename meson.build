@@ -105,6 +105,7 @@ smrty_src = [
   'functions/factorial.cpp',
   'functions/integer.cpp',
   'functions/log.cpp',
+  'functions/mode_funcs.cpp',
   'functions/modular_funcs.cpp',
   'functions/probability.cpp',
   'functions/product.cpp',

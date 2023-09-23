@@ -86,10 +86,10 @@ class Calculator
     // used by functions
     bool undo();
     bool debug();
-    bool base();
+    bool base(unsigned int);
     bool cbase();
-    bool fixed_bits();
-    bool precision();
+    bool fixed_bits(unsigned int);
+    bool precision(unsigned int);
     bool signed_mode(bool);
     bool angle_mode(e_angle_mode);
     bool mpq_mode(e_mpq_mode);
