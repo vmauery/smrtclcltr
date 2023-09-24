@@ -448,7 +448,7 @@ void Calculator::show_stack()
         {
             if (config.debug)
             {
-                const char* base;
+                const char* base{};
                 switch (it->base)
                 {
                     case 2:

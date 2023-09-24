@@ -22,6 +22,9 @@ timestamp_iso8601 = ts_cmd.stdout().strip()
 add_project_arguments(['-D__TIMESTAMP_ISO8601__="'+timestamp_iso8601+'"'], language: 'cpp')
 
 cxx = meson.get_compiler('cpp')
+if (cxx.get_id() == 'gcc')
+  add_project_arguments(['-fpermissive'], language: 'cpp')
+endif
 build = get_option('buildtype')
 
 numeric = dependency('mpfr')
