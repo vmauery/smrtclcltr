@@ -4,6 +4,7 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 #include <algorithm>
+#include <calculator.hpp>
 #include <charconv>
 #include <functions/common.hpp>
 #include <units.hpp>

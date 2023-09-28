@@ -12,27 +12,10 @@ namespace smrty
 
 namespace function
 {
+namespace util
+{
 
-// struct add : public CalcFunction
-// {
-const std::string& add::name() const
-{
-    static const std::string _name{"+"};
-    return _name;
-}
-const std::string& add::help() const
-{
-    static const std::string _help{
-        // clang-format off
-            "\n"
-            "    Usage: x y +\n"
-            "\n"
-            "    Returns the sum of the bottom two items on the stack (x + y)\n"
-        // clang-format on
-    };
-    return _help;
-}
-bool add::op(Calculator& calc) const
+bool add_from_stack(Calculator& calc)
 {
     return two_arg_uconv_op(
         calc,
@@ -45,95 +28,8 @@ bool add::op(Calculator& calc) const
             return {a + b, ua};
         });
 }
-// }; // struct add
 
-// struct subtract : public CalcFunction
-// {
-const std::string& subtract::name() const
-{
-    static const std::string _name{"-"};
-    return _name;
-}
-const std::string& subtract::help() const
-{
-    static const std::string _help{
-        // clang-format off
-            "\n"
-            "    Usage: x y -\n"
-            "\n"
-            "    Returns the difference of the bottom two items "
-            "on the stack (x - y)\n"
-        // clang-format on
-    };
-    return _help;
-}
-bool subtract::op(Calculator& calc) const
-{
-    return two_arg_uconv_op(
-        calc,
-        [](const auto& a, const auto& b, const units::unit& ua,
-           const units::unit& ub) -> std::tuple<numeric, units::unit> {
-            if (ua != ub)
-            {
-                throw std::invalid_argument("units do not match");
-            }
-            return {a - b, ua};
-        });
-}
-// };
-
-// struct multiply : public CalcFunction
-// {
-const std::string& multiply::name() const
-{
-    static const std::string _name{"*"};
-    return _name;
-}
-const std::string& multiply::help() const
-{
-    static const std::string _help{
-        // clang-format off
-            "\n"
-            "    Usage: x y *\n"
-            "\n"
-            "    Returns the product of the bottom two items "
-            "on the stack (x * y)\n"
-        // clang-format on
-    };
-    return _help;
-}
-bool multiply::op(Calculator& calc) const
-{
-    return two_arg_op(
-        calc,
-        [](const auto& a, const auto& b, const units::unit& ua,
-           const units::unit& ub) -> std::tuple<numeric, units::unit> {
-            return {a * b, ua * ub};
-        });
-}
-// };
-
-// struct divide : public CalcFunction
-// {
-const std::string& divide::name() const
-{
-    static const std::string _name{"/"};
-    return _name;
-}
-const std::string& divide::help() const
-{
-    static const std::string _help{
-        // clang-format off
-            "\n"
-            "    Usage: x y /\n"
-            "\n"
-            "    Returns the quotient of the bottom two items "
-            "on the stack (x / y)\n"
-        // clang-format on
-    };
-    return _help;
-}
-bool divide::op(Calculator& calc) const
+bool divide_from_stack(Calculator& calc)
 {
     return two_arg_conv_op(
         calc,
@@ -148,7 +44,219 @@ bool divide::op(Calculator& calc) const
         std::tuple<mpz>{}, std::tuple<mpq>{},
         std::tuple<mpq, mpf, mpc, time_>{});
 }
-// };
+
+} // namespace util
+
+struct add : public CalcFunction
+{
+    const std::string& name() const
+    {
+        static const std::string _name{"+"};
+        return _name;
+    }
+    const std::string& help() const
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y +\n"
+            "\n"
+            "    Returns the sum of the bottom two items on the stack (x + y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    bool op(Calculator& calc) const
+    {
+        return util::add_from_stack(calc);
+    }
+}; // struct add
+
+struct subtract : public CalcFunction
+{
+    const std::string& name() const
+    {
+        static const std::string _name{"-"};
+        return _name;
+    }
+    const std::string& help() const
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y -\n"
+            "\n"
+            "    Returns the difference of the bottom two items "
+            "on the stack (x - y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    bool op(Calculator& calc) const
+    {
+        return two_arg_uconv_op(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw std::invalid_argument("units do not match");
+                }
+                return {a - b, ua};
+            });
+    }
+};
+
+struct multiply : public CalcFunction
+{
+    const std::string& name() const
+    {
+        static const std::string _name{"*"};
+        return _name;
+    }
+    const std::string& help() const
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y *\n"
+            "\n"
+            "    Returns the product of the bottom two items "
+            "on the stack (x * y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    bool op(Calculator& calc) const
+    {
+        return two_arg_op(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                return {a * b, ua * ub};
+            });
+    }
+};
+
+struct divide : public CalcFunction
+{
+    const std::string& name() const
+    {
+        static const std::string _name{"/"};
+        return _name;
+    }
+    const std::string& help() const
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y /\n"
+            "\n"
+            "    Returns the quotient of the bottom two items "
+            "on the stack (x / y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    bool op(Calculator& calc) const
+    {
+        return util::divide_from_stack(calc);
+    }
+};
+
+struct sum : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"sum"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: ... x sum\n"
+            "\n"
+            "    Returns the sum of the "
+            "bottom x items on the stack: Nx * Nx-1 * ... * N0\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e = calc.stack.front();
+        if (e.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
+        if (!v || (*v > 1000000000) ||
+            (*v >= static_cast<mpz>(calc.stack.size())))
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+        size_t count = static_cast<size_t>(*v - 1);
+        add add_fn{};
+        for (; count > 0; count--)
+        {
+            if (!add_fn.op(calc))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+struct product : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"product"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: ... x product\n"
+            "\n"
+            "    Returns the product of the "
+            "bottom x items on the stack: Nx * Nx-1 * ... * N0\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e = calc.stack.front();
+        if (e.unit() != units::unit())
+        {
+            return false;
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
+        if (!v || (*v > 1000000000) ||
+            (*v >= static_cast<mpz>(calc.stack.size())))
+        {
+            return false;
+        }
+        calc.stack.pop_front();
+        size_t count = static_cast<size_t>(*v - 1);
+        multiply mult{};
+        for (; count > 0; count--)
+        {
+            if (!mult.op(calc))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+};
 
 struct percent_change : public CalcFunction
 {
@@ -578,6 +686,8 @@ register_calc_fn(add);
 register_calc_fn(subtract);
 register_calc_fn(multiply);
 register_calc_fn(divide);
+register_calc_fn(sum);
+register_calc_fn(product);
 register_calc_fn(percent_change);
 register_calc_fn(lshift);
 register_calc_fn(rshift);

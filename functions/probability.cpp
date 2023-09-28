@@ -216,20 +216,17 @@ struct mean : public CalcFunction
             throw std::invalid_argument("Insufficient arguments");
         }
         calc.stack.pop_front();
-        add add_fn{};
         // only go from count to 1 because each op takes two items
         for (; count > 1; count--)
         {
-            if (!add_fn.op(calc))
+            if (!util::add_from_stack(calc))
             {
                 return false;
             }
         }
-        calc.stack.emplace_front(*v, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+        calc.stack.push_front(e);
 
-        divide div_fn{};
-        return div_fn.op(calc);
+        return util::divide_from_stack(calc);
     }
 };
 
