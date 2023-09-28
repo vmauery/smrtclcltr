@@ -10,6 +10,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <functions/common.hpp>
 #include <random>
 
+namespace smrty
+{
 namespace function
 {
 namespace util
@@ -394,6 +396,7 @@ struct rand_dist : public CalcFunction
     }
 };
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(combination);
 register_calc_fn(permutation);

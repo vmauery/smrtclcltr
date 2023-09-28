@@ -9,6 +9,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <functions/common.hpp>
 #include <version.hpp>
 
+namespace smrty
+{
 // internal calculator functions
 namespace function
 {
@@ -490,6 +492,8 @@ struct gradiens : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
+
 register_calc_fn(version);
 register_calc_fn(debug);
 register_calc_fn(verbose);

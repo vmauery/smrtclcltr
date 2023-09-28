@@ -18,6 +18,12 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <string>
 #include <ui.hpp>
 
+extern const struct smrty::CalcFunction* __start_calc_functions;
+extern const struct smrty::CalcFunction* __stop_calc_functions;
+
+namespace smrty
+{
+
 struct column_layout
 {
     explicit column_layout(size_t n) : cols(n), len(0), valid(true)
@@ -525,9 +531,6 @@ void Calculator::show_stack()
     }
 }
 
-extern const struct CalcFunction* __start_calc_functions;
-extern const struct CalcFunction* __stop_calc_functions;
-
 void Calculator::make_grammar()
 {
 }
@@ -578,3 +581,5 @@ std::optional<std::string_view> Calculator::auto_complete(std::string_view in,
     }
     return std::nullopt;
 }
+
+} // namespace smrty

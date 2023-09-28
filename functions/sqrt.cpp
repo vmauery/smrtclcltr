@@ -5,6 +5,8 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
@@ -57,5 +59,6 @@ struct square_root : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(square_root);

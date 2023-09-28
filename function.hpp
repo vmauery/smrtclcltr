@@ -18,6 +18,9 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <type_traits>
 #include <units.hpp>
 
+namespace smrty
+{
+
 constexpr bool const_or(bool b0)
 {
     return b0;
@@ -452,3 +455,4 @@ std::tuple<numeric, units::unit> scaled_trig_op_inv(Calculator& calc,
     }
     return {b, units::unit()};
 }
+} // namespace smrty

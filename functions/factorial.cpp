@@ -7,6 +7,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <exception>
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
@@ -97,5 +99,6 @@ struct factorial : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(factorial);

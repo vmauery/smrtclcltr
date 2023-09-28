@@ -6,10 +6,12 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <function.hpp>
 #include <functions/common.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
-struct product : public CalcFunction
+struct product : public smrty::CalcFunction
 {
     virtual const std::string& name() const final
     {
@@ -57,5 +59,6 @@ struct product : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(product);

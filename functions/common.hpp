@@ -3,33 +3,36 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
+#pragma once
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
-struct add : public CalcFunction
+struct add : public smrty::CalcFunction
 {
     virtual const std::string& name() const final;
     virtual const std::string& help() const final;
     virtual bool op(Calculator& calc) const final;
 };
 
-struct subtract : public CalcFunction
+struct subtract : public smrty::CalcFunction
 {
     virtual const std::string& name() const final;
     virtual const std::string& help() const final;
     virtual bool op(Calculator& calc) const final;
 };
 
-struct multiply : public CalcFunction
+struct multiply : public smrty::CalcFunction
 {
     virtual const std::string& name() const final;
     virtual const std::string& help() const final;
     virtual bool op(Calculator& calc) const final;
 };
 
-struct divide : public CalcFunction
+struct divide : public smrty::CalcFunction
 {
     virtual const std::string& name() const final;
     virtual const std::string& help() const final;
@@ -54,3 +57,5 @@ numeric pow(const mpz& base, const mpz& exponent);
 } // namespace util
 
 } // namespace function
+
+} // namespace smrty

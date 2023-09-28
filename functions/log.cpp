@@ -5,6 +5,8 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
@@ -152,6 +154,7 @@ struct log_base_two : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(logarithm);
 register_calc_fn(natural_logarithm);

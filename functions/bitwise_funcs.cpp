@@ -5,6 +5,8 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
@@ -144,6 +146,7 @@ struct bitwise_inv : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(bitwise_and);
 register_calc_fn(bitwise_or);

@@ -67,11 +67,11 @@ mpq make_quotient(std::string_view s)
         // FIXME: check to see if this will get too big? Then what?
         if (exp < 0)
         {
-            val /= to_mpq(function::util::pow(mpz(10), -exp));
+            val /= to_mpq(smrty::function::util::pow(mpz(10), -exp));
         }
         else
         {
-            val *= to_mpq(function::util::pow(mpz(10), exp));
+            val *= to_mpq(smrty::function::util::pow(mpz(10), exp));
         }
     }
     return val;

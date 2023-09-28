@@ -16,6 +16,9 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <string>
 #include <tuple>
 
+namespace smrty
+{
+
 class Calculator;
 
 struct CalcFunction
@@ -37,8 +40,8 @@ struct CalcFunction
 
 // All functions will register by adding an object to the __functions__ section
 #define register_calc_fn(__cls)                                                \
-    const static function::__cls __calc_fn_impl__##__cls;                      \
-    const static CalcFunction* __calc_fn_##__cls                               \
+    const static smrty::function::__cls __calc_fn_impl__##__cls;               \
+    const static smrty::CalcFunction* __calc_fn_##__cls                        \
         __attribute((__section__("calc_functions"))) __attribute((__used__)) = \
             &__calc_fn_impl__##__cls;
 
@@ -126,3 +129,5 @@ class Calculator
     size_t _op_names_max_strlen;
     std::shared_ptr<Input> input;
 };
+
+} // namespace smrty

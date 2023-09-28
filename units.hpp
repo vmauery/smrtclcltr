@@ -12,6 +12,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <numeric.hpp>
 #include <ostream>
 
+namespace smrty
+{
 namespace units
 {
 
@@ -266,11 +268,12 @@ static auto require_match_3 = [](const unit& a, const unit& b, const unit& c) {
 unit pow(const unit& u, const mpf& p);
 
 } // namespace units
+} // namespace smrty
 
-std::ostream& operator<<(std::ostream& out, const units::unit& n);
+std::ostream& operator<<(std::ostream& out, const smrty::units::unit& n);
 
 template <>
-struct fmt::formatter<units::unit>
+struct fmt::formatter<smrty::units::unit>
 {
     // Parses format specifications of the form
     constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
@@ -287,7 +290,8 @@ struct fmt::formatter<units::unit>
     // Formats the point p using the parsed format specification (presentation)
     // stored in this formatter.
     template <typename FormatContext>
-    auto format(const units::unit& u, FormatContext& ctx) -> decltype(ctx.out())
+    auto format(const smrty::units::unit& u, FormatContext& ctx)
+        -> decltype(ctx.out())
     {
         // ctx.out() is an output iterator to write to.
         std::stringstream ss;

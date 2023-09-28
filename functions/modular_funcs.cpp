@@ -6,6 +6,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <cmath>
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
@@ -119,6 +121,7 @@ struct modinv : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(modexp);
 register_calc_fn(modinv);

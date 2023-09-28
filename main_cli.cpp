@@ -11,7 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 int main()
 {
-    Calculator& calc = Calculator::get();
+    smrty::Calculator& calc = smrty::Calculator::get();
     try
     {
         calc.run();

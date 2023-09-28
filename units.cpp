@@ -9,6 +9,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <units.hpp>
 #include <vector>
 
+namespace smrty
+{
 namespace units
 {
 
@@ -329,11 +331,12 @@ unit pow(const unit& u, const mpf& p)
 }
 
 } // namespace units
+} // namespace smrty
 
-std::ostream& operator<<(std::ostream& out, const units::unit& n)
+std::ostream& operator<<(std::ostream& out, const smrty::units::unit& n)
 {
-    bool debug = Calculator::get().config.debug;
-    if (n.id == units::id_None)
+    bool debug = smrty::Calculator::get().config.debug;
+    if (n.id == smrty::units::id_None)
     {
         if (debug)
         {
@@ -341,8 +344,8 @@ std::ostream& operator<<(std::ostream& out, const units::unit& n)
         }
         return out;
     }
-    auto units_it = units::units_map.right.find(n);
-    if (units_it != units::units_map.right.end())
+    auto units_it = smrty::units::units_map.right.find(n);
+    if (units_it != smrty::units::units_map.right.end())
     {
         out << "_" << units_it->second;
         if (debug)
@@ -353,13 +356,13 @@ std::ostream& operator<<(std::ostream& out, const units::unit& n)
     }
     // factor numerator and denominator of id
     std::vector<mpz> num_factors =
-        function::util::prime_factor(helper::numerator(n.id));
+        smrty::function::util::prime_factor(helper::numerator(n.id));
     if (num_factors.size() == 0)
     {
         num_factors.push_back(helper::numerator(n.id));
     }
     std::vector<mpz> den_factors =
-        function::util::prime_factor(helper::denominator(n.id));
+        smrty::function::util::prime_factor(helper::denominator(n.id));
     bool first = true;
     for (const auto& f : num_factors)
     {
@@ -372,8 +375,9 @@ std::ostream& operator<<(std::ostream& out, const units::unit& n)
         {
             out << "*";
         }
-        units_it = units::units_map.right.find(units::unit(mpq{f, 1}));
-        if (units_it != units::units_map.right.end())
+        units_it =
+            smrty::units::units_map.right.find(smrty::units::unit(mpq{f, 1}));
+        if (units_it != smrty::units::units_map.right.end())
         {
             out << units_it->second;
         }
@@ -398,8 +402,9 @@ std::ostream& operator<<(std::ostream& out, const units::unit& n)
         {
             out << "*";
         }
-        units_it = units::units_map.right.find(units::unit(mpq{f, 1}));
-        if (units_it != units::units_map.right.end())
+        units_it =
+            smrty::units::units_map.right.find(smrty::units::unit(mpq{f, 1}));
+        if (units_it != smrty::units::units_map.right.end())
         {
             out << units_it->second;
         }

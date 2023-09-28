@@ -6,6 +6,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <cmath>
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 namespace util
@@ -243,6 +245,7 @@ struct lcm : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(factor);
 register_calc_fn(prime_factor);

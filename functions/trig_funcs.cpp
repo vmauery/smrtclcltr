@@ -6,6 +6,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <function.hpp>
 #include <units.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
@@ -475,6 +477,7 @@ struct hyperbolic_arctangent : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(sine);
 register_calc_fn(cosine);

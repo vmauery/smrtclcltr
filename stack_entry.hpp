@@ -8,6 +8,9 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <numeric.hpp>
 #include <units.hpp>
 
+namespace smrty
+{
+
 class stack_entry
 {
   public:
@@ -27,7 +30,7 @@ class stack_entry
         }
     }
 
-    stack_entry(numeric&& v, const units::unit& u, int b, int f, int p,
+    stack_entry(numeric&& v, const smrty::units::unit& u, int b, int f, int p,
                 bool s) :
         _unit(u),
         base(b), fixed_bits(f), precision(p), is_signed(s), overflow(false),
@@ -58,17 +61,17 @@ class stack_entry
         }
     }
 
-    units::unit& unit()
+    smrty::units::unit& unit()
     {
         return _unit;
     }
-    void unit(const units::unit& u)
+    void unit(const smrty::units::unit& u)
     {
         _unit = u;
     }
     void unit(std::string_view u)
     {
-        _unit = units::unit(u);
+        _unit = smrty::units::unit(u);
     }
 
   protected:
@@ -126,7 +129,7 @@ class stack_entry
 
   protected:
     numeric _value;
-    units::unit _unit;
+    smrty::units::unit _unit;
 
   public:
     int base;
@@ -138,3 +141,5 @@ class stack_entry
     bool carry;
     bool zero;
 };
+
+} // namespace smrty

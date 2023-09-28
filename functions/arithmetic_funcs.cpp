@@ -7,6 +7,9 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <function.hpp>
 #include <functions/common.hpp>
 
+namespace smrty
+{
+
 namespace function
 {
 
@@ -569,6 +572,7 @@ struct power : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(add);
 register_calc_fn(subtract);

@@ -6,6 +6,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <chrono>
 #include <function.hpp>
 
+namespace smrty
+{
 namespace function
 {
 
@@ -291,6 +293,7 @@ struct calendar : public CalcFunction
 };
 
 } // namespace function
+} // namespace smrty
 
 register_calc_fn(unix_ts);
 register_calc_fn(date_time);
