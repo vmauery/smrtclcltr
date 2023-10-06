@@ -3,8 +3,8 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
-#include <cmath>
 #include <charconv>
+#include <cmath>
 #include <function.hpp>
 #include <functions/common.hpp>
 #include <version.hpp>
@@ -302,6 +302,81 @@ struct floats : public CalcFunction
     }
 };
 
+struct ij : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"ij"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: ij\n"
+            "\n"
+            "    Print complex numbers in rectangular x+iy format\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.mpc_mode(Calculator::e_mpc_mode::ij);
+    }
+};
+
+struct rectangular : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"rectangular"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: rectangular\n"
+            "\n"
+            "    Print complex numbers in rectangular (x,y) format\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.mpc_mode(Calculator::e_mpc_mode::rectangular);
+    }
+};
+
+struct polar : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"polar"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: polar\n"
+            "\n"
+            "    Print complex numbers in polar (m,<a) format\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.mpc_mode(Calculator::e_mpc_mode::polar);
+    }
+};
+
 struct signed_mode : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -510,3 +585,6 @@ register_calc_fn(int_type);
 register_calc_fn(radians);
 register_calc_fn(degrees);
 register_calc_fn(gradiens);
+register_calc_fn(ij);
+register_calc_fn(polar);
+register_calc_fn(rectangular);

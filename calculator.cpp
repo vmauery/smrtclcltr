@@ -400,6 +400,12 @@ bool Calculator::mpq_mode(e_mpq_mode mode)
     return true;
 }
 
+bool Calculator::mpc_mode(e_mpc_mode mode)
+{
+    config.mpc_mode = mode;
+    return true;
+}
+
 bool Calculator::base(unsigned int b)
 {
     switch (b)
@@ -490,6 +496,22 @@ void Calculator::show_stack()
                 else // floating
                 {
                     ui->out("{0:.{1}f}{2}\n", *q, it->precision, it->unit());
+                }
+            }
+            else if (auto c = std::get_if<mpc>(&v); c)
+            {
+                // mpq gets special treatment to print a quotient or float
+                if (config.mpc_mode == e_mpc_mode::polar)
+                {
+                    ui->out("{0:.{1}p}{2}\n", *c, it->precision, it->unit());
+                }
+                else if (config.mpc_mode == e_mpc_mode::rectangular)
+                {
+                    ui->out("{0:.{1}r}{2}\n", *c, it->precision, it->unit());
+                }
+                else // ij mode
+                {
+                    ui->out("{0:.{1}i}{2}\n", *c, it->precision, it->unit());
                 }
             }
             else if (auto f = std::get_if<mpf>(&v); f)

@@ -59,6 +59,12 @@ class Calculator
         floating,
         quotient
     };
+    enum class e_mpc_mode
+    {
+        rectangular,
+        polar,
+        ij
+    };
     struct Config
     {
         bool interactive = true;
@@ -69,6 +75,7 @@ class Calculator
         int precision = 8;
         e_angle_mode angle_mode = e_angle_mode::rad;
         e_mpq_mode mpq_mode = e_mpq_mode::floating;
+        e_mpc_mode mpc_mode = e_mpc_mode::rectangular;
     };
     using Stack = std::deque<stack_entry>;
 
@@ -106,6 +113,7 @@ class Calculator
     bool signed_mode(bool);
     bool angle_mode(e_angle_mode);
     bool mpq_mode(e_mpq_mode);
+    bool mpc_mode(e_mpc_mode);
 
   protected:
     Calculator();
