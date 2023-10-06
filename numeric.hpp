@@ -6,13 +6,10 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #pragma once
 
-#include <fmt/format.h>
-#include <fmt/std.h>
-
 #include <boost/math/constants/constants.hpp>
 #include <chrono>
 #include <debug.hpp>
-#include <iostream>
+#include <format>
 #include <variant>
 
 #ifdef USE_BASIC_TYPES
@@ -222,7 +219,7 @@ struct rational
         if (d == std::string::npos)
         {
             num = std::stoll(r);
-            lg::debug("mpq({}): num: {}, den: 1\n", r, num);
+            // lg::debug("mpq({}): num: {}, den: 1\n", r, num);
             den = 1;
         }
         else
@@ -230,9 +227,9 @@ struct rational
             auto numstr = r.substr(0, d);
             auto denstr = r.substr(d + 1);
             num = std::stoll(numstr);
-            lg::debug("mpq({}): num: {} -> {}\n", r, numstr, num);
+            // lg::debug("mpq({}): num: {} -> {}\n", r, numstr, num);
             den = std::stoll(denstr);
-            lg::debug("mpq({}): den: {} -> {}\n", r, den, den);
+            // lg::debug("mpq({}): den: {} -> {}\n", r, den, den);
         }
         reduce();
     }
@@ -335,14 +332,9 @@ struct rational
         reduce();
         return *this;
     }
-    friend std::ostream& operator<<(std::ostream& output, const rational& r)
+    std::string str() const
     {
-        return output << r.num << "/" << r.den;
-    }
-    friend std::istream& operator>>(std::istream& input, rational& r)
-    {
-        input >> r.num >> "/" >> r.den;
-        return input;
+        return std::format("{}/{}", r, num, r.den);
     }
 };
 
@@ -372,11 +364,11 @@ static inline mpz parse_mpz(std::string_view s)
     }
     catch (std::invalid_argument const& e)
     {
-        // std::cerr << "std::invalid_argument::what(): " << e.what() << '\n';
+        // lg::debug("std::invalid_argument::what(): {}\n",  e.what());
     }
     catch (std::out_of_range const& e)
     {
-        // std::cerr << "std::out_of_range::what(): " << e.what() << '\n';
+        // lg::debug("std::out_of_range::what(): {}\n",  e.what());
     }
     // possible exponent?
     if (end != s.size())
@@ -492,7 +484,7 @@ static inline mpq to_mpq(const mpc& v)
 // to_mpc
 static inline mpc to_mpc(const mpz& v)
 {
-    return mpc(mpf(v), 0);
+    return mpc{mpf{v}, 0};
 }
 static inline mpc to_mpc(const mpf& v)
 {
@@ -500,7 +492,7 @@ static inline mpc to_mpc(const mpf& v)
 }
 static inline mpc to_mpc(const mpq& v)
 {
-    return mpc(to_mpf(v), 0);
+    return mpc{mpf{v}, 0};
 }
 static inline mpc to_mpc(const mpc& v)
 {
@@ -710,23 +702,30 @@ struct time_
         return *this;
     }
 
-    friend std::ostream& operator<<(std::ostream& output, const time_& t)
+    std::string str() const
     {
-        if (t.absolute)
+        if (absolute)
         {
             long long nanos = static_cast<long long>(
-                (helper::numerator(t.value) * mpz(1'000'000'000ll)) /
-                helper::denominator(t.value));
-            lg::debug("value={}, nanos={}\n", t.value, nanos);
+                (helper::numerator(value) * mpz(1'000'000'000ll)) /
+                helper::denominator(value));
+            // lg::debug("value={}, nanos={}\n", value, nanos);
             std::chrono::duration d = std::chrono::nanoseconds(nanos);
             std::chrono::time_point<std::chrono::system_clock> tp(d);
-            const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
-            return output << std::put_time(std::localtime(&t_c), "%F %T");
+            return std::format("{:%F %T}", tp);
+            // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
+            // return std::strftime(std::localtime(&t_c), "%F %T");
         }
         else
         {
-            auto f = to_mpf(t.value);
-            return output << std::setprecision(20) << f;
+            long long nanos = static_cast<long long>(
+                (helper::numerator(value) * mpz(1'000'000'000ll)) /
+                helper::denominator(value));
+            // lg::debug("value={}, nanos={}\n", value, nanos);
+            std::chrono::duration d = std::chrono::nanoseconds(nanos);
+            return std::format("{}", d);
+            // auto f = to_mpf(value);
+            // return f.str(20);
         }
     }
 
@@ -769,8 +768,6 @@ static constexpr auto numeric_types = std::to_array<const char*>({
     "mpq",
     "time",
 });
-
-std::ostream& operator<<(std::ostream& out, const numeric& n);
 
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
 mpq parse_mpf(std::string_view s);
@@ -996,248 +993,406 @@ static inline mpf operator/(const mpf& f, const mpq& q)
     return f / to_mpf(q);
 }
 
-struct binary_wrapper
-{
-    explicit binary_wrapper(const mpz& v, int bits) : v(v), bits(bits)
-    {
-    }
-    const mpz& v;
-    int bits;
-};
-
-struct oct_wrapper
-{
-    explicit oct_wrapper(const mpz& v, int bits) : v(v), bits(bits)
-    {
-    }
-    const mpz& v;
-    int bits;
-};
-
-struct hex_wrapper
-{
-    explicit hex_wrapper(const mpz& v, int bits) : v(v), bits(bits)
-    {
-    }
-    const mpz& v;
-    int bits;
-};
-
-std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw);
-std::ostream& operator<<(std::ostream& os, const oct_wrapper& bw);
-std::ostream& operator<<(std::ostream& os, const hex_wrapper& bw);
+std::string mpz_to_bin_string(const mpz& v, std::streamsize width);
 
 #ifndef USE_BASIC_TYPES
 template <>
-struct fmt::formatter<mpz>
+struct std::formatter<mpz>
 {
-    fmt::detail::dynamic_format_specs<char> specs;
+    std::__format::_Spec<char> spec{};
 
-    // Parses format like the standard int formatter
+    // Parses format like the standard int parser
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
     {
-        // this is a simplification of integer format parsing from fmt/core.h
+        // this is a simplification of integer format parsing from format
         auto begin = ctx.begin(), end = ctx.end();
         if (begin == end)
         {
             return begin;
         }
-        using handler_type = fmt::detail::dynamic_specs_handler<ParseContext>;
-        auto checker = fmt::detail::specs_checker<handler_type>(
-            handler_type(specs, ctx), fmt::detail::type::int_type);
-        auto it = fmt::detail::parse_format_specs(begin, end, checker);
-        auto eh = ctx.error_handler();
-        fmt::detail::check_int_type_spec(specs.type, eh);
-
-        return it;
+        begin = spec._M_parse_fill_and_align(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_sign(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_zero_fill(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_width(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        switch (*begin)
+        {
+            case 'b':
+                spec._M_type = std::__format::_Pres_b;
+                ++begin;
+                break;
+            case 'd':
+                spec._M_type = std::__format::_Pres_d;
+                ++begin;
+                break;
+            case 'o':
+                spec._M_type = std::__format::_Pres_o;
+                ++begin;
+                break;
+            case 'x':
+                spec._M_type = std::__format::_Pres_x;
+                ++begin;
+                break;
+            default:
+                // throw something
+                break;
+        }
+        if (begin == end)
+        {
+            return begin;
+        }
+        return begin;
     }
 
-    // Formats the point p using the parsed format specification (presentation)
-    // stored in this formatter.
     template <typename FormatContext>
-    auto format(const mpz& z, FormatContext& ctx) -> decltype(ctx.out())
-    {
-        // this part was found in fmt/format.h
-        if (specs.width_ref.kind != fmt::detail::arg_id_kind::none)
-        {
-            fmt::detail::handle_dynamic_spec<fmt::detail::width_checker>(
-                specs.width, specs.width_ref, ctx);
-        }
-        // ctx.out() is an output iterator to write to.
-        std::stringstream ss;
-        if (specs.type == fmt::presentation_type::bin_lower)
-        {
-            ss << binary_wrapper{z, specs.width};
-        }
-        else if (specs.type == fmt::presentation_type::oct)
-        {
-            ss << oct_wrapper{z, specs.width};
-        }
-        else if (specs.type == fmt::presentation_type::hex_lower)
-        {
-            ss << hex_wrapper{z, specs.width};
-        }
-        else // if (specs.type == fmt::presentation_type::dec)
-        {
-            ss << z;
-        }
-        auto s = ss.str();
-        std::copy(s.begin(), s.end(), ctx.out());
-        return ctx.out();
-    }
-};
-
-template <typename Char>
-struct fmt::formatter<mpf, Char>
-{
-    detail::dynamic_format_specs<Char> specs_;
-    const Char* format_str_;
-
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
-    {
-        format_str_ = ctx.begin();
-        // Checks are deferred to formatting time when the argument type is
-        // known.
-        detail::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
-        return detail::parse_format_specs(ctx.begin(), ctx.end(), handler);
-    }
-
-    // Formats the point p using the parsed format specification (presentation)
-    // stored in this formatter.
-    // FormatContext is something like basic_format_context
-    template <typename FormatContext>
-    auto format(const mpf& f, FormatContext& ctx) -> decltype(ctx.out())
-    {
-        auto specs = specs_;
-        detail::handle_dynamic_spec<detail::width_checker>(
-            specs.width, specs.width_ref, ctx);
-        detail::handle_dynamic_spec<detail::precision_checker>(
-            specs.precision, specs.precision_ref, ctx);
-        if (specs.precision < 1)
-        {
-            specs.precision = default_precision;
-        }
-        return fmt::format_to(ctx.out(), "{}", f.str(specs.precision));
-    }
-};
-#endif
-
-template <typename Char>
-struct fmt::formatter<mpq, Char>
-{
-    detail::dynamic_format_specs<Char> specs_;
-    const Char* format_str_;
-
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
-    {
-        format_str_ = ctx.begin();
-        // Checks are deferred to formatting time when the argument type is
-        // known.
-        detail::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
-        return detail::parse_format_specs(ctx.begin(), ctx.end(), handler);
-    }
-
-    // Formats the point p using the parsed format specification (presentation)
-    // stored in this formatter.
-    // FormatContext is something like basic_format_context
-    template <typename FormatContext>
-    auto format(const mpq& q, FormatContext& ctx) -> decltype(ctx.out())
-    {
-        auto specs = specs_;
-        if (specs.type == fmt::presentation_type::fixed_lower)
-        {
-            detail::handle_dynamic_spec<detail::width_checker>(
-                specs.width, specs.width_ref, ctx);
-            detail::handle_dynamic_spec<detail::precision_checker>(
-                specs.precision, specs.precision_ref, ctx);
-            if (specs.precision < 1)
-            {
-                specs.precision = default_precision;
-            }
-            mpf f =
-                to_mpf(helper::numerator(q)) / to_mpf(helper::denominator(q));
-#ifdef USE_BASIC_TYPES
-            return fmt::format_to(ctx.out(), "{}", std::to_string(f));
-#else
-            return fmt::format_to(ctx.out(), "{}", f.str(specs.precision));
-#endif
-        }
-        // q form is chosen by 'g' (general_lower) presentation type
-        mpz num = helper::numerator(q);
-        mpz den = helper::denominator(q);
-        return fmt::format_to(ctx.out(), "{}/{}", num, den);
-    }
-};
-
-template <>
-struct fmt::formatter<mpc>
-{
-    char presentation = 'r';
-
-    // Parses format specifications of the form ['r' | 'p' | 'i'].
-    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
-    {
-        auto it = ctx.begin(), end = ctx.end();
-        if (it != end && (*it == 'r' || *it == 'p' || *it == 'i'))
-            presentation = *it++;
-
-        // Check if reached the end of the range:
-        if (it != end && *it != '}')
-            throw format_error("invalid format");
-
-        // Return an iterator past the end of the parsed range:
-        return it;
-    }
-
-    // Formats the point p using the parsed format specification (presentation)
-    // stored in this formatter.
-    template <typename FormatContext>
-    auto format(const mpc& c, FormatContext& ctx) -> decltype(ctx.out())
+    auto format(const mpz& z, FormatContext& ctx) const -> decltype(ctx.out())
     {
         // ctx.out() is an output iterator to write to.
-        if (presentation == 'r')
+        std::streamsize width = spec._M_get_width(ctx);
+        std::string s{};
+        if (spec._M_type == std::__format::_Pres_b)
         {
-            return fmt::format_to(ctx.out(), "({}, {})", c.real(), c.imag());
-        }
-        else if (presentation == 'p')
-        {
-            return fmt::format_to(ctx.out(), "({}, <{})", abs(c),
-                                  atan2(c.real(), c.imag()));
+            // manually make the binary version; mpz does not do it
+            s = mpz_to_bin_string(z, width);
         }
         else
         {
-            return fmt::format_to(ctx.out(), "{}{}{}i", c.real(),
-                                  (c.imag() > 0 ? '+' : '-'), c.imag());
+            // hex/dec/oct are all handled by mpz
+            std::ios_base::fmtflags f = std::ios::showbase;
+            if (spec._M_type == std::__format::_Pres_o)
+            {
+                f |= std::ios::oct;
+            }
+            else if (spec._M_type == std::__format::_Pres_x)
+            {
+                f |= std::ios::hex;
+            }
+            else // if (spec._M_type == std::__format::_Pres_d)
+            {
+                f |= std::ios::dec;
+            }
+            s = z.str(width, f);
+        }
+        auto out = ctx.out();
+        if (z >= 0 && spec._M_sign == std::__format::_Sign_plus)
+        {
+            *out++ = '+';
+        }
+        return std::copy(s.begin(), s.end(), out);
+    }
+};
+
+template <>
+struct std::formatter<mpf>
+{
+    std::__format::_Spec<char> spec{};
+
+    // Parses format like the standard float parser
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // this is a simplification of integer format parsing from format
+        auto begin = ctx.begin(), end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_fill_and_align(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_sign(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_zero_fill(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_width(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_precision(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        switch (*begin)
+        {
+            case 'f':
+                spec._M_type = std::__format::_Pres_f;
+                ++begin;
+                break;
+            default:
+                // throw something
+                break;
+        }
+        if (begin == end)
+        {
+            return begin;
+        }
+        return begin;
+    }
+
+    template <typename FormatContext>
+    auto format(const mpf& f, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        ssize_t precision = spec._M_get_precision(ctx);
+        if (precision < 1)
+        {
+            precision = default_precision;
+        }
+        auto out = ctx.out();
+        if (f >= 0 && spec._M_sign == std::__format::_Sign_plus)
+        {
+            *out++ = '+';
+        }
+        auto s = f.str(precision);
+        return std::copy(s.begin(), s.end(), out);
+    }
+};
+#endif // USE_BASIC_TYPES
+
+template <>
+struct std::formatter<mpq>
+{
+    std::__format::_Spec<char> spec{};
+
+    // Parses format like the standard float parser
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // this is a simplification of integer format parsing from format
+        auto begin = ctx.begin(), end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_fill_and_align(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_sign(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_zero_fill(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_width(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_precision(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        switch (*begin)
+        {
+            case 'q': // quotient
+                spec._M_type = std::__format::_Pres_d;
+                ++begin;
+                break;
+            case 'f': // fraction
+                spec._M_type = std::__format::_Pres_f;
+                ++begin;
+                break;
+            default:
+                // throw something
+                break;
+        }
+        if (begin == end)
+        {
+            return begin;
+        }
+        return begin;
+    }
+
+    template <typename FormatContext>
+    auto format(const mpq& q, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        ssize_t precision = spec._M_get_precision(ctx);
+        if (precision < 1)
+        {
+            precision = default_precision;
+        }
+        if (spec._M_type == std::__format::_Pres_f)
+        {
+            mpf f =
+                to_mpf(helper::numerator(q)) / to_mpf(helper::denominator(q));
+#ifdef USE_BASIC_TYPES
+            return std::format_to(ctx.out(), "{:{1}f}", precision, f);
+#else
+            auto s = f.str(precision);
+            return std::copy(s.begin(), s.end(), ctx.out());
+#endif
+        }
+        else // if (spec._M_type == std::__format::_Pres_d)
+        {
+            // q form is chosen by 'q' presentation type
+            mpz num = helper::numerator(q);
+            mpz den = helper::denominator(q);
+            return std::format_to(ctx.out(), "{}/{}", num, den);
         }
     }
 };
 
 template <>
-struct fmt::formatter<time_>
+struct std::formatter<mpc>
 {
-    // Parses format specifications of the form
-    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
-    {
-        auto it = ctx.begin(), end = ctx.end();
-        // Check if reached the end of the range:
-        if (it != end && *it != '}')
-            throw format_error("invalid format");
+    std::__format::_Spec<char> spec{};
 
-        // Return an iterator past the end of the parsed range:
-        return it;
+    // Parses format like the standard int parser
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // this is a simplification of integer format parsing from format
+        auto begin = ctx.begin(), end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_fill_and_align(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_sign(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_zero_fill(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_width(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_precision(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        switch (*begin)
+        {
+            case 'i': // i or j notation
+                spec._M_type = std::__format::_Pres_g;
+                ++begin;
+                break;
+            case 'p': // polar
+                spec._M_type = std::__format::_Pres_p;
+                ++begin;
+                break;
+            case 'r': // rectangular
+                spec._M_type = std::__format::_Pres_f;
+                ++begin;
+                break;
+            default:
+                // throw something
+                break;
+        }
+        if (begin == end)
+        {
+            return begin;
+        }
+        return begin;
     }
 
-    // Formats the point p using the parsed format specification (presentation)
-    // stored in this formatter.
     template <typename FormatContext>
-    auto format(const time_& t, FormatContext& ctx) -> decltype(ctx.out())
+    auto format(const mpc& c, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        ssize_t precision = spec._M_get_precision(ctx);
+        if (precision < 1)
+        {
+            precision = default_precision;
+        }
+        // ctx.out() is an output iterator to write to.
+        if (spec._M_type == std::__format::_Pres_f)
+        {
+            return std::format_to(ctx.out(), "({0:.{2}f}, {1:.{2}f})", c.real(),
+                                  c.imag(), precision);
+        }
+        else if (spec._M_type == std::__format::_Pres_p)
+        {
+            return std::format_to(ctx.out(), "({0:.{2}f}, <{1:.{2}f})", abs(c),
+                                  atan2(c.real(), c.imag()), precision);
+        }
+        else // if (spec._M_type == std::__format::_Pres_g)
+        {
+            return std::format_to(ctx.out(), "{0:.{2}f}{1:+.{2}}i", c.real(),
+                                  c.imag(), precision);
+        }
+    }
+};
+
+template <>
+struct std::formatter<time_>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const time_& t, FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto s = t.str();
+        return std::copy(s.begin(), s.end(), ctx.out());
+    }
+};
+
+template <typename... Types>
+struct std::formatter<std::variant<Types...>>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // nothing to parse
+        auto begin = ctx.begin();
+        return begin;
+    }
+
+    template <typename FormatContext>
+    auto format(const std::variant<Types...>& t, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         // ctx.out() is an output iterator to write to.
-        std::stringstream ss;
-        ss << t;
-        return fmt::format_to(ctx.out(), "{}", ss.str());
+        return std::visit(
+            [&ctx](const auto& v) {
+                return std::format_to(ctx.out(), "{}", v);
+            },
+            t);
     }
 };

@@ -273,7 +273,7 @@ struct quotient : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.mpq_mode(Calculator::e_mpq_mode::q);
+        return calc.mpq_mode(Calculator::e_mpq_mode::quotient);
     }
 };
 
@@ -298,7 +298,7 @@ struct floats : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.mpq_mode(Calculator::e_mpq_mode::f);
+        return calc.mpq_mode(Calculator::e_mpq_mode::floating);
     }
 };
 

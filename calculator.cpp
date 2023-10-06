@@ -483,13 +483,13 @@ void Calculator::show_stack()
             if (auto q = std::get_if<mpq>(&v); q)
             {
                 // mpq gets special treatment to print a quotient or float
-                if (config.mpq_mode == e_mpq_mode::f)
+                if (config.mpq_mode == e_mpq_mode::quotient)
+                {
+                    ui->out("{:q}{}\n", *q, it->unit());
+                }
+                else // floating
                 {
                     ui->out("{0:.{1}f}{2}\n", *q, it->precision, it->unit());
-                }
-                else
-                {
-                    ui->out("{:g}{}\n", *q, it->unit());
                 }
             }
             else if (auto f = std::get_if<mpf>(&v); f)

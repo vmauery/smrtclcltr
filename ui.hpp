@@ -57,7 +57,7 @@ struct ui : public std::enable_shared_from_this<ui>
     template <typename... Args>
     std::shared_ptr<ui> out(std::string_view f, Args... args)
     {
-        std::string msg = fmt::vformat(f, fmt::make_format_args(args...));
+        std::string msg = std::vformat(f, std::make_format_args(args...));
         return out(msg);
     }
 };

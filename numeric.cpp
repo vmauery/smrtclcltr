@@ -499,22 +499,20 @@ numeric reduce_numeric(const numeric& n, int precision)
     return n;
 }
 
-std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw)
+std::string mpz_to_bin_string(const mpz& v, std::streamsize width)
 {
-    const mpz& v = bw.v;
-    unsigned long width = bw.bits;
     // limit binary prints to 64k bits?
-    mpf charsf = ceil(log(abs(mpf{v})) / log(mpf{2}));
-    auto bits = static_cast<unsigned long>(charsf);
+    std::streamsize bits = 0;
+    mpz mask{1};
+    while (mask < v)
+    {
+        bits++;
+        mask <<= 1;
+    }
     if (bits >= 64 * 1024)
     {
-        std::stringstream ss;
-        ss << v;
-        os << ss.str();
-        return os;
+        return v.str(width, std::ios::hex | std::ios::showbase);
     }
-    mpz mask{1};
-    mask <<= bits;
     std::string out;
     out.reserve(bits + 3);
     out.push_back('0');
@@ -540,71 +538,5 @@ std::ostream& operator<<(std::ostream& os, const binary_wrapper& bw)
     {
         out.push_back('0');
     }
-    os << out;
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const oct_wrapper& w)
-{
-    const mpz& v = w.v;
-    unsigned long width = (w.bits + 2) / 3;
-    if (v >= 0)
-    {
-        os << std::oct << "0o" << std::setfill('0') << std::setw(width) << v;
-        return os;
-    }
-    os << std::oct << "0o";
-    // ceil(log2(v) / 3) is the number of chars to print
-    mpf charsf = ceil((log(mpf{-v}) / log(mpf{2})) / 3);
-    auto chars = static_cast<unsigned long>(charsf);
-    if (!chars)
-    {
-        chars = 1;
-    }
-    while (width > chars)
-    {
-        // all negative here, so fill with '7'
-        os << '7';
-        width--;
-    }
-    while (chars--)
-    {
-        // starting at the MSB, print the two nibbles
-        unsigned int x = static_cast<uint8_t>((v >> (3 * chars)) & 0x07);
-        os << x;
-    }
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const hex_wrapper& w)
-{
-    const mpz& v = w.v;
-    unsigned long width = (w.bits + 3) / 4;
-    // optimize positive numbers...
-    if (v >= 0)
-    {
-        os << std::hex << "0x" << std::setfill('0') << std::setw(width) << v;
-        return os;
-    }
-    os << std::hex << "0x";
-    // ceil(log2(v) / 4) is the number of chars to print
-    mpf charsf = ceil((log(mpf{-v}) / log(mpf{2})) / 4);
-    auto chars = static_cast<unsigned long>(charsf);
-    if (!chars)
-    {
-        chars = 1;
-    }
-    while (width > chars)
-    {
-        // all negative here, so fill with 'f'
-        os << 'f';
-        width--;
-    }
-    while (chars--)
-    {
-        // starting at the MSB, print the two nibbles
-        unsigned int x = static_cast<uint8_t>((v >> (4 * chars)) & 0xf);
-        os << x;
-    }
-    return os;
+    return out;
 }

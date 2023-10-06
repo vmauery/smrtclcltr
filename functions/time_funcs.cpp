@@ -240,8 +240,7 @@ struct calendar : public CalcFunction
         // first doomsday by the month
         static constexpr auto doomsdays =
             std::to_array<int>({2, 6, 7, 4, 2, 6, 4, 1, 5, 3, 7, 5});
-        static constexpr auto dow = std::to_array<const char*>(
-            {"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"});
+        static constexpr auto dow{"Su Mo Tu We Th Fr Sa"};
         static constexpr auto moy = std::to_array<const char*>(
             {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
              "Oct", "Nov", "Dec"});
@@ -269,24 +268,25 @@ struct calendar : public CalcFunction
         31
         */
         ui->out("{} / {} / {}\n", int(ymd.year()), moy[m], unsigned(ymd.day()));
-        ui->out("{}\n", fmt::join(dow, " "));
+        ui->out("{}\n", dow);
         int dom = 0 - first_dom;
         for (unsigned w = 0; w < num_weeks; w++)
         {
-            std::vector<std::string> days{};
+            std::string days{};
+            days.reserve(24);
             for (int di = 0; di < 7 && dom <= static_cast<int>(last_day);
                  di++, dom++)
             {
                 if (dom <= 0)
                 {
-                    days.emplace_back("  ");
+                    days.append("  ");
                 }
                 else
                 {
-                    days.push_back(fmt::format("{:2d}", dom));
+                    days.append(std::format("{:2d}", dom));
                 }
             }
-            ui->out("{}\n", fmt::join(days, " "));
+            ui->out("{}\n", days);
         }
         return true;
     }

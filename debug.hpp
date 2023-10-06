@@ -6,9 +6,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
 #include <cxxabi.h>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 
+#include <format>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -58,7 +57,7 @@ extern level debug_level;
 static inline void _log(const source_location& sl, std::string_view message)
 {
     std::string msg =
-        fmt::format("{:s}:{:d}: {:s}", sl.file_name(), sl.line(), message);
+        std::format("{:s}:{:d}: {:s}", sl.file_name(), sl.line(), message);
     ui::get()->err(msg);
 }
 
@@ -69,7 +68,7 @@ struct log
     {
         if (L <= debug_level)
         {
-            std::string msg = fmt::vformat(f, fmt::make_format_args(args...));
+            std::string msg = std::vformat(f, std::make_format_args(args...));
             _log(loc, msg);
         }
     }

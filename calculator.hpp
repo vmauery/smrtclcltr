@@ -56,8 +56,8 @@ class Calculator
     };
     enum class e_mpq_mode
     {
-        f,
-        q
+        floating,
+        quotient
     };
     struct Config
     {
@@ -68,7 +68,7 @@ class Calculator
         bool is_signed = true;
         int precision = 8;
         e_angle_mode angle_mode = e_angle_mode::rad;
-        e_mpq_mode mpq_mode = e_mpq_mode::f;
+        e_mpq_mode mpq_mode = e_mpq_mode::floating;
     };
     using Stack = std::deque<stack_entry>;
 

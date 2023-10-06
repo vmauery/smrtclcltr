@@ -40,9 +40,7 @@ elif (get_option('numeric') == 'native')
   add_project_arguments(['-DUSE_BASIC_TYPES'], language: 'cpp')
 endif
 
-fmt = dependency('fmt')
-
-base_deps = [ numeric, fmt ]
+base_deps = [ numeric ]
 
 add_project_arguments(
   cxx.get_supported_arguments([

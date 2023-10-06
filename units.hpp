@@ -5,10 +5,12 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 
 #pragma once
+
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/bimap.hpp>
 #include <exception>
+#include <functions/common.hpp>
 #include <numeric.hpp>
 #include <ostream>
 
@@ -267,35 +269,157 @@ static auto require_match_3 = [](const unit& a, const unit& b, const unit& c) {
 
 unit pow(const unit& u, const mpf& p);
 
+const boost::bimap<std::string_view, unit>& get_units_map();
+
 } // namespace units
 } // namespace smrty
 
-std::ostream& operator<<(std::ostream& out, const smrty::units::unit& n);
-
 template <>
-struct fmt::formatter<smrty::units::unit>
+struct std::formatter<smrty::units::unit>
 {
-    // Parses format specifications of the form
-    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin())
-    {
-        auto it = ctx.begin(), end = ctx.end();
-        // Check if reached the end of the range:
-        if (it != end && *it != '}')
-            throw format_error("invalid format");
+    std::__format::_Spec<char> spec;
 
-        // Return an iterator past the end of the parsed range:
-        return it;
+    // Parses format like the standard int formatter
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // this is a simplification of integer format parsing from format
+        auto begin = ctx.begin(), end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_fill_and_align(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_sign(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_zero_fill(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_width(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        // default to basic
+        spec._M_type = std::__format::_Pres_b;
+        switch (*begin)
+        {
+            case 'b': // unit basic
+                spec._M_type = std::__format::_Pres_b;
+                ++begin;
+                break;
+            case 'd': // unit debug
+                spec._M_type = std::__format::_Pres_d;
+                ++begin;
+                break;
+            default:
+                // throw something
+                break;
+        }
+        if (begin == end)
+        {
+            return begin;
+        }
+        return begin;
     }
 
     // Formats the point p using the parsed format specification (presentation)
     // stored in this formatter.
     template <typename FormatContext>
-    auto format(const smrty::units::unit& u, FormatContext& ctx)
+    auto format(const smrty::units::unit& u, FormatContext& ctx) const
         -> decltype(ctx.out())
     {
-        // ctx.out() is an output iterator to write to.
-        std::stringstream ss;
-        ss << u;
-        return fmt::format_to(ctx.out(), "{}", ss.str());
+        auto out = ctx.out();
+        bool debug = spec._M_type == std::__format::_Pres_d;
+        if (u.id == smrty::units::id_None)
+        {
+            if (debug)
+            {
+                std::format_to(out, "_<>({}, {}, {})", u.id, u.exp, u.scale);
+            }
+            return out;
+        }
+        auto units_map = smrty::units::get_units_map();
+        auto units_it = units_map.right.find(u);
+        if (units_it != units_map.right.end())
+        {
+            std::format_to(out, "_{}", units_it->second);
+            if (debug)
+            {
+                std::format_to(out, "({}, {}, {})", u.id, u.exp, u.scale);
+            }
+            return out;
+        }
+        // factor numerator and denominator of id
+        std::vector<mpz> num_factors =
+            smrty::function::util::prime_factor(helper::numerator(u.id));
+        if (num_factors.size() == 0)
+        {
+            num_factors.push_back(helper::numerator(u.id));
+        }
+        std::vector<mpz> den_factors =
+            smrty::function::util::prime_factor(helper::denominator(u.id));
+        bool first = true;
+        for (const auto& f : num_factors)
+        {
+            if (first)
+            {
+                *out++ = '_';
+                first = false;
+            }
+            else
+            {
+                *out++ = '*';
+            }
+            units_it = units_map.right.find(smrty::units::unit(mpq{f, 1}));
+            if (units_it != units_map.right.end())
+            {
+                std::format_to(out, "{}", units_it->second);
+            }
+            else
+            {
+                *out++ = '?';
+            }
+        }
+        if (first)
+        {
+            *out++ = '1';
+        }
+        first = true;
+        for (const auto& f : den_factors)
+        {
+            if (first)
+            {
+                *out++ = '/';
+                first = false;
+            }
+            else
+            {
+                *out++ = '*';
+            }
+            units_it = units_map.right.find(smrty::units::unit(mpq{f, 1}));
+            if (units_it != units_map.right.end())
+            {
+                std::format_to(out, "{}", units_it->second);
+            }
+            else
+            {
+                *out++ = '?';
+            }
+        }
+        if (debug)
+        {
+            std::format_to(out, "({}, {}, {})", u.id, u.exp, u.scale);
+        }
+        return out;
     }
 };

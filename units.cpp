@@ -6,7 +6,6 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <algorithm>
 #include <calculator.hpp>
 #include <charconv>
-#include <functions/common.hpp>
 #include <units.hpp>
 #include <vector>
 
@@ -136,6 +135,11 @@ static boost::bimap<std::string_view, unit> units_map =
                                         {"degF", degF},
                                         {"mph", mph},
                                         {"hp", hp}});
+
+const boost::bimap<std::string_view, unit>& get_units_map()
+{
+    return units_map;
+}
 
 unit::unit(std::string_view u) : id(1, 1), exp(1, 1), scale(1, 1)
 {
@@ -333,93 +337,6 @@ unit pow(const unit& u, const mpf& p)
 
 } // namespace units
 } // namespace smrty
-
-std::ostream& operator<<(std::ostream& out, const smrty::units::unit& n)
-{
-    bool debug = smrty::Calculator::get().config.debug;
-    if (n.id == smrty::units::id_None)
-    {
-        if (debug)
-        {
-            out << "_<>(" << n.id << ", " << n.exp << ", " << n.scale << ")";
-        }
-        return out;
-    }
-    auto units_it = smrty::units::units_map.right.find(n);
-    if (units_it != smrty::units::units_map.right.end())
-    {
-        out << "_" << units_it->second;
-        if (debug)
-        {
-            out << "(" << n.id << ", " << n.exp << ", " << n.scale << ")";
-        }
-        return out;
-    }
-    // factor numerator and denominator of id
-    std::vector<mpz> num_factors =
-        smrty::function::util::prime_factor(helper::numerator(n.id));
-    if (num_factors.size() == 0)
-    {
-        num_factors.push_back(helper::numerator(n.id));
-    }
-    std::vector<mpz> den_factors =
-        smrty::function::util::prime_factor(helper::denominator(n.id));
-    bool first = true;
-    for (const auto& f : num_factors)
-    {
-        if (first)
-        {
-            out << "_";
-            first = false;
-        }
-        else
-        {
-            out << "*";
-        }
-        units_it =
-            smrty::units::units_map.right.find(smrty::units::unit(mpq{f, 1}));
-        if (units_it != smrty::units::units_map.right.end())
-        {
-            out << units_it->second;
-        }
-        else
-        {
-            out << "?";
-        }
-    }
-    if (first)
-    {
-        out << "1";
-    }
-    first = true;
-    for (const auto& f : den_factors)
-    {
-        if (first)
-        {
-            out << "/";
-            first = false;
-        }
-        else
-        {
-            out << "*";
-        }
-        units_it =
-            smrty::units::units_map.right.find(smrty::units::unit(mpq{f, 1}));
-        if (units_it != smrty::units::units_map.right.end())
-        {
-            out << units_it->second;
-        }
-        else
-        {
-            out << "?";
-        }
-    }
-    if (debug)
-    {
-        out << "(" << n.id << ", " << n.exp << ", " << n.scale << ")";
-    }
-    return out;
-}
 
 /*
 
