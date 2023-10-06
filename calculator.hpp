@@ -50,9 +50,9 @@ class Calculator
   public:
     enum class e_angle_mode
     {
-        rad,
-        deg,
-        grad
+        radians,
+        degrees,
+        gradians
     };
     enum class e_mpq_mode
     {
@@ -73,7 +73,7 @@ class Calculator
         int fixed_bits = 0;
         bool is_signed = true;
         int precision = 8;
-        e_angle_mode angle_mode = e_angle_mode::rad;
+        e_angle_mode angle_mode = e_angle_mode::radians;
         e_mpq_mode mpq_mode = e_mpq_mode::floating;
         e_mpc_mode mpc_mode = e_mpc_mode::rectangular;
     };

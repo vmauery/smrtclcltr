@@ -512,7 +512,7 @@ struct radians : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.angle_mode(Calculator::e_angle_mode::rad);
+        return calc.angle_mode(Calculator::e_angle_mode::radians);
     }
 };
 
@@ -537,7 +537,7 @@ struct degrees : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.angle_mode(Calculator::e_angle_mode::deg);
+        return calc.angle_mode(Calculator::e_angle_mode::degrees);
     }
 };
 
@@ -562,7 +562,7 @@ struct gradiens : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.angle_mode(Calculator::e_angle_mode::grad);
+        return calc.angle_mode(Calculator::e_angle_mode::gradians);
     }
 };
 

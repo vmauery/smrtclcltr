@@ -429,13 +429,13 @@ template <typename Fn>
 std::tuple<numeric, units::unit> scaled_trig_op(Calculator& calc, auto a,
                                                 const Fn& fn)
 {
-    if (calc.config.angle_mode == Calculator::e_angle_mode::deg)
+    if (calc.config.angle_mode == Calculator::e_angle_mode::degrees)
     {
         a *= boost::math::constants::pi<mpf>() / 180;
     }
-    else if (calc.config.angle_mode == Calculator::e_angle_mode::grad)
+    else if (calc.config.angle_mode == Calculator::e_angle_mode::gradians)
     {
-        a *= boost::math::constants::pi<mpf>() / 50;
+        a *= boost::math::constants::pi<mpf>() / 200;
     }
     return {fn(a), units::unit()};
 }
@@ -445,13 +445,13 @@ std::tuple<numeric, units::unit> scaled_trig_op_inv(Calculator& calc,
                                                     const auto& a, const Fn& fn)
 {
     auto b = fn(a);
-    if (calc.config.angle_mode == Calculator::e_angle_mode::deg)
+    if (calc.config.angle_mode == Calculator::e_angle_mode::degrees)
     {
         b *= 180 / boost::math::constants::pi<mpf>();
     }
-    else if (calc.config.angle_mode == Calculator::e_angle_mode::grad)
+    else if (calc.config.angle_mode == Calculator::e_angle_mode::gradians)
     {
-        b *= 50 / boost::math::constants::pi<mpf>();
+        b *= 200 / boost::math::constants::pi<mpf>();
     }
     return {b, units::unit()};
 }
