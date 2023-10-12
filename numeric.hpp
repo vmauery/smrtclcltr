@@ -601,14 +601,14 @@ struct time_
     {
         throw std::invalid_argument("cannot perform multiplication with times");
     }
-    time_ operator/(const time_& t) const
+    mpq operator/(const time_& t) const
     {
         if (absolute || t.absolute)
         {
             throw std::invalid_argument(
                 "cannot perform division with absolute times");
         }
-        return time_(value / t.value, absolute);
+        return value / t.value;
     }
     time_& operator+=(const time_& t)
     {
@@ -702,32 +702,8 @@ struct time_
         return *this;
     }
 
-    std::string str() const
-    {
-        if (absolute)
-        {
-            long long nanos = static_cast<long long>(
-                (helper::numerator(value) * mpz(1'000'000'000ll)) /
-                helper::denominator(value));
-            // lg::debug("value={}, nanos={}\n", value, nanos);
-            std::chrono::duration d = std::chrono::nanoseconds(nanos);
-            std::chrono::time_point<std::chrono::system_clock> tp(d);
-            return std::format("{:%F %T}", tp);
-            // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
-            // return std::strftime(std::localtime(&t_c), "%F %T");
-        }
-        else
-        {
-            long long nanos = static_cast<long long>(
-                (helper::numerator(value) * mpz(1'000'000'000ll)) /
-                helper::denominator(value));
-            // lg::debug("value={}, nanos={}\n", value, nanos);
-            std::chrono::duration d = std::chrono::nanoseconds(nanos);
-            return std::format("{}", d);
-            // auto f = to_mpf(value);
-            // return f.str(20);
-        }
-    }
+    // used by std::format(), but also formats mpq, which is below
+    std::string str() const;
 
     mpq value;
     bool absolute;

@@ -257,6 +257,58 @@ mpc parse_mpc(std::string_view s)
     return mpc(complex_parts[0], complex_parts[1]);
 }
 
+std::string time_::str() const
+{
+    if (absolute)
+    {
+        long long nanos = static_cast<long long>(
+            (helper::numerator(value) * mpz(1'000'000'000ll)) /
+            helper::denominator(value));
+        // lg::debug("value={}, nanos={}\n", value, nanos);
+        std::chrono::duration d = std::chrono::nanoseconds(nanos);
+        std::chrono::time_point<std::chrono::system_clock> tp(d);
+        return std::format("{:%F %T}", tp);
+        // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
+        // return std::strftime(std::localtime(&t_c), "%F %T");
+    }
+
+    // duration
+    static const mpq one_day{86400, 1};
+    static const mpq one_hour{3600, 1};
+    static const mpq one_minute{60, 1};
+    static const mpq one_second{1, 1};
+    static const mpq one_ms{1, 1000};
+    static const mpq one_us{1, 1000000};
+    static const mpq one_ns{1, 1000000000};
+
+    auto pval = abs(value);
+    if (pval >= one_day)
+    {
+        return std::format("{:f}d", value / one_day);
+    }
+    if (pval >= one_hour)
+    {
+        return std::format("{:f}h", value / one_hour);
+    }
+    if (pval >= one_minute)
+    {
+        return std::format("{:f}m", value / one_minute);
+    }
+    if (pval >= one_second)
+    {
+        return std::format("{:f}s", value / one_second);
+    }
+    if (pval >= one_ms)
+    {
+        return std::format("{:f}ms", value / one_ms);
+    }
+    if (pval >= one_us)
+    {
+        return std::format("{:f}us", value / one_us);
+    }
+    return std::format("{:f}ns", value / one_ns);
+}
+
 std::optional<time_> parse_time(std::string_view s)
 {
     static std::regex time_literal("("           // start of value capture
