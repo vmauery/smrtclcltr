@@ -246,46 +246,38 @@ bool Calculator::run_one(std::string_view expr)
         }
         else
         {
-            if (config.fixed_bits)
+            lg::debug("mpz(\"{}\")\n", expr);
+            std::string_view num;
+            int base{config.base};
+            if (expr[0] == '0' && expr.size() > 1)
             {
-                lg::debug("mpz(\"{}\") {fixed}\n", expr);
-                auto v = parse_mpz(expr);
-                e.value(make_fixed(v, config.fixed_bits, config.is_signed));
-            }
-            else
-            {
-                lg::debug("mpz(\"{}\")\n", expr);
-                std::string_view num;
-                if (expr[0] == '0' && expr.size() > 1)
+                // check for base prefix
+                if (expr.starts_with("0x"))
                 {
-                    // check for base prefix
-                    if (expr.starts_with("0x"))
-                    {
-                        e.base = 16;
-                        num = expr;
-                    }
-                    else if (expr.starts_with("0d"))
-                    {
-                        e.base = 10;
-                        num = expr.substr(2);
-                    }
-                    else if (expr.starts_with("0b"))
-                    {
-                        e.base = 2;
-                        num = binary_to_hex(expr);
-                    }
-                    else
-                    {
-                        e.base = 8;
-                        num = expr;
-                    }
+                    base = e.base = 16;
+                    num = expr;
+                }
+                else if (expr.starts_with("0d"))
+                {
+                    base = e.base = 10;
+                    num = expr.substr(2);
+                }
+                else if (expr.starts_with("0b"))
+                {
+                    base = e.base = 2;
+                    num = binary_to_hex(expr);
                 }
                 else
                 {
+                    base = e.base = 8;
                     num = expr;
                 }
-                e.value(parse_mpz(num));
             }
+            else
+            {
+                num = expr;
+            }
+            e.value(parse_mpz(num, base));
         }
     }
     catch (const std::exception& e)
@@ -500,7 +492,7 @@ void Calculator::show_stack()
             }
             else if (auto c = std::get_if<mpc>(&v); c)
             {
-                // mpq gets special treatment to print a quotient or float
+                // mpc gets special treatment with three print styles
                 if (config.mpc_mode == e_mpc_mode::polar)
                 {
                     ui->out("{0:.{1}p}{2}\n", *c, it->precision, it->unit());
@@ -523,16 +515,16 @@ void Calculator::show_stack()
                 switch (it->base)
                 {
                     case 2:
-                        ui->out("{:{}b}{}\n", *z, it->fixed_bits, it->unit());
+                        ui->out("{:#{}b}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                     case 8:
-                        ui->out("{:{}o}{}\n", *z, it->fixed_bits, it->unit());
+                        ui->out("{:#{}o}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                     case 10:
                         ui->out("{:{}d}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                     case 16:
-                        ui->out("{:{}x}{}\n", *z, it->fixed_bits, it->unit());
+                        ui->out("{:#{}x}{}\n", *z, it->fixed_bits, it->unit());
                         break;
                 }
             }

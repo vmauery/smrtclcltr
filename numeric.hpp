@@ -154,7 +154,7 @@ static inline mpz denominator(const mpq& q)
 } // namespace helper
 
 // explicit string parsers
-extern mpz parse_mpz(std::string_view s);
+extern mpz parse_mpz(std::string_view s, int base = 10);
 
 extern mpc parse_mpc(std::string_view s);
 
@@ -170,10 +170,10 @@ static inline mpq parse_mpq(std::string_view s)
 #define round_fn roundl
 #define lcm_fn std::lcm
 #define gcd_fn std::gcd
-#define pow_fn powl
+#define pow_fn std::pow
 
-static constexpr int builtin_default_precision = 20;
-static constexpr int max_precision = 20;
+static constexpr int builtin_default_precision = 6;
+static constexpr int max_precision = LDBL_DIG;
 
 static constexpr const char MATH_BACKEND[] = "native types";
 
@@ -201,12 +201,14 @@ struct rational
     T num = 0;
     T den = 1;
 
-    rational() = default;
-
     rational(const rational&) = default;
     rational(rational&&) = default;
     rational& operator=(const rational&) = default;
     rational& operator=(rational&&) = default;
+
+    rational() : num(0), den(1)
+    {
+    }
 
     rational(const mpz& n, const mpz& d) : num(n), den(d)
     {
@@ -218,7 +220,7 @@ struct rational
         auto d = r.find("/");
         if (d == std::string::npos)
         {
-            num = std::stoll(r);
+            std::from_chars(r.begin(), r.end(), num, 0);
             // lg::debug("mpq({}): num: {}, den: 1\n", r, num);
             den = 1;
         }
@@ -226,9 +228,9 @@ struct rational
         {
             auto numstr = r.substr(0, d);
             auto denstr = r.substr(d + 1);
-            num = std::stoll(numstr);
+            std::from_chars(numstr.begin(), numstr.end(), num, 0);
             // lg::debug("mpq({}): num: {} -> {}\n", r, numstr, num);
-            den = std::stoll(denstr);
+            std::from_chars(denstr.begin(), denstr.end(), den, 0);
             // lg::debug("mpq({}): den: {} -> {}\n", r, den, den);
         }
         reduce();
@@ -334,12 +336,17 @@ struct rational
     }
     std::string str() const
     {
-        return std::format("{}/{}", r, num, r.den);
+        return std::format("{}/{}", num, den);
     }
 };
 
 mpq make_quotient(const mpf& f, int digits);
 mpq make_quotient(std::string_view s);
+
+static inline mpq abs(const mpq& v)
+{
+    return (v >= mpq{}) ? v : mpq{} - v;
+}
 
 namespace helper
 {
@@ -354,58 +361,7 @@ static inline mpz denominator(const mpq& q)
 } // namespace helper
 
 // string parsers
-static inline mpz parse_mpz(std::string_view s)
-{
-    size_t end = 0;
-    mpz ret{};
-    try
-    {
-        ret = std::stoll(s, &end, 0);
-    }
-    catch (std::invalid_argument const& e)
-    {
-        // lg::debug("std::invalid_argument::what(): {}\n",  e.what());
-    }
-    catch (std::out_of_range const& e)
-    {
-        // lg::debug("std::out_of_range::what(): {}\n",  e.what());
-    }
-    // possible exponent?
-    if (end != s.size())
-    {
-        if (s[end] == 'e')
-        {
-            std::string exps = s.substr(end + 1);
-            end = 0;
-            mpf exp{};
-            try
-            {
-                exp = std::stoll(exps, &end);
-            }
-            catch (const std::exception& e)
-            {
-            }
-            if (end != exps.size())
-            {
-                throw std::invalid_argument("input has an invalid exponent");
-            }
-            exp = pow_fn(10.0l, exp);
-            mpf retf = ret * exp;
-            if (exp == HUGE_VALL ||
-                ((retf) > mpf(std::numeric_limits<mpz>::max())))
-            {
-                throw std::overflow_error("overflow with exponent");
-            }
-            ret = mpz(retf);
-        }
-        else
-        {
-            throw std::invalid_argument("input is not an integer");
-        }
-    }
-    return ret;
-}
-
+extern mpz parse_mpz(std::string_view s, int base = 10);
 extern mpc parse_mpc(std::string_view s);
 
 static inline mpq parse_mpq(std::string_view s)
@@ -484,7 +440,7 @@ static inline mpq to_mpq(const mpc& v)
 // to_mpc
 static inline mpc to_mpc(const mpz& v)
 {
-    return mpc{mpf{v}, 0};
+    return mpc{to_mpf(v), 0};
 }
 static inline mpc to_mpc(const mpf& v)
 {
@@ -492,7 +448,7 @@ static inline mpc to_mpc(const mpf& v)
 }
 static inline mpc to_mpc(const mpq& v)
 {
-    return mpc{mpf{v}, 0};
+    return mpc{to_mpf(v), 0};
 }
 static inline mpc to_mpc(const mpc& v)
 {
@@ -997,6 +953,11 @@ struct std::formatter<mpz>
         {
             return begin;
         }
+        begin = spec._M_parse_alternate_form(begin, end);
+        if (begin == end)
+        {
+            return begin;
+        }
         begin = spec._M_parse_zero_fill(begin, end);
         if (begin == end)
         {
@@ -1050,7 +1011,11 @@ struct std::formatter<mpz>
         else
         {
             // hex/dec/oct are all handled by mpz
-            std::ios_base::fmtflags f = std::ios::showbase;
+            std::ios_base::fmtflags f{};
+            if (spec._M_alt)
+            {
+                f |= std::ios::showbase;
+            }
             if (spec._M_type == std::__format::_Pres_o)
             {
                 f |= std::ios::oct;
@@ -1224,7 +1189,7 @@ struct std::formatter<mpq>
             mpf f =
                 to_mpf(helper::numerator(q)) / to_mpf(helper::denominator(q));
 #ifdef USE_BASIC_TYPES
-            return std::format_to(ctx.out(), "{:{1}f}", precision, f);
+            return std::format_to(ctx.out(), "{0:{1}f}", f, precision);
 #else
             auto s = f.str(precision);
             return std::copy(s.begin(), s.end(), ctx.out());
@@ -1316,12 +1281,12 @@ struct std::formatter<mpc>
         // ctx.out() is an output iterator to write to.
         if (spec._M_type == std::__format::_Pres_f)
         {
-            return std::format_to(ctx.out(), "({0:.{2}f}, {1:.{2}f})", c.real(),
+            return std::format_to(ctx.out(), "({0:.{2}f},{1:.{2}f})", c.real(),
                                   c.imag(), precision);
         }
         else if (spec._M_type == std::__format::_Pres_p)
         {
-            return std::format_to(ctx.out(), "({0:.{2}f}, <{1:.{2}f})", abs(c),
+            return std::format_to(ctx.out(), "({0:.{2}f},<{1:.{2}f})", abs(c),
                                   atan2(c.real(), c.imag()), precision);
         }
         else // if (spec._M_type == std::__format::_Pres_g)

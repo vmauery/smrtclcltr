@@ -100,7 +100,7 @@ class stack_entry
         if (is_signed)
         {
             mpz max_val = ((mpz{1} << (fixed_bits - 1)) - 1);
-            mpz min_val = -(mpz{1} << fixed_bits - 1);
+            mpz min_val = -(mpz{1} << (fixed_bits - 1));
             overflow = (v > max_val) || (v < min_val);
             if (overflow)
             {
