@@ -669,6 +669,16 @@ struct power : public CalcFunction
                 {
                     return {util::pow(a, b), units::pow(ua, to_mpf(b))};
                 }
+                else if constexpr (std::is_same_v<decltype(a), decltype(b)>)
+                {
+                    return {pow_fn(a, b), units::pow(ua, to_mpf(b))};
+                }
+                else if constexpr (std::is_same_v<decltype(a), const mpc&> ||
+                                   std::is_same_v<decltype(b), const mpc&>)
+                {
+                    return {pow_fn(to_mpc(a), to_mpc(b)),
+                            units::pow(ua, to_mpf(b))};
+                }
                 else
                 {
                     return {pow_fn(to_mpf(a), to_mpf(b)),
