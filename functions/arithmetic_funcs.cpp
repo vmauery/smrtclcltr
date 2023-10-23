@@ -562,7 +562,7 @@ struct inverse : public CalcFunction
             calc,
             [](const auto& a,
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                return {mpz(1) / a, units::unit() / ua};
+                return {mpq(1, 1) / a, units::unit() / ua};
             },
             std::tuple<mpz>{}, std::tuple<mpq>{}, std::tuple<mpq, mpf, mpc>{});
     }

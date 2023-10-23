@@ -457,7 +457,7 @@ static inline mpc to_mpc(const mpc& v)
 
 struct time_
 {
-    time_() : value(0, 0), absolute(false)
+    time_() : value(0, 1), absolute(false)
     {
     }
 
@@ -707,7 +707,34 @@ std::optional<time_> parse_time(std::string_view s);
 
 static inline bool operator<(const numeric& a, const numeric& b)
 {
-    return std::visit([](const auto& a, const auto& b) { return a < b; }, a, b);
+    return std::visit(
+        [](const auto& a, const auto& b) {
+            if constexpr (std::is_same_v<decltype(a), decltype(b)>)
+            {
+                return a < b;
+            }
+            else if constexpr (std::is_same_v<decltype(a), mpc> ||
+                               std::is_same_v<decltype(b), mpc>)
+            {
+                return to_mpc(a) < to_mpc(b);
+            }
+            else if constexpr (std::is_same_v<decltype(a), mpf> ||
+                               std::is_same_v<decltype(b), mpf>)
+            {
+                return to_mpf(a) < to_mpf(b);
+            }
+            else if constexpr (std::is_same_v<decltype(a), mpq> ||
+                               std::is_same_v<decltype(b), mpq>)
+            {
+                return to_mpq(a) < to_mpq(b);
+            }
+            else
+            {
+                throw std::invalid_argument("non-comparable values");
+            }
+            return false;
+        },
+        a, b);
 }
 
 static inline mpz to_mpz(const numeric& n)
