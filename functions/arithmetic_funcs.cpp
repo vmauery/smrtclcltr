@@ -31,18 +31,17 @@ bool add_from_stack(Calculator& calc)
 
 bool divide_from_stack(Calculator& calc)
 {
-    return two_arg_conv_op(
-        calc,
-        [](const auto& a, const auto& b, const units::unit& ua,
-           const units::unit& ub) -> std::tuple<numeric, units::unit> {
-            lg::debug("a: ({} (type {}))\n", a, DEBUG_TYPE(a));
-            lg::debug("b: ({} (type {}))\n", b, DEBUG_TYPE(b));
-            auto r = a / b;
-            lg::debug("r: ({} (type {}))\n", r, DEBUG_TYPE(r));
-            return {r, ua / ub};
-        },
-        std::tuple<mpz>{}, std::tuple<mpq>{},
-        std::tuple<mpq, mpf, mpc, time_>{});
+    return two_arg_conv<ITypes<mpz>, OTypes<mpq>,
+                        LTypes<mpq, mpf, mpc, time_>>::
+        op(calc,
+           [](const auto& a, const auto& b, const units::unit& ua,
+              const units::unit& ub) -> std::tuple<numeric, units::unit> {
+               lg::debug("a: ({} (type {}))\n", a, DEBUG_TYPE(a));
+               lg::debug("b: ({} (type {}))\n", b, DEBUG_TYPE(b));
+               auto r = a / b;
+               lg::debug("r: ({} (type {}))\n", r, DEBUG_TYPE(r));
+               return {r, ua / ub};
+           });
 }
 
 } // namespace util
@@ -279,18 +278,17 @@ struct percent_change : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return two_arg_conv_op(
-            calc,
-            [](const auto& a, const auto& b, const units::unit& ua,
-               const units::unit& ub) -> std::tuple<numeric, units::unit> {
-                if (ua != ub)
-                {
-                    throw std::invalid_argument("units do not match");
-                }
-                return {(b - a) / a, units::unit{}};
-            },
-            std::tuple<mpz>{}, std::tuple<mpq>{},
-            std::tuple<mpq, mpf, mpc, time_>{});
+        return two_arg_conv<ITypes<mpz>, OTypes<mpq>,
+                            LTypes<mpq, mpf, mpc, time_>>::
+            op(calc,
+               [](const auto& a, const auto& b, const units::unit& ua,
+                  const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                   if (ua != ub)
+                   {
+                       throw std::invalid_argument("units do not match");
+                   }
+                   return {(b - a) / a, units::unit{}};
+               });
     }
 };
 
@@ -388,28 +386,28 @@ struct ceil : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    // complex adapter doesn't work with ceil
-                    mpf rp = ceil_fn(a.real());
-                    mpf ip = ceil_fn(a.imag());
-                    return {mpc(rp, ip), ua};
-                }
-                else if constexpr (std::is_same<decltype(a), const mpz&>::value)
-                {
-                    // integers are already there
-                    return {a, ua};
-                }
-                else
-                {
-                    return {ceil_fn(a), ua};
-                }
-            },
-            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+        return one_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   {
+                       // complex adapter doesn't work with ceil
+                       mpf rp = ceil_fn(a.real());
+                       mpf ip = ceil_fn(a.imag());
+                       return {mpc(rp, ip), ua};
+                   }
+                   else if constexpr (std::is_same<decltype(a),
+                                                   const mpz&>::value)
+                   {
+                       // integers are already there
+                       return {a, ua};
+                   }
+                   else
+                   {
+                       return {ceil_fn(a), ua};
+                   }
+               });
     }
 };
 
@@ -435,28 +433,28 @@ struct floor : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    // complex adapter doesn't work with floor
-                    mpf rp = floor_fn(a.real());
-                    mpf ip = floor_fn(a.imag());
-                    return {mpc(rp, ip), ua};
-                }
-                else if constexpr (std::is_same<decltype(a), const mpz&>::value)
-                {
-                    // integers are already there
-                    return {a, ua};
-                }
-                else
-                {
-                    return {floor_fn(a), ua};
-                }
-            },
-            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+        return one_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   {
+                       // complex adapter doesn't work with floor
+                       mpf rp = floor_fn(a.real());
+                       mpf ip = floor_fn(a.imag());
+                       return {mpc(rp, ip), ua};
+                   }
+                   else if constexpr (std::is_same<decltype(a),
+                                                   const mpz&>::value)
+                   {
+                       // integers are already there
+                       return {a, ua};
+                   }
+                   else
+                   {
+                       return {floor_fn(a), ua};
+                   }
+               });
     }
 };
 
@@ -482,28 +480,28 @@ struct round : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    // complex adapter doesn't work with round
-                    mpf rp = round_fn(a.real());
-                    mpf ip = round_fn(a.imag());
-                    return {mpc(rp, ip), ua};
-                }
-                else if constexpr (std::is_same<decltype(a), const mpz&>::value)
-                {
-                    // integers are already there
-                    return {a, ua};
-                }
-                else
-                {
-                    return {round_fn(a), ua};
-                }
-            },
-            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+        return one_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   {
+                       // complex adapter doesn't work with round
+                       mpf rp = round_fn(a.real());
+                       mpf ip = round_fn(a.imag());
+                       return {mpc(rp, ip), ua};
+                   }
+                   else if constexpr (std::is_same<decltype(a),
+                                                   const mpz&>::value)
+                   {
+                       // integers are already there
+                       return {a, ua};
+                   }
+                   else
+                   {
+                       return {round_fn(a), ua};
+                   }
+               });
     }
 };
 
@@ -558,13 +556,12 @@ struct inverse : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                return {mpq(1, 1) / a, units::unit() / ua};
-            },
-            std::tuple<mpz>{}, std::tuple<mpq>{}, std::tuple<mpq, mpf, mpc>{});
+        return one_arg_conv<ITypes<mpz>, OTypes<mpq>, LTypes<mpq, mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                   return {mpq(1, 1) / a, units::unit() / ua};
+               });
     }
 };
 
@@ -656,36 +653,36 @@ struct power : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return two_arg_conv_op(
-            calc,
-            [](const auto& a, const auto& b, const units::unit& ua,
-               const units::unit& ub) -> std::tuple<numeric, units::unit> {
-                if (ub != units::unit())
-                {
-                    throw std::invalid_argument("cannot raise to a unit power");
-                }
-                if constexpr (std::is_same_v<decltype(a), const mpz&> &&
-                              std::is_same_v<decltype(b), const mpz&>)
-                {
-                    return {util::pow(a, b), units::pow(ua, to_mpf(b))};
-                }
-                else if constexpr (std::is_same_v<decltype(a), decltype(b)>)
-                {
-                    return {pow_fn(a, b), units::pow(ua, to_mpf(b))};
-                }
-                else if constexpr (std::is_same_v<decltype(a), const mpc&> ||
-                                   std::is_same_v<decltype(b), const mpc&>)
-                {
-                    return {pow_fn(to_mpc(a), to_mpc(b)),
-                            units::pow(ua, to_mpf(b))};
-                }
-                else
-                {
-                    return {pow_fn(to_mpf(a), to_mpf(b)),
-                            units::pow(ua, to_mpf(b))};
-                }
-            },
-            std::tuple<mpq>{}, std::tuple<mpf>{}, std::tuple<mpz, mpf, mpc>{});
+        return two_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+            op(calc,
+               [](const auto& a, const auto& b, const units::unit& ua,
+                  const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                   if (ub != units::unit())
+                   {
+                       throw std::invalid_argument(
+                           "cannot raise to a unit power");
+                   }
+                   if constexpr (std::is_same_v<decltype(a), const mpz&> &&
+                                 std::is_same_v<decltype(b), const mpz&>)
+                   {
+                       return {util::pow(a, b), units::pow(ua, to_mpf(b))};
+                   }
+                   else if constexpr (std::is_same_v<decltype(a), decltype(b)>)
+                   {
+                       return {pow_fn(a, b), units::pow(ua, to_mpf(b))};
+                   }
+                   else if constexpr (std::is_same_v<decltype(a), const mpc&> ||
+                                      std::is_same_v<decltype(b), const mpc&>)
+                   {
+                       return {pow_fn(to_mpc(a), to_mpc(b)),
+                               units::pow(ua, to_mpf(b))};
+                   }
+                   else
+                   {
+                       return {pow_fn(to_mpf(a), to_mpf(b)),
+                               units::pow(ua, to_mpf(b))};
+                   }
+               });
     }
 };
 

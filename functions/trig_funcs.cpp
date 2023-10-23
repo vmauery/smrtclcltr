@@ -32,20 +32,20 @@ struct sine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op(calc, a,
-                                      [](const auto& a) { return sin(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op(
+                                          calc, a,
+                                          [](const auto& a) { return sin(a); });
+                                  });
     }
 };
 
@@ -70,20 +70,20 @@ struct cosine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op(calc, a,
-                                      [](const auto& a) { return cos(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op(
+                                          calc, a,
+                                          [](const auto& a) { return cos(a); });
+                                  });
     }
 };
 
@@ -108,20 +108,20 @@ struct tangent : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op(calc, a,
-                                      [](const auto& a) { return tan(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op(
+                                          calc, a,
+                                          [](const auto& a) { return tan(a); });
+                                  });
     }
 };
 
@@ -147,20 +147,21 @@ struct arcsine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op_inv(
-                    calc, a, [](const auto& a) { return asin(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op_inv(
+                                          calc, a, [](const auto& a) {
+                                              return asin(a);
+                                          });
+                                  });
     }
 };
 
@@ -186,20 +187,21 @@ struct arccosine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op_inv(
-                    calc, a, [](const auto& a) { return acos(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op_inv(
+                                          calc, a, [](const auto& a) {
+                                              return acos(a);
+                                          });
+                                  });
     }
 };
 
@@ -225,20 +227,21 @@ struct arctangent : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op_inv(
-                    calc, a, [](const auto& a) { return atan(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op_inv(
+                                          calc, a, [](const auto& a) {
+                                              return atan(a);
+                                          });
+                                  });
     }
 };
 
@@ -264,20 +267,21 @@ struct hyperbolic_sine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op(calc, a,
-                                      [](const auto& a) { return sinh(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op(calc, a,
+                                                            [](const auto& a) {
+                                                                return sinh(a);
+                                                            });
+                                  });
     }
 };
 
@@ -303,20 +307,21 @@ struct hyperbolic_cosine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op(calc, a,
-                                      [](const auto& a) { return cosh(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op(calc, a,
+                                                            [](const auto& a) {
+                                                                return cosh(a);
+                                                            });
+                                  });
     }
 };
 
@@ -342,20 +347,21 @@ struct hyperbolic_tangent : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op(calc, a,
-                                      [](const auto& a) { return tanh(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op(calc, a,
+                                                            [](const auto& a) {
+                                                                return tanh(a);
+                                                            });
+                                  });
     }
 };
 
@@ -381,20 +387,21 @@ struct hyperbolic_arcsine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op_inv(
-                    calc, a, [](const auto& a) { return asinh(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op_inv(
+                                          calc, a, [](const auto& a) {
+                                              return asinh(a);
+                                          });
+                                  });
     }
 };
 
@@ -420,20 +427,21 @@ struct hyperbolic_arccosine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op_inv(
-                    calc, a, [](const auto& a) { return acosh(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op_inv(
+                                          calc, a, [](const auto& a) {
+                                              return acosh(a);
+                                          });
+                                  });
     }
 };
 
@@ -459,20 +467,21 @@ struct hyperbolic_arctangent : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [&calc](const auto& a,
-                    const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if (ua != units::unit())
-                {
-                    throw std::invalid_argument(
-                        "values with units not allowed");
-                }
-                return scaled_trig_op_inv(
-                    calc, a, [](const auto& a) { return atanh(a); });
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [&calc](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw std::invalid_argument(
+                                              "values with units not allowed");
+                                      }
+                                      return scaled_trig_op_inv(
+                                          calc, a, [](const auto& a) {
+                                              return atanh(a);
+                                          });
+                                  });
     }
 };
 

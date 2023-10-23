@@ -32,29 +32,28 @@ struct logarithm : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit&) -> std::tuple<numeric, units::unit> {
-                mpf log10 = log(mpf{10});
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    return {log(a) / log10, units::unit()};
-                }
-                else
-                {
-                    if (a > decltype(a)(0))
-                    {
-                        return {log(mpf{a}) / log10, units::unit()};
-                    }
-                    else
-                    {
-                        return {log(mpc{a}) / log10, units::unit()};
-                    }
-                }
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit&) -> std::tuple<numeric, units::unit> {
+                   mpf log10 = log(mpf{10});
+                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   {
+                       return {log(a) / log10, units::unit()};
+                   }
+                   else
+                   {
+                       if (a > decltype(a)(0))
+                       {
+                           return {log(mpf{a}) / log10, units::unit()};
+                       }
+                       else
+                       {
+                           return {log(mpc{a}) / log10, units::unit()};
+                       }
+                   }
+               });
     }
 };
 
@@ -80,28 +79,27 @@ struct natural_logarithm : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit&) -> std::tuple<numeric, units::unit> {
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    return {log(a), units::unit()};
-                }
-                else
-                {
-                    if (a > decltype(a)(0))
-                    {
-                        return {log(mpf{a}), units::unit()};
-                    }
-                    else
-                    {
-                        return {log(mpc{a}), units::unit()};
-                    }
-                }
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit&) -> std::tuple<numeric, units::unit> {
+                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   {
+                       return {log(a), units::unit()};
+                   }
+                   else
+                   {
+                       if (a > decltype(a)(0))
+                       {
+                           return {log(mpf{a}), units::unit()};
+                       }
+                       else
+                       {
+                           return {log(mpc{a}), units::unit()};
+                       }
+                   }
+               });
     }
 };
 
@@ -127,29 +125,28 @@ struct log_base_two : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit&) -> std::tuple<numeric, units::unit> {
-                mpf log2 = log(mpf{2});
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    return {log(a) / log2, units::unit()};
-                }
-                else
-                {
-                    if (a > decltype(a)(0))
-                    {
-                        return {log(mpf{a}) / log2, units::unit()};
-                    }
-                    else
-                    {
-                        return {log(mpc{a}) / log2, units::unit()};
-                    }
-                }
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit&) -> std::tuple<numeric, units::unit> {
+                   mpf log2 = log(mpf{2});
+                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   {
+                       return {log(a) / log2, units::unit()};
+                   }
+                   else
+                   {
+                       if (a > decltype(a)(0))
+                       {
+                           return {log(mpf{a}) / log2, units::unit()};
+                       }
+                       else
+                       {
+                           return {log(mpc{a}) / log2, units::unit()};
+                       }
+                   }
+               });
     }
 };
 

@@ -87,6 +87,21 @@ struct reduce
     }
 };
 
+template <typename...>
+struct ITypes
+{
+};
+
+template <typename...>
+struct OTypes
+{
+};
+
+template <typename...>
+struct LTypes
+{
+};
+
 template <std::size_t N, class... Args>
 using list_type_t = std::tuple_element_t<N, std::tuple<Args...>>;
 
@@ -142,35 +157,45 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
     return true;
 }
 
-template <typename Fn, typename... Itypes, typename... Otypes,
-          typename... Ltypes>
-bool one_arg_conv_op(Calculator& calc, const Fn& fn,
-                     const std::tuple<Itypes...>& /* in */,
-                     const std::tuple<Otypes...>& /* out */,
-                     const std::tuple<Ltypes...>& /*limit*/)
+template <typename It, typename Ot, typename Lt>
+struct one_arg_conv
 {
-    if (calc.stack.size() < 1)
+    template <typename Fn>
+    static bool op(Calculator&, const Fn&)
     {
-        throw std::invalid_argument("Requires 1 argument");
+        return false;
     }
-    stack_entry a = calc.stack.front();
-    numeric ca = a.value();
-    conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
-    std::variant<Ltypes...> lca;
-    if (!reduce(ca, lca)())
+};
+template <typename... Itypes, typename... Otypes, typename... Ltypes>
+struct one_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
+{
+    template <typename Fn>
+    static bool op(Calculator& calc, const Fn& fn)
     {
-        throw std::runtime_error("Argument failed to reduce after conversion");
+        if (calc.stack.size() < 1)
+        {
+            throw std::invalid_argument("Requires 1 argument");
+        }
+        stack_entry a = calc.stack.front();
+        numeric ca = a.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
+        std::variant<Ltypes...> lca;
+        if (!reduce(ca, lca)())
+        {
+            throw std::runtime_error(
+                "Argument failed to reduce after conversion");
+        }
+
+        auto [cv, nu] = std::visit(
+            [&fn, ua{a.unit()}](const auto& a) { return fn(a, ua); }, lca);
+        calc.stack.pop_front();
+
+        calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
+                                 calc.config.fixed_bits, a.precision,
+                                 calc.config.is_signed);
+        return true;
     }
-
-    auto [cv, nu] = std::visit(
-        [&fn, ua{a.unit()}](const auto& a) { return fn(a, ua); }, lca);
-    calc.stack.pop_front();
-
-    calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
-                             calc.config.fixed_bits, a.precision,
-                             calc.config.is_signed);
-    return true;
-}
+};
 
 template <typename... AllowedTypes, typename Fn>
 bool one_arg_limited_op(Calculator& calc, const Fn& fn)
@@ -273,58 +298,68 @@ bool two_arg_uconv_op(Calculator& calc, const Fn& fn)
     return true;
 }
 
-template <typename Fn, typename... Itypes, typename... Otypes,
-          typename... Ltypes>
-bool two_arg_conv_op(Calculator& calc, const Fn& fn,
-                     const std::tuple<Itypes...>& /* in */,
-                     const std::tuple<Otypes...>& /* out */,
-                     const std::tuple<Ltypes...>& /*limit*/)
+template <typename It, typename Ot, typename Lt>
+struct two_arg_conv
 {
-    if (calc.stack.size() < 2)
+    template <typename Fn>
+    bool op(Calculator&, const Fn&)
     {
-        throw std::invalid_argument("Requires 2 arguments");
+        return false;
     }
-    stack_entry a = calc.stack[1];
-    stack_entry b = calc.stack[0];
+};
 
-    lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
-    lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
-    if (a.unit() != b.unit() && a.unit().compat(b.unit()))
+template <typename... Itypes, typename... Otypes, typename... Ltypes>
+struct two_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
+{
+    template <typename Fn>
+    static bool op(Calculator& calc, const Fn& fn)
     {
-        // convert b to a units
-        b.value(units::convert(b.value(), b.unit(), a.unit()));
-    }
-    lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
-    lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
-    numeric ca = a.value();
-    conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
-    numeric cb = b.value();
-    conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cb);
-    std::variant<Ltypes...> lca;
-    std::variant<Ltypes...> lcb;
-    if (!reduce(ca, lca)() || !reduce(cb, lcb)())
-    {
-        throw std::runtime_error(
-            "Argument(s) failed to reduce after conversion");
-    }
-    lg::debug("a: ({} (type {}))\n", lca, DEBUG_TYPE(lca));
-    lg::debug("b: ({} (type {}))\n", lcb, DEBUG_TYPE(lcb));
-    auto [cv, nu] = std::visit(
-        [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
-            lg::debug("a: ({} (type {}))\n", a, DEBUG_TYPE(a));
-            lg::debug("b: ({} (type {}))\n", b, DEBUG_TYPE(b));
-            return fn(a, b, ua, ub);
-        },
-        lca, lcb);
+        if (calc.stack.size() < 2)
+        {
+            throw std::invalid_argument("Requires 2 arguments");
+        }
+        stack_entry a = calc.stack[1];
+        stack_entry b = calc.stack[0];
 
-    calc.stack.pop_front();
-    calc.stack.pop_front();
+        lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
+        lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
+        if (a.unit() != b.unit() && a.unit().compat(b.unit()))
+        {
+            // convert b to a units
+            b.value(units::convert(b.value(), b.unit(), a.unit()));
+        }
+        lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
+        lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
+        numeric ca = a.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
+        numeric cb = b.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cb);
+        std::variant<Ltypes...> lca;
+        std::variant<Ltypes...> lcb;
+        if (!reduce(ca, lca)() || !reduce(cb, lcb)())
+        {
+            throw std::runtime_error(
+                "Argument(s) failed to reduce after conversion");
+        }
+        lg::debug("a: ({} (type {}))\n", lca, DEBUG_TYPE(lca));
+        lg::debug("b: ({} (type {}))\n", lcb, DEBUG_TYPE(lcb));
+        auto [cv, nu] = std::visit(
+            [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
+                lg::debug("a: ({} (type {}))\n", a, DEBUG_TYPE(a));
+                lg::debug("b: ({} (type {}))\n", b, DEBUG_TYPE(b));
+                return fn(a, b, ua, ub);
+            },
+            lca, lcb);
 
-    calc.stack.emplace_front(
-        std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
-        std::min(a.precision, b.precision), calc.config.is_signed);
-    return true;
-}
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+
+        calc.stack.emplace_front(
+            std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
+            std::min(a.precision, b.precision), calc.config.is_signed);
+        return true;
+    }
+};
 
 template <typename... AllowedTypes, typename Fn>
 bool two_arg_limited_op(Calculator& calc, const Fn& fn)

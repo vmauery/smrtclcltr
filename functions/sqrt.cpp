@@ -33,28 +33,27 @@ struct square_root : public CalcFunction
 
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv_op(
-            calc,
-            [](const auto& a,
-               const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                if constexpr (std::is_same<decltype(a), const mpc&>::value)
-                {
-                    return {sqrt(a), units::pow(ua, 0.5l)};
-                }
-                else
-                {
-                    if (a >= decltype(a)(0))
-                    {
-                        return {sqrt(mpf{a}), units::pow(ua, 0.5l)};
-                    }
-                    else
-                    {
-                        return {sqrt(mpc{a}), units::pow(ua, 0.5l)};
-                    }
-                }
-            },
-            std::tuple<mpz, mpq>{}, std::tuple<mpf, mpf>{},
-            std::tuple<mpf, mpc>{});
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   {
+                       return {sqrt(a), units::pow(ua, 0.5l)};
+                   }
+                   else
+                   {
+                       if (a >= decltype(a)(0))
+                       {
+                           return {sqrt(mpf{a}), units::pow(ua, 0.5l)};
+                       }
+                       else
+                       {
+                           return {sqrt(mpc{a}), units::pow(ua, 0.5l)};
+                       }
+                   }
+               });
     }
 };
 
