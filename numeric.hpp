@@ -220,18 +220,18 @@ struct rational
         auto d = r.find("/");
         if (d == std::string::npos)
         {
-            std::from_chars(r.begin(), r.end(), num, 0);
-            // lg::debug("mpq({}): num: {}, den: 1\n", r, num);
+            std::from_chars(r.begin(), r.end(), num, 10);
+            lg::debug("mpq({}): num: {}, den: 1\n", r, num);
             den = 1;
         }
         else
         {
             auto numstr = r.substr(0, d);
             auto denstr = r.substr(d + 1);
-            std::from_chars(numstr.begin(), numstr.end(), num, 0);
-            // lg::debug("mpq({}): num: {} -> {}\n", r, numstr, num);
-            std::from_chars(denstr.begin(), denstr.end(), den, 0);
-            // lg::debug("mpq({}): den: {} -> {}\n", r, den, den);
+            std::from_chars(numstr.begin(), numstr.end(), num, 10);
+            std::from_chars(denstr.begin(), denstr.end(), den, 10);
+            lg::debug("mpq({}): '{}'/'{}' -> {}/{}\n", r, numstr, denstr, num,
+                      den);
         }
         reduce();
     }
