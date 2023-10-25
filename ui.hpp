@@ -5,8 +5,8 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #pragma once
 
-#include <iostream>
 #include <memory>
+#include <print.hpp>
 #include <string_view>
 
 struct ui : public std::enable_shared_from_this<ui>
@@ -37,20 +37,20 @@ struct ui : public std::enable_shared_from_this<ui>
 
     std::shared_ptr<ui> flush()
     {
-        // cerr is non-buffering, so just flush cout
-        std::cout.flush();
+        // stderr is non-buffering, so just flush stdout
+        fflush(stdout);
         return shared_from_this();
     }
 
     std::shared_ptr<ui> err(const std::string& m)
     {
-        std::cerr << m;
+        std::print(stderr, m);
         return shared_from_this();
     }
 
     std::shared_ptr<ui> out(const std::string& m)
     {
-        std::cout << m;
+        std::print(stdout, m);
         return shared_from_this();
     }
 
