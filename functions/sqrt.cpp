@@ -40,17 +40,17 @@ struct square_root : public CalcFunction
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {
                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                    {
-                       return {sqrt(a), units::pow(ua, 0.5l)};
+                       return {sqrt_fn(a), units::pow(ua, mpf{0.5l})};
                    }
                    else
                    {
-                       if (a >= decltype(a)(0))
+                       if (a >= decltype(a){0.0l})
                        {
-                           return {sqrt(mpf{a}), units::pow(ua, 0.5l)};
+                           return {sqrt_fn(mpf{a}), units::pow(ua, mpf{0.5l})};
                        }
                        else
                        {
-                           return {sqrt(mpc{a}), units::pow(ua, 0.5l)};
+                           return {sqrt_fn(mpc{a}), units::pow(ua, mpf{0.5l})};
                        }
                    }
                });

@@ -14,10 +14,10 @@ namespace function
 mpz pow(const mpz& base, const mpz& exponent, const mpz& modulus)
 {
     mpz b(base), e(exponent), m(modulus);
-    mpz result = 1;
-    while (e > 0)
+    mpz result{1};
+    while (e > zero)
     {
-        if (e & 1)
+        if (e & one)
         {
             result *= b;
             result %= m;

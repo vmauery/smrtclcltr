@@ -165,15 +165,14 @@ unit::unit(std::string_view u) : id(1, 1), exp(1, 1), scale(1, 1)
             ustr = std::string_view{start, next};
             start = next;
         }
-        int pval = 1;
+        mpz pval{1};
         // further break down the unit kg^2 or m^-1
         auto p = ustr.find('^');
         if (p != std::string::npos)
         {
             ustr = ustr.substr(0, p);
             auto expview = ustr.substr(p + 1);
-            std::from_chars(expview.data(), expview.data() + expview.size(),
-                            pval);
+            pval = mpz(expview);
         }
         auto units_it = units_map.left.find(ustr);
         if (units_it == units_map.left.end())
@@ -182,7 +181,7 @@ unit::unit(std::string_view u) : id(1, 1), exp(1, 1), scale(1, 1)
             return;
         }
         unit uval = units_it->second;
-        if (pval < 0)
+        if (pval < zero)
         {
             if (op == '*')
             {

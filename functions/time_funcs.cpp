@@ -33,7 +33,9 @@ struct date_time : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        time_ now(std::chrono::system_clock::now());
+        auto tp = std::chrono::system_clock::now();
+        lg::debug("tp: {} ({})\n", tp, tp.time_since_epoch());
+        time_ now(tp);
         calc.stack.emplace_front(now, calc.config.base, calc.config.fixed_bits,
                                  calc.config.precision, calc.config.is_signed);
         return true;
@@ -216,9 +218,8 @@ struct calendar : public CalcFunction
         // generate a calendar
         // get year and month: time_ -> duration -> time_point -> year_month_day
         long long nanos =
-            static_cast<long long>(
-                (helper::numerator(t->value) * mpz(1'000'000'000ll)) /
-                helper::denominator(t->value)) +
+            static_cast<long long>((helper::numerator(t->value) * one_billion) /
+                                   helper::denominator(t->value)) +
             tz_offset_nanos();
         std::chrono::duration d = std::chrono::nanoseconds(nanos);
         std::chrono::time_point<std::chrono::system_clock> tp(d);

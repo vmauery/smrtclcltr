@@ -191,13 +191,12 @@ struct sum : public CalcFunction
             return false;
         }
         const mpz* v = std::get_if<mpz>(&e.value());
-        if (!v || (*v > 1000000000) ||
-            (*v >= static_cast<mpz>(calc.stack.size())))
+        if (!v || (*v >= static_cast<mpz>(calc.stack.size())))
         {
             return false;
         }
         calc.stack.pop_front();
-        size_t count = static_cast<size_t>(*v - 1);
+        size_t count = static_cast<size_t>(*v) - 1;
         add add_fn{};
         for (; count > 0; count--)
         {
@@ -238,13 +237,12 @@ struct product : public CalcFunction
             return false;
         }
         const mpz* v = std::get_if<mpz>(&e.value());
-        if (!v || (*v > 1000000000) ||
-            (*v >= static_cast<mpz>(calc.stack.size())))
+        if (!v || (*v >= static_cast<mpz>(calc.stack.size())))
         {
             return false;
         }
         calc.stack.pop_front();
-        size_t count = static_cast<size_t>(*v - 1);
+        size_t count = static_cast<size_t>(*v) - 1;
         multiply mult{};
         for (; count > 0; count--)
         {
@@ -393,8 +391,8 @@ struct ceil : public CalcFunction
                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                    {
                        // complex adapter doesn't work with ceil
-                       mpf rp = ceil_fn(a.real());
-                       mpf ip = ceil_fn(a.imag());
+                       mpf rp{ceil_fn(a.real())};
+                       mpf ip{ceil_fn(a.imag())};
                        return {mpc(rp, ip), ua};
                    }
                    else if constexpr (std::is_same<decltype(a),
@@ -440,8 +438,8 @@ struct floor : public CalcFunction
                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                    {
                        // complex adapter doesn't work with floor
-                       mpf rp = floor_fn(a.real());
-                       mpf ip = floor_fn(a.imag());
+                       mpf rp{floor_fn(a.real())};
+                       mpf ip{floor_fn(a.imag())};
                        return {mpc(rp, ip), ua};
                    }
                    else if constexpr (std::is_same<decltype(a),
@@ -487,8 +485,8 @@ struct round : public CalcFunction
                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                    {
                        // complex adapter doesn't work with round
-                       mpf rp = round_fn(a.real());
-                       mpf ip = round_fn(a.imag());
+                       mpf rp{round_fn(a.real())};
+                       mpf ip{round_fn(a.imag())};
                        return {mpc(rp, ip), ua};
                    }
                    else if constexpr (std::is_same<decltype(a),
@@ -587,7 +585,7 @@ struct divmod : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return two_arg_limited_op<mpz>(
+        return two_arg_limited_op<mpz, mpq, mpf>(
             calc,
             [](const auto& a, const auto& b, const units::unit& ua,
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -599,37 +597,6 @@ struct divmod : public CalcFunction
             });
     }
 };
-
-namespace util
-{
-
-numeric pow(const mpz& base, const mpz& exponent)
-{
-    mpz b(base), e(exponent);
-    bool invert = false;
-    if (e < 0)
-    {
-        invert = true;
-        e = -e;
-    }
-    mpz result = 1;
-    while (e > 0)
-    {
-        if (e & 1)
-        {
-            result *= b;
-        }
-        e = e >> 1;
-        b *= b;
-    }
-    if (invert)
-    {
-        return mpq(1, result);
-    }
-    return result;
-}
-
-} // namespace util
 
 struct power : public CalcFunction
 {
@@ -665,7 +632,17 @@ struct power : public CalcFunction
                    if constexpr (std::is_same_v<decltype(a), const mpz&> &&
                                  std::is_same_v<decltype(b), const mpz&>)
                    {
-                       return {util::pow(a, b), units::pow(ua, to_mpf(b))};
+                       lg::debug("mpz pow({}, {})\n", a, b);
+                       if (b > zero)
+                       {
+                           return {powul_fn(a, static_cast<int>(b)),
+                                   units::pow(ua, to_mpf(b))};
+                       }
+                       else
+                       {
+                           return {mpq{one, powul_fn(a, static_cast<int>(-b))},
+                                   units::pow(ua, to_mpf(b))};
+                       }
                    }
                    else if constexpr (std::is_same_v<decltype(a), decltype(b)>)
                    {

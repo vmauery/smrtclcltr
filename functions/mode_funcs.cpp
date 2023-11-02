@@ -91,6 +91,8 @@ struct verbose : public CalcFunction
         if (v)
         {
             auto lvl = static_cast<lg::level>(static_cast<int>(*v));
+            std::print("request to set verbosity to {} ({})\n",
+                       static_cast<int>(lvl), *v);
             if (lvl >= lg::level::emergency && lvl <= lg::level::debug)
             {
                 lg::debug_level = lvl;

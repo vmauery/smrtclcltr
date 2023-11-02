@@ -32,8 +32,6 @@ std::vector<mpz> factor_mpz(const mpz& x);
 
 std::vector<mpz> prime_factor(mpz x);
 
-numeric pow(const mpz& base, const mpz& exponent);
-
 } // namespace util
 
 } // namespace function

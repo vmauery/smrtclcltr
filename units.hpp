@@ -173,22 +173,7 @@ struct unit
     {
         return !(id == o.id && exp == o.exp && scale == o.scale);
     }
-    bool operator<(const unit& o) const
-    {
-        return (id * exp * scale) < (o.id * o.exp * o.scale);
-    }
-    bool operator>(const unit& o) const
-    {
-        return (id * exp * scale) > (o.id * o.exp * o.scale);
-    }
-    bool operator<=(const unit& o) const
-    {
-        return (id * exp * scale) <= (o.id * o.exp * o.scale);
-    }
-    bool operator>=(const unit& o) const
-    {
-        return (id * exp * scale) >= (o.id * o.exp * o.scale);
-    }
+    std::strong_ordering operator<=>(const unit& o) const = default;
 };
 
 static inline bool are_temp_units(const unit& a, const unit& b)

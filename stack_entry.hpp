@@ -99,13 +99,13 @@ class stack_entry
         mpz zero{0};
         if (is_signed)
         {
-            mpz max_val = ((mpz{1} << (fixed_bits - 1)) - 1);
-            mpz min_val = -(mpz{1} << (fixed_bits - 1));
+            mpz max_val = ((one << (fixed_bits - 1)) - one);
+            mpz min_val = -(one << (fixed_bits - 1));
             overflow = (v > max_val) || (v < min_val);
             if (overflow)
             {
-                mpz bits_val = (mpz{1} << fixed_bits);
-                mpz mask = bits_val - 1;
+                mpz bits_val = (one << fixed_bits);
+                mpz mask = bits_val - one;
                 v &= mask;
                 if (v > max_val)
                 {
@@ -115,7 +115,7 @@ class stack_entry
         }
         else // unsigned
         {
-            mpz max_val = ((mpz{1} << fixed_bits) - 1);
+            mpz max_val = ((one << fixed_bits) - one);
             carry = (v > max_val) || (v < zero);
             if (carry)
             {

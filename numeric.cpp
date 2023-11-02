@@ -15,12 +15,6 @@ SPDX-License-Identifier: BSD-3-Clause
 
 int default_precision = builtin_default_precision;
 
-std::ostream& operator<<(std::ostream& out, const numeric& n)
-{
-    return std::visit(
-        [&out](const auto& nn) -> std::ostream& { return out << nn; }, n);
-}
-
 mpq make_quotient(std::string_view s)
 {
     static std::regex real{
@@ -57,21 +51,21 @@ mpq make_quotient(std::string_view s)
     // [4]  float with leading zeros removed
     // [5] exponent with sign
     mpz sign = (parts[1].matched && parts[1].str() == "-") ? -1 : 1;
-    mpz whole = parts[2].matched ? parse_mpz(parts[2].str()) : 0;
-    mpz num = parts[4].matched ? parse_mpz(parts[4].str()) : 0;
-    mpz den = pow_fn(mpz(10), parts[3].str().size());
+    mpz whole = parts[2].matched ? parse_mpz(parts[2].str()) : zero;
+    mpz num = parts[4].matched ? parse_mpz(parts[4].str()) : zero;
+    mpz den = powul_fn(ten, parts[3].str().size());
     mpq val(sign * (whole * den + num), den);
     if (parts[5].matched)
     {
-        int exp = std::stoi(parts[5].str());
+        int exp{std::stoi(parts[5].str())};
         // FIXME: check to see if this will get too big? Then what?
-        if (exp < 0)
+        if (exp < zero)
         {
-            val /= to_mpq(smrty::function::util::pow(mpz(10), -exp));
+            val /= to_mpq(powul_fn(ten, -exp));
         }
         else
         {
-            val *= to_mpq(smrty::function::util::pow(mpz(10), exp));
+            val *= to_mpq(powul_fn(ten, exp));
         }
     }
     return val;
@@ -104,12 +98,13 @@ mpq make_quotient(const mpf& f, int digits)
     set_default_precision(orig_prec + 2);
     const mpf one(1.0l);
     // require error of at least original precision
-    const mpf max_error = pow_fn(mpf(10.0l), -orig_prec);
+    const mpf max_error =
+        pow_fn(mpf(10.0l), static_cast<mpf>(static_cast<mpz>(-orig_prec)));
 
     mpz m[2][2];
     mpf x(f);
     mpz ai;
-    mpz maxden = pow_fn(mpz(10), digits);
+    mpz maxden = powul_fn(ten, digits);
 
     /* initialize matrix */
     m[0][0] = m[1][1] = 1;
@@ -132,7 +127,7 @@ mpq make_quotient(const mpf& f, int digits)
 
     mpq result(m[0][0], m[1][0]);
     // throw something; not a perfect representation
-    mpf error = abs(f - to_mpf(result));
+    mpf error = abs_fn(f - static_cast<mpf>((result)));
     lg::debug("Q: {}, error = {}\n", result, error);
 
     /* now try other possibility */
@@ -140,7 +135,7 @@ mpq make_quotient(const mpf& f, int digits)
     m[0][0] = m[0][0] * ai + m[0][1];
     m[1][0] = m[1][0] * ai + m[1][1];
     mpq result2(m[0][0], m[1][0]);
-    mpf error2 = abs(f - to_mpf(result2));
+    mpf error2 = abs_fn(f - static_cast<mpf>(result2));
     lg::debug("Q: {}, error2 = {}\n", result2, error2);
     set_default_precision(orig_prec);
     if (error > max_error && error2 > max_error)
@@ -162,10 +157,10 @@ mpq parse_mpf(std::string_view s)
 
 mpz make_fixed(const mpz& v, int bits, bool is_signed)
 {
-    mpz one(1);
-    mpz max_half = one << (bits - 1);
-    mpz max_signed_value = max_half - 1;
-    mpz max_mask = (one << bits) - 1;
+    mpz bitz{bits};
+    mpz max_half = one << static_cast<int>(bitz - one);
+    mpz max_signed_value = max_half - one;
+    mpz max_mask = (one << static_cast<int>(bitz)) - one;
 
     mpz s1;
     if (is_signed)
@@ -173,7 +168,7 @@ mpz make_fixed(const mpz& v, int bits, bool is_signed)
         s1 = v & max_mask;
         if (s1 > max_signed_value)
         {
-            s1 = -(max_half + ((~(v & max_mask)) + 1) % max_half);
+            s1 = -(max_half + ((~(v & max_mask)) + one) % max_half);
         }
     }
     else
@@ -208,12 +203,49 @@ mpz parse_mpz(std::string_view s, int base)
         {
             throw std::invalid_argument("input has an invalid exponent");
         }
-        ret *= mpz(pow_fn(mpf(10), exp));
+        ret *= mpz(powul_fn(mpf(10), static_cast<int>(exp)));
         return ret;
     }
     return mpz(s);
 }
 #else  // USE_BASIC_TYPES
+
+namespace std
+{
+mpz powul(const mpz& base, int exponent)
+{
+    mpz b{base}, e{exponent};
+    lg::debug("powul(base={}, exponent={})\n", base, exponent);
+    lg::debug("powul(b={}, e={})\n", b, e);
+    if (e < zero)
+    {
+        throw std::runtime_error("invalid negative exponent");
+    }
+    mpz result{1};
+    while (e > zero)
+    {
+        lg::debug("powul: r={}, b={}, e={})\n", result, b, e);
+        if (e & one)
+        {
+            result *= b;
+        }
+        e = e >> 1;
+        b *= b;
+    }
+    return result;
+}
+std::tuple<mpz, mpz> pow(const mpz& base, int exponent)
+{
+    mpz result = powul(base, static_cast<int>(abs_fn(exponent)));
+    if (exponent < zero)
+    {
+        return {one, result};
+    }
+    return {result, one};
+}
+
+} // namespace std
+
 mpz parse_mpz(std::string_view s, int base)
 {
     std::string nc{};
@@ -230,7 +262,8 @@ mpz parse_mpz(std::string_view s, int base)
         s = s.substr(2);
     }
     mpz ret{};
-    auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), ret, base);
+    auto [ptr, ec] =
+        std::from_chars(s.data(), s.data() + s.size(), ret.value, base);
     if (ec != std::errc{})
     {
         throw std::invalid_argument(std::error_condition(ec).message());
@@ -244,19 +277,13 @@ mpz parse_mpz(std::string_view s, int base)
             auto exps = s.substr(end + 1);
             end = 0;
             mpz exp{};
-            auto [ptr, ec] = std::from_chars(exps.begin(), exps.end(), exp);
+            auto [ptr, ec] =
+                std::from_chars(exps.begin(), exps.end(), exp.value);
             if (ptr != exps.end())
             {
                 throw std::invalid_argument("input has an invalid exponent");
             }
-            exp = pow_fn(10.0l, static_cast<mpf>(exp));
-            mpf retf = ret * exp;
-            if (exp == HUGE_VALL ||
-                ((retf) > mpf(std::numeric_limits<mpz>::max())))
-            {
-                throw std::overflow_error("overflow with exponent");
-            }
-            ret = mpz(retf);
+            ret *= powul_fn(ten, exp);
         }
         else
         {
@@ -295,7 +322,7 @@ mpc parse_mpc(std::string_view s)
 #ifdef USE_BASIC_TYPES
                     std::string s = parts[i + 1].str();
                     char* end = nullptr;
-                    complex_parts[i] = std::strtold(s.c_str(), &end);
+                    complex_parts[i] = mpf{std::strtold(s.c_str(), &end)};
                     if (*end)
                     {
                         throw std::invalid_argument(
@@ -314,13 +341,21 @@ mpc parse_mpc(std::string_view s)
 
 std::string time_::str() const
 {
+    // lg::debug("str(): value={:q}\n", value);
     if (absolute)
     {
-        long long nanos = static_cast<long long>(
-            (helper::numerator(value) * mpz(1'000'000'000ll)) /
-            helper::denominator(value));
-        // lg::debug("value={}, nanos={}\n", value, nanos);
+#ifdef USE_BASIC_TYPES
+        long long nanos =
+            static_cast<long long>(helper::numerator(value) *
+                                   (one_million / helper::denominator(value)));
+        std::chrono::duration d = std::chrono::microseconds(nanos);
+#else  // !USE_BASIC_TYPES
+        long long nanos =
+            static_cast<long long>(helper::numerator(value) *
+                                   (one_billion / helper::denominator(value)));
         std::chrono::duration d = std::chrono::nanoseconds(nanos);
+#endif // USE_BASIC_TYPES
+       // lg::debug("value={}, nanos={}\n", value, nanos);
         std::chrono::time_point<std::chrono::system_clock> tp(d);
         return std::format("{:%F %T}", tp);
         // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
@@ -555,8 +590,9 @@ numeric reduce_numeric(const numeric& n, int precision)
      */
     if (auto q = std::get_if<mpq>(&n); q)
     {
-        if (helper::denominator(*q) == 1)
+        if (helper::denominator(*q) == one)
         {
+            lg::debug("reduce: denominator is one\n");
             return helper::numerator(*q);
         }
 #ifndef USE_BASIC_TYPES
@@ -571,13 +607,14 @@ numeric reduce_numeric(const numeric& n, int precision)
             return mpq(helper::numerator(*q) / c, helper::denominator(*q) / c);
         }
 #endif // !USE_BASIC_TYPES
+        lg::debug("reduce: no change\n");
         return n;
     }
     else if (auto f = std::get_if<mpf>(&n); f)
     {
         if (*f == mpf(0.0))
         {
-            return mpz(0);
+            return zero;
         }
         // internally, make_quotient will do calculations
         // with a higher precision than the current precision
@@ -599,7 +636,7 @@ numeric reduce_numeric(const numeric& n, int precision)
     {
         if (c->imag() == mpf(0.0))
         {
-            return reduce_numeric(c->real(), precision);
+            return reduce_numeric(mpf{c->real()}, precision);
         }
         return n;
     }
@@ -624,7 +661,7 @@ std::string mpz_to_bin_string(const mpz& v, std::streamsize width)
     out.reserve(bits + 3);
     out.push_back('0');
     out.push_back('b');
-    char fill = v < 0 ? '1' : '0';
+    char fill = v < zero ? '1' : '0';
     while (width > bits)
     {
         out.push_back(fill);

@@ -37,20 +37,21 @@ struct logarithm : public CalcFunction
             op(calc,
                [](const auto& a,
                   const units::unit&) -> std::tuple<numeric, units::unit> {
-                   mpf log10 = log(mpf{10});
+                   mpf log10 = log_fn(mpf{10.0l});
                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                    {
-                       return {log(a) / log10, units::unit()};
+                       return {log_fn(a) / log10, units::unit()};
                    }
                    else
                    {
-                       if (a > decltype(a)(0))
+                       if (a > decltype(a){0.0l})
                        {
-                           return {log(mpf{a}) / log10, units::unit()};
+                           return {log_fn(mpf{a}) / log10, units::unit()};
                        }
                        else
                        {
-                           return {log(mpc{a}) / log10, units::unit()};
+                           return {log_fn(mpc{a}) / static_cast<mpc>(log10),
+                                   units::unit()};
                        }
                    }
                });
@@ -86,17 +87,17 @@ struct natural_logarithm : public CalcFunction
                   const units::unit&) -> std::tuple<numeric, units::unit> {
                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                    {
-                       return {log(a), units::unit()};
+                       return {log_fn(a), units::unit()};
                    }
                    else
                    {
-                       if (a > decltype(a)(0))
+                       if (a > decltype(a){0.0l})
                        {
-                           return {log(mpf{a}), units::unit()};
+                           return {log_fn(mpf{a}), units::unit()};
                        }
                        else
                        {
-                           return {log(mpc{a}), units::unit()};
+                           return {log_fn(mpc{a}), units::unit()};
                        }
                    }
                });
@@ -130,20 +131,21 @@ struct log_base_two : public CalcFunction
             op(calc,
                [](const auto& a,
                   const units::unit&) -> std::tuple<numeric, units::unit> {
-                   mpf log2 = log(mpf{2});
+                   mpf log2 = log_fn(mpf{2.0l});
                    if constexpr (std::is_same<decltype(a), const mpc&>::value)
                    {
-                       return {log(a) / log2, units::unit()};
+                       return {log_fn(a) / log2, units::unit()};
                    }
                    else
                    {
-                       if (a > decltype(a)(0))
+                       if (a > decltype(a){0.0l})
                        {
-                           return {log(mpf{a}) / log2, units::unit()};
+                           return {log_fn(mpf{a}) / log2, units::unit()};
                        }
                        else
                        {
-                           return {log(mpc{a}) / log2, units::unit()};
+                           return {log_fn(mpc{a}) / static_cast<mpc>(log2),
+                                   units::unit()};
                        }
                    }
                });

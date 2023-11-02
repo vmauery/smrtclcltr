@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/multiprecision/number.hpp>
 #include <calculator.hpp>
@@ -370,6 +371,11 @@ bool Calculator::debug()
     if (config.debug)
     {
         ui->out("using {} for numeric backend\n", MATH_BACKEND);
+        lg::debug_level = lg::level::debug;
+    }
+    else
+    {
+        lg::debug_level = lg::level::error;
     }
     return true;
 }
@@ -421,22 +427,16 @@ bool Calculator::cbase()
 
 bool Calculator::fixed_bits(unsigned int bits)
 {
-    if (bits <= 64 * 1024)
-    {
-        config.fixed_bits = bits;
-        return true;
-    }
-    return false;
+    bits = std::min(bits, max_bits);
+    config.fixed_bits = bits;
+    return true;
 }
 
 bool Calculator::precision(unsigned int p)
 {
-    if (p <= max_precision)
-    {
-        config.precision = p;
-        set_default_precision(p);
-        return true;
-    }
+    p = std::min(p, max_precision);
+    config.precision = p;
+    set_default_precision(p);
     return false;
 }
 

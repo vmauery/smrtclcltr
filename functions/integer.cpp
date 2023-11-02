@@ -17,7 +17,7 @@ std::vector<mpz> factor_mpz(const mpz& x)
 {
     std::vector<mpz> facts;
     mpz maxf = to_mpz(ceil_fn(sqrt(mpf(x))));
-    mpz n(2);
+    mpz n{2};
     while (n < maxf)
     {
         if (x % n == 0)

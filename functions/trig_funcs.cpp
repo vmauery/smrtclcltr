@@ -43,8 +43,9 @@ struct sine : public CalcFunction
                                               "values with units not allowed");
                                       }
                                       return scaled_trig_op(
-                                          calc, a,
-                                          [](const auto& a) { return sin(a); });
+                                          calc, a, [](const auto& a) {
+                                              return sin_fn(a);
+                                          });
                                   });
     }
 };
@@ -81,8 +82,9 @@ struct cosine : public CalcFunction
                                               "values with units not allowed");
                                       }
                                       return scaled_trig_op(
-                                          calc, a,
-                                          [](const auto& a) { return cos(a); });
+                                          calc, a, [](const auto& a) {
+                                              return cos_fn(a);
+                                          });
                                   });
     }
 };
@@ -119,8 +121,9 @@ struct tangent : public CalcFunction
                                               "values with units not allowed");
                                       }
                                       return scaled_trig_op(
-                                          calc, a,
-                                          [](const auto& a) { return tan(a); });
+                                          calc, a, [](const auto& a) {
+                                              return tan_fn(a);
+                                          });
                                   });
     }
 };
@@ -159,7 +162,7 @@ struct arcsine : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return asin(a);
+                                              return asin_fn(a);
                                           });
                                   });
     }
@@ -199,7 +202,7 @@ struct arccosine : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return acos(a);
+                                              return acos_fn(a);
                                           });
                                   });
     }
@@ -239,7 +242,7 @@ struct arctangent : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return atan(a);
+                                              return atan_fn(a);
                                           });
                                   });
     }
@@ -277,10 +280,10 @@ struct hyperbolic_sine : public CalcFunction
                                           throw std::invalid_argument(
                                               "values with units not allowed");
                                       }
-                                      return scaled_trig_op(calc, a,
-                                                            [](const auto& a) {
-                                                                return sinh(a);
-                                                            });
+                                      return scaled_trig_op(
+                                          calc, a, [](const auto& a) {
+                                              return sinh_fn(a);
+                                          });
                                   });
     }
 };
@@ -317,10 +320,10 @@ struct hyperbolic_cosine : public CalcFunction
                                           throw std::invalid_argument(
                                               "values with units not allowed");
                                       }
-                                      return scaled_trig_op(calc, a,
-                                                            [](const auto& a) {
-                                                                return cosh(a);
-                                                            });
+                                      return scaled_trig_op(
+                                          calc, a, [](const auto& a) {
+                                              return cosh_fn(a);
+                                          });
                                   });
     }
 };
@@ -357,10 +360,10 @@ struct hyperbolic_tangent : public CalcFunction
                                           throw std::invalid_argument(
                                               "values with units not allowed");
                                       }
-                                      return scaled_trig_op(calc, a,
-                                                            [](const auto& a) {
-                                                                return tanh(a);
-                                                            });
+                                      return scaled_trig_op(
+                                          calc, a, [](const auto& a) {
+                                              return tanh_fn(a);
+                                          });
                                   });
     }
 };
@@ -399,7 +402,7 @@ struct hyperbolic_arcsine : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return asinh(a);
+                                              return asinh_fn(a);
                                           });
                                   });
     }
@@ -439,7 +442,7 @@ struct hyperbolic_arccosine : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return acosh(a);
+                                              return acosh_fn(a);
                                           });
                                   });
     }
@@ -479,7 +482,7 @@ struct hyperbolic_arctangent : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return atanh(a);
+                                              return atanh_fn(a);
                                           });
                                   });
     }

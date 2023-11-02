@@ -39,10 +39,10 @@ struct split : public CalcFunction
         {
             calc.stack.pop_front();
             stack_entry c1{a};
-            c1.value(c->real());
+            c1.value(mpf{c->real()});
             calc.stack.push_front(c1);
             stack_entry c2{a};
-            c2.value(c->imag());
+            c2.value(mpf{c->imag()});
             calc.stack.push_front(c2);
             return true;
         }

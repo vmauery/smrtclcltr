@@ -3,7 +3,6 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 
 SPDX-License-Identifier: BSD-3-Clause
 */
-#include <boost/math/special_functions/gamma.hpp>
 #include <exception>
 #include <function.hpp>
 
@@ -17,14 +16,14 @@ namespace util
 mpf factorial(const mpf& x)
 {
     // non-int types get gamma treatment
-    return boost::math::tgamma(x + 1);
+    return gamma_fn(x + mpf{1.0l});
 }
 
 mpf factorial(const mpq& x)
 {
-    mpf xp = to_mpf(x + 1);
+    mpf xp = to_mpf(x + one);
     // non-int types get gamma treatment
-    return boost::math::tgamma(xp);
+    return gamma_fn(xp);
 }
 
 mpz bin_split_factorial(const mpz& a, const mpz& b)
@@ -34,33 +33,33 @@ mpz bin_split_factorial(const mpz& a, const mpz& b)
         return 1;
     if (d < 4)
     {
-        if (d == 1)
+        if (d == one)
         {
             return a;
         }
-        if (d == 2)
+        if (d == two)
         {
-            return a * (a - 1);
+            return a * (a - one);
         }
         // d == 3
-        return a * (a - 1) * (a - 2);
+        return a * (a - one) * (a - two);
     }
     // all other values >= 4
-    mpz m = (a + b) / 2;
+    mpz m = (a + b) / two;
     return bin_split_factorial(a, m) * bin_split_factorial(m, b);
 }
 
 mpz factorial(const mpz& x)
 {
-    if (x < 0)
+    if (x < zero)
     {
         throw std::range_error("Undefined for integers x < 0");
     }
-    if (x < 2)
+    if (x < two)
     {
-        return 1;
+        return one;
     }
-    return bin_split_factorial(x, 0);
+    return bin_split_factorial(x, zero);
 }
 } //  namespace util
 

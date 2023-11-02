@@ -42,6 +42,22 @@ boost::random::mt19937& gen(void)
 }
 } // namespace
 
+#ifdef USE_BASIC_TYPES
+mpz rand_dist(const mpz& low, const mpz& high)
+{
+    auto l = static_cast<long long>(low);
+    auto h = static_cast<long long>(high);
+    boost::random::uniform_int_distribution<long long> dist(l, h);
+    return mpz{dist(gen())};
+}
+
+mpq rand(unsigned long bits)
+{
+    long long high{1};
+    high <<= bits;
+    return mpq(rand_dist(zero, mpz{high}), mpz{high});
+}
+#else  // USE_BASIC_TYPES
 mpz rand_dist(const mpz& low, const mpz& high)
 {
     boost::random::uniform_int_distribution<mpz> dist(low, high);
@@ -50,11 +66,12 @@ mpz rand_dist(const mpz& low, const mpz& high)
 
 mpq rand(unsigned long bits)
 {
-    mpz high = 1;
+    mpz high{1};
     high <<= bits;
-    boost::random::uniform_int_distribution<mpz> dist(0, high - 1);
+    boost::random::uniform_int_distribution<mpz> dist(0, high - one);
     return mpq(dist(gen()), high);
 }
+#endif // USE_BASIC_TYPES
 
 } // namespace util
 
@@ -307,7 +324,7 @@ struct median : public CalcFunction
                                      calc.config.precision,
                                      calc.config.is_signed);
             calc.stack.emplace_front(
-                mpz{2}, calc.config.base, calc.config.fixed_bits,
+                two, calc.config.base, calc.config.fixed_bits,
                 calc.config.precision, calc.config.is_signed);
             mean mean_fn{};
             return mean_fn.op(calc);
