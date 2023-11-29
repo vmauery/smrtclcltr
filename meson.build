@@ -1,12 +1,12 @@
 project('smrtclcltr', 'cpp',
   version : '1.0',
-  meson_version: '>=0.63.0',
+  meson_version: '>=1.1.0',
   default_options : [
     'werror=true',
     'warning_level=3',
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'cpp_std=c++20',
+    'cpp_std=c++23',
     ]
   )
 
