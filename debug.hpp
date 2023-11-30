@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <format>
 #include <iomanip>
 #include <iostream>
+#include <source_location>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -17,26 +18,10 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <ui.hpp>
 #include <variant>
 
-#if 0 // __has_builtin(__builtin_source_location)
-#include <source_location>
-
 namespace lg
 {
 using source_location = std::source_location;
-}
 
-#else
-#include <experimental/source_location>
-
-namespace lg
-{
-using source_location = std::experimental::source_location;
-}
-
-#endif
-
-namespace lg
-{
 /** Matches a type T which is anything except one of those in Ss. */
 template <typename T, typename... Ss>
 concept any_but = (... && !std::convertible_to<T, Ss>);
