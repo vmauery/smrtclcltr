@@ -8,13 +8,14 @@ Ideas for future development
      * Show modes rad/deg, polar/rect
 	 * Show error messages
 	 * Memory usage? CPU usage?
- * Better parsing of input (spirit? or maybe just more regexes?)
  * Constants library (interactive lookup for lesser-known constants)
  * More functions (long list)
  * N-d vector support
    * parse / cross / dot / add / subtract / scaler
  * Array support
    * parse / add / subtract / inv / det / mult
+ * List support
+   * sum / product / concatenate / split / scalar ops
  * Variable store/recall support
  * Scripting? Like the HP language? That might be too much...
  * Saved state?

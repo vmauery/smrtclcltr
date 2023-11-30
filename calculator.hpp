@@ -11,6 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <map>
 #include <numeric.hpp>
 #include <optional>
+#include <parser.hpp>
 #include <regex>
 #include <stack_entry.hpp>
 #include <string>
@@ -27,13 +28,13 @@ struct CalcFunction
     virtual const std::string& name() const = 0;
     virtual const std::string& help() const = 0;
     virtual bool op(Calculator&) const = 0;
-    virtual bool reop(Calculator&, const std::cmatch&) const
+    virtual bool reop(Calculator&, const std::vector<std::string>&) const
     {
         return false;
     };
-    virtual const std::optional<std::regex>& regex() const
+    virtual const std::shared_ptr<std::regex>& regex() const
     {
-        static std::optional<std::regex> _regex{};
+        static std::shared_ptr<std::regex> _regex{};
         return _regex;
     }
 };
@@ -102,6 +103,7 @@ class Calculator
         return *_this;
     }
     bool run();
+    bool run_help();
 
     // used by functions
     bool undo();
@@ -120,22 +122,22 @@ class Calculator
 
     std::deque<Stack> saved_stacks;
 
-    void make_grammar();
     void make_functions();
     std::optional<std::string_view> auto_complete(std::string_view in,
                                                   int state);
 
     void show_stack();
-    std::string get_next_token();
-    bool run_help();
-    bool run_one(std::string_view expr);
+    std::shared_ptr<Token> get_next_token(bool flush);
+    bool run_one(std::shared_ptr<Token>& token);
 
     bool _running = true;
 
     std::map<std::string_view, const CalcFunction*> _operations;
     std::vector<std::string_view> _op_names;
+    std::map<size_t, std::shared_ptr<std::regex>> _reops;
     size_t _op_names_max_strlen;
     std::shared_ptr<Input> input;
+    std::unique_ptr<Parser> parser;
 };
 
 } // namespace smrty

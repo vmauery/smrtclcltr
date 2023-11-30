@@ -103,6 +103,7 @@ smrty_src = [
   'debug.cpp',
   'input.cpp',
   'numeric.cpp',
+  'parser.cpp',
   'units.cpp',
   version_src,
   'functions/arithmetic_funcs.cpp',

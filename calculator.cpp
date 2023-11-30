@@ -102,7 +102,7 @@ Calculator::Calculator()
     make_functions();
 
     // set up the grammar
-    make_grammar();
+    parser = std::make_unique<Parser>(10, _op_names, _reops);
 }
 
 std::string binary_to_hex(std::string_view v)
@@ -148,9 +148,10 @@ std::string binary_to_hex(std::string_view v)
 bool Calculator::run_help()
 {
     auto ui = ui::get();
-    // if no arguments follow,
-    auto fn = get_next_token();
-    if (fn == "" || fn == "\n")
+    // get the next token, but drain the input so stack doesn't get printed
+    auto next = get_next_token(true);
+    lg::debug("help token is: {}\n", *next);
+    if (next->type == Parser::eol_type || next->type == Parser::null_type)
     {
         constexpr size_t WIDTH = 80; // FIXME: get this from the window
         column_layout l = find_best_layout(_op_names, WIDTH);
@@ -172,39 +173,36 @@ bool Calculator::run_help()
         }
         return true;
     }
-    auto help_op = _operations.find(fn);
+    auto help_op = _operations.find(next->value);
     if (help_op != _operations.end())
     {
         ui->out("{}\n\t{}\n", help_op->second->name(), help_op->second->help());
     }
-    // drain the input so stack doesn't get printed
-    std::string nt;
-    do
-    {
-        nt = get_next_token();
-    } while (nt != "\n");
     return true;
 }
 
-bool Calculator::run_one(std::string_view expr)
+bool Calculator::run_one(std::shared_ptr<Token>& token)
 {
-    if (expr == "help")
+    if (token->type == Parser::cmd_type)
     {
-        return run_help();
-    }
-    for (const auto& [name, op] : _operations)
-    {
-        if (name == expr)
+        // operation should always be present,
+        // but find is the same speed as []
+        auto opiter = _operations.find(token->value);
+        if (opiter == _operations.end())
         {
-            lg::debug("executing function '{}'\n", name);
-            return op->op(*this);
+            lg::error("function not found: '{}'\n", token->value);
+            return false;
         }
-        const std::optional<std::regex>& re = op->regex();
-        std::cmatch match{};
-        if (re && std::regex_match(expr.begin(), expr.end(), match, re.value()))
+        if (token->matches.size())
         {
-            lg::debug("executing function '{}'\n", name);
-            return op->reop(*this, match);
+            lg::debug("executing function '{}({})'\n", token->value,
+                      token->matches[0]);
+            return opiter->second->reop(*this, token->matches);
+        }
+        else
+        {
+            lg::debug("executing function '{}'\n", token->value);
+            return opiter->second->op(*this);
         }
     }
     // not a function
@@ -213,39 +211,17 @@ bool Calculator::run_one(std::string_view expr)
     e.precision = config.precision;
     e.fixed_bits = config.fixed_bits;
     e.is_signed = config.is_signed;
+    std::string expr = token->value;
     try
     {
         if (auto ubar = expr.find("_"); ubar != std::string::npos)
         {
             // parse units off the end and then let the numeric get parsed below
-            std::string_view unitstr = expr.substr(ubar + 1);
+            std::string unitstr = expr.substr(ubar + 1);
             expr = expr.substr(0, ubar);
             e.unit(unitstr);
         }
-        // time literals ns, us, ms, s, m, h, d, or
-        // absolute times of the ISO8601 format: yyyy-mm-dd[Thh:mm:ss]
-        if (std::optional<time_> t = parse_time(expr); t)
-        {
-            e.value(*t);
-        }
-        else if (expr.starts_with("(") || expr.ends_with("i") ||
-                 expr.ends_with("j"))
-        {
-            lg::debug("mpc(\"{}\")\n", expr);
-            e.value(parse_mpc(expr));
-        }
-        // FIXME: how to use locale-based decimal radix separator
-        else if (expr.find(".") != std::string::npos)
-        {
-            lg::debug("mpf(\"{}\")\n", expr);
-            e.value(parse_mpf(expr));
-        }
-        else if (expr.find("/") != std::string::npos)
-        {
-            lg::debug("mpq(\"{}\")\n", expr);
-            e.value(mpq(expr));
-        }
-        else
+        if (token->type == Parser::mpz_type)
         {
             lg::debug("mpz(\"{}\")\n", expr);
             std::string_view num;
@@ -280,6 +256,36 @@ bool Calculator::run_one(std::string_view expr)
             }
             e.value(parse_mpz(num, base));
         }
+        else if (token->type == Parser::mpf_type)
+        {
+            lg::debug("mpf(\"{}\")\n", expr);
+            e.value(parse_mpf(expr));
+        }
+        else if (token->type == Parser::mpc_type)
+        {
+            lg::debug("mpc(\"{}\")\n", expr);
+            e.value(parse_mpc(expr));
+        }
+        else if (token->type == Parser::mpq_type)
+        {
+            lg::debug("mpq(\"{}\")\n", expr);
+            e.value(mpq(expr));
+        }
+        else if (token->type == Parser::matrix_type)
+        {
+        }
+        else if (token->type == Parser::list_type)
+        {
+        }
+        else if (token->type == Parser::time_type)
+        {
+            // time literals ns, us, ms, s, m, h, d, or
+            // absolute times of the ISO8601 format: yyyy-mm-dd[Thh:mm:ss]
+            if (std::optional<time_> t = parse_time(expr); t)
+            {
+                e.value(*t);
+            }
+        }
     }
     catch (const std::exception& e)
     {
@@ -290,25 +296,49 @@ bool Calculator::run_one(std::string_view expr)
     return true;
 }
 
-std::string Calculator::get_next_token()
+std::shared_ptr<Token> Calculator::get_next_token(bool drain)
 {
-    static std::deque<std::string> current_line;
+    static std::deque<std::shared_ptr<Token>> current_line{};
     if (current_line.size() == 0)
     {
         std::optional<std::string> nextline = input->readline();
         if (!nextline)
         {
             _running = false;
-            return "";
+            return std::make_shared<Token>();
         }
-        std::string& input = *nextline;
-        boost::split(current_line, input, boost::is_any_of(" \t\n\r"));
-        current_line.push_back("\n");
+        std::string_view next = *nextline;
+        do
+        {
+            const auto& [parse_ok, t, more] = parser->parse_next(next);
+            if (parse_ok)
+            {
+                lg::debug("parsed: {}\n", *t);
+            }
+            next = more;
+            if (!parse_ok)
+            {
+                lg::debug("\n");
+                auto ui = ui::get();
+                ui->out("Failed to parse at '{}'\n", more);
+                current_line.clear();
+                return std::make_shared<Token>();
+            }
+            current_line.push_back(t);
+        } while (next.size());
+        current_line.push_back(std::make_shared<Token>(Parser::eol_type));
     }
-    std::string next = current_line.front();
-    current_line.pop_front();
-    lg::debug("next token is :'{}'\n", next);
-    return next;
+    auto next_token = current_line.front();
+    if (drain)
+    {
+        current_line.clear();
+    }
+    else
+    {
+        current_line.pop_front();
+    }
+    lg::debug("next token is: {}\n", *next_token);
+    return next_token;
 }
 
 bool Calculator::run()
@@ -316,11 +346,11 @@ bool Calculator::run()
     while (_running)
     {
         // get the next token
-        std::string token = get_next_token();
-        if (token == "")
+        std::shared_ptr<Token> token = get_next_token(false);
+        if (token->type == Parser::null_type)
         {
         }
-        else if (token == "\n")
+        else if (token->type == Parser::eol_type)
         {
             try
             {
@@ -413,6 +443,7 @@ bool Calculator::base(unsigned int b)
         case 10:
         case 16:
             config.base = b;
+            parser->rebuild(b);
             return true;
     }
     return false;
@@ -545,10 +576,6 @@ void Calculator::show_stack()
     }
 }
 
-void Calculator::make_grammar()
-{
-}
-
 void Calculator::make_functions()
 {
 
@@ -569,6 +596,17 @@ void Calculator::make_functions()
                        return kv.first;
                    });
     std::sort(_op_names.begin(), _op_names.end());
+
+    for (const auto& [k, v] : _operations)
+    {
+        auto re = v->regex();
+        if (re)
+        {
+            auto first = _op_names.begin();
+            auto iter = std::find(first, _op_names.end(), k);
+            _reops.emplace(std::distance(first, iter), re);
+        }
+    }
 }
 
 std::optional<std::string_view> Calculator::auto_complete(std::string_view in,

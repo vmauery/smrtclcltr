@@ -466,7 +466,7 @@ struct int_type : public CalcFunction
         calc.stack.pop_front();
         const mpz* su = std::get_if<mpz>(&x.value());
         const mpz* bits = std::get_if<mpz>(&y.value());
-        if (su && bits && ((*su == 0) || (*su == 1)) && (*bits > 0))
+        if (su && bits && ((*su == 0) || (*su == 1)) && (*bits >= 0))
         {
             bool mode = (*su == 1);
             auto ibits = static_cast<unsigned int>(*bits);
@@ -474,11 +474,12 @@ struct int_type : public CalcFunction
         }
         return false;
     }
-    virtual bool reop(Calculator& calc, const std::cmatch& match) const final
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
     {
-        bool mode = match[1].str() == "s";
+        bool mode = match[1] == "s";
         unsigned int bits{};
-        const std::string x = match[2].str();
+        std::string_view x = match[2];
         if (std::from_chars(x.data(), x.data() + x.size(), bits).ec !=
             std::errc{})
         {
@@ -486,9 +487,10 @@ struct int_type : public CalcFunction
         }
         return calc.signed_mode(mode) && calc.fixed_bits(bits);
     }
-    virtual const std::optional<std::regex>& regex() const final
+    virtual const std::shared_ptr<std::regex>& regex() const final
     {
-        static const std::optional<std::regex> _regex{"([us])([0-9]+)"};
+        static const auto _regex =
+            std::make_shared<std::regex>("([us])([0-9]+)");
         return _regex;
     }
 };
@@ -568,6 +570,32 @@ struct gradiens : public CalcFunction
     }
 };
 
+struct Help : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"help"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: help [cmd]\n"
+            "\n"
+            "    prints a list of available commands with no argument\n"
+            "    or more information for `cmd` specified\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.run_help();
+    }
+};
+
 } // namespace function
 } // namespace smrty
 
@@ -590,3 +618,4 @@ register_calc_fn(gradiens);
 register_calc_fn(ij);
 register_calc_fn(polar);
 register_calc_fn(rectangular);
+register_calc_fn(Help);
