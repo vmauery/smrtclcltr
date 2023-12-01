@@ -937,7 +937,6 @@ struct rational
         if (d == std::string::npos)
         {
             num = T{r};
-            lg::debug("mpq({}): num: {}, den: 1\n", r, num);
             den = 1;
         }
         else
@@ -946,17 +945,19 @@ struct rational
             auto denstr = r.substr(d + 1);
             num = T{numstr};
             den = T{denstr};
-            lg::debug("mpq({}): '{}'/'{}' -> {}/{}\n", r, numstr, denstr, num,
-                      den);
         }
         reduce();
     }
 
     constexpr void reduce()
     {
-        T cf = gcd_fn(num, den);
-        lg::debug("reduce: {:q} ({})\n", *this, cf);
-        if (cf > one)
+        if (den < 0)
+        {
+            num *= -1;
+            den *= -1;
+        }
+        T cf = std::gcd(num, den);
+        if (cf > 1)
         {
             num /= cf;
             den /= cf;
@@ -972,98 +973,97 @@ struct rational
         return den;
     }
 
-    template <floating F>
-    explicit constexpr operator checked_float<F>() const
+    explicit constexpr operator long double() const
     {
-        return checked_float<F>{static_cast<F>(num) / static_cast<F>(den)};
+        return static_cast<long double>(num) / static_cast<long double>(den);
     }
 
-    bool operator==(const rational& r) const
+    bool operator==(const rational<T>& r) const
     {
         return num == r.num && den == r.den;
     }
-    bool operator!=(const rational& r) const
+    bool operator!=(const rational<T>& r) const
     {
         return !(num == r.num && den == r.den);
     }
-    bool operator<(const rational& r) const
+    bool operator<(const rational<T>& r) const
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         return num * (lcm / den) < r.num * (lcm / r.den);
     }
-    bool operator>(const rational& r) const
+    bool operator>(const rational<T>& r) const
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         return num * (lcm / den) > r.num * (lcm / r.den);
     }
-    bool operator<=(const rational& r) const
+    bool operator<=(const rational<T>& r) const
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         return num * (lcm / den) <= r.num * (lcm / r.den);
     }
-    bool operator>=(const rational& r) const
+    bool operator>=(const rational<T>& r) const
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         return num * (lcm / den) >= r.num * (lcm / r.den);
     }
     /* ops with other ratios */
-    rational operator+(const rational& r) const
+    rational<T> operator+(const rational<T>& r) const
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         T nnum = num * (lcm / den) + r.num * (lcm / r.den);
-        return rational(nnum, lcm);
+        return rational<T>(nnum, lcm);
     }
-    rational operator-(const rational& r) const
+    rational<T> operator-(const rational<T>& r) const
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         T nnum = num * (lcm / den) - r.num * (lcm / r.den);
-        return rational(nnum, lcm);
+        return rational<T>(nnum, lcm);
     }
-    rational operator*(const rational& r) const
+    rational<T> operator*(const rational<T>& r) const
     {
         T nnum = num * r.num;
         T lcm = den * r.den;
-        return rational(nnum, lcm);
+        return rational<T>(nnum, lcm);
     }
-    rational operator/(const rational& r) const
+    rational<T> operator/(const rational<T>& r) const
     {
         T nnum = num * r.den;
         T lcm = den * r.num;
-        return rational(nnum, lcm);
+        return rational<T>(nnum, lcm);
     }
-    rational operator%(const rational& b) const
+    rational<T> operator%(const rational<T>& b) const
     {
         // q = a/b -> c/d
         // r = a - b * (c - (c % d)) / d
         // equivalent to:
         // a b dup2 / split dup2 rolld swap % - roll / * -
-        rational q{num * b.den, den * b.num};
-        return *this - b * rational{q.num - q.num % q.den, q.den};
+        rational<T> q{num * b.den, den * b.num};
+        return *this - b * rational<T>{q.num - q.num % q.den, q.den};
     }
-    rational& operator+=(const rational& r)
+    rational<T>& operator+=(const rational<T>& r)
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         num = num * (lcm / den) + r.num * (lcm / r.den);
         den = lcm;
         reduce();
         return *this;
     }
-    rational& operator-=(const rational& r)
+    rational<T>& operator-=(const rational<T>& r)
     {
-        T lcm = lcm_fn(den, r.den);
+        T lcm = std::lcm(den, r.den);
         num = num * (lcm / den) - r.num * (lcm / r.den);
-        reduce();
         den = lcm;
+        reduce();
         return *this;
     }
-    rational& operator*=(const rational& r)
+    rational<T>& operator*=(const rational<T>& r)
     {
         num *= r.num;
         den *= r.den;
         reduce();
         return *this;
     }
-    rational& operator/=(const rational& r)
+    rational<T>& operator/=(const rational<T>& r)
     {
         num *= r.den;
         den *= r.num;
