@@ -183,8 +183,7 @@ static inline bool are_temp_units(const unit& a, const unit& b)
 }
 
 template <typename T>
-static inline numeric scale_temp_units(const T& v, const unit& ua,
-                                       const unit& ub)
+inline numeric scale_temp_units(const T& v, const unit& ua, const unit& ub)
 {
     if (ua.id == id_degC)
     {
@@ -211,6 +210,11 @@ static inline numeric scale_temp_units(const T& v, const unit& ua,
         return v;
     }
     throw std::invalid_argument("not temperature units");
+}
+template <>
+inline numeric scale_temp_units(const matrix& v, const unit&, const unit&)
+{
+    return v;
 }
 
 // helper function that makes unit conversions more readable

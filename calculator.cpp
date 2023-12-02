@@ -273,6 +273,7 @@ bool Calculator::run_one(std::shared_ptr<Token>& token)
         }
         else if (token->type == Parser::matrix_type)
         {
+            e.value(parse_matrix(expr));
         }
         else if (token->type == Parser::list_type)
         {
@@ -503,9 +504,10 @@ void Calculator::show_stack()
                         it->fixed_bits, it->precision, base,
                         numeric_types[it->value().index()]);
             }
+            std::string row_idx{};
             if (config.interactive)
             {
-                ui->out("{:d}: ", c);
+                row_idx = std::format("{:d}: ", c);
             }
             auto& v = it->value();
 
@@ -514,11 +516,12 @@ void Calculator::show_stack()
                 // mpq gets special treatment to print a quotient or float
                 if (config.mpq_mode == e_mpq_mode::quotient)
                 {
-                    ui->out("{:q}{}\n", *q, it->unit());
+                    ui->out("{}{:q}{}\n", row_idx, *q, it->unit());
                 }
                 else // floating
                 {
-                    ui->out("{0:.{1}f}{2}\n", *q, it->precision, it->unit());
+                    ui->out("{0}{1:.{2}f}{3}\n", row_idx, *q, it->precision,
+                            it->unit());
                 }
             }
             else if (auto c = std::get_if<mpc>(&v); c)
@@ -526,44 +529,57 @@ void Calculator::show_stack()
                 // mpc gets special treatment with three print styles
                 if (config.mpc_mode == e_mpc_mode::polar)
                 {
-                    ui->out("{0:.{1}p}{2}\n", *c, it->precision, it->unit());
+                    ui->out("{0}{1:.{2}p}{3}\n", row_idx, *c, it->precision,
+                            it->unit());
                 }
                 else if (config.mpc_mode == e_mpc_mode::rectangular)
                 {
-                    ui->out("{0:.{1}r}{2}\n", *c, it->precision, it->unit());
+                    ui->out("{0}{1:.{2}r}{3}\n", row_idx, *c, it->precision,
+                            it->unit());
                 }
                 else // ij mode
                 {
-                    ui->out("{0:.{1}i}{2}\n", *c, it->precision, it->unit());
+                    ui->out("{0}{1:.{2}i}{3}\n", row_idx, *c, it->precision,
+                            it->unit());
                 }
             }
             else if (auto f = std::get_if<mpf>(&v); f)
             {
-                ui->out("{0:.{1}f}{2}\n", *f, it->precision, it->unit());
+                ui->out("{0}{1:.{2}f}{3}\n", row_idx, *f, it->precision,
+                        it->unit());
             }
             else if (auto z = std::get_if<mpz>(&v); z)
             {
                 switch (it->base)
                 {
                     case 2:
-                        ui->out("{:#{}b}{}\n", *z, it->fixed_bits, it->unit());
+                        ui->out("{0}{1:#{2}b}{3}\n", row_idx, *z,
+                                it->fixed_bits, it->unit());
                         break;
                     case 8:
-                        ui->out("{:#{}o}{}\n", *z, it->fixed_bits, it->unit());
+                        ui->out("{0}{1:#{2}o}{3}\n", row_idx, *z,
+                                it->fixed_bits, it->unit());
                         break;
                     case 10:
-                        ui->out("{:{}d}{}\n", *z, it->fixed_bits, it->unit());
+                        ui->out("{0}{1:{2}d}{3}\n", row_idx, *z, it->fixed_bits,
+                                it->unit());
                         break;
                     case 16:
-                        ui->out("{:#{}x}{}\n", *z, it->fixed_bits, it->unit());
+                        ui->out("{0}{1:#{2}x}{3}\n", row_idx, *z,
+                                it->fixed_bits, it->unit());
                         break;
                 }
+            }
+            else if (auto m = std::get_if<matrix>(&v); m)
+            {
+                ui->out("{0}{1:{2}}{3}\n", row_idx, *m, row_idx.size(),
+                        it->unit());
             }
             else
             {
                 std::visit(
-                    [it, ui](const auto& a) {
-                        ui->out("{}{}\n", a, it->unit());
+                    [it, ui, &row_idx](const auto& a) {
+                        ui->out("{}{}{}\n", row_idx, a, it->unit());
                     },
                     v);
             }

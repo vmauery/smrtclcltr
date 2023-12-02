@@ -4,6 +4,7 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <calculator.hpp>
 #include <charconv>
 #include <chrono>
 #include <cmath>
@@ -391,6 +392,59 @@ std::string time_::str() const
         return std::format("{:f}us", value / one_us);
     }
     return std::format("{:f}ns", value / one_ns);
+}
+
+matrix parse_matrix(std::string_view s)
+{
+    smrty::Calculator& calc = smrty::Calculator::get();
+    Parser& parser = calc.get_parser();
+    // strip off the braces and parse the values
+    auto next_not_brace = [](std::string_view sv) -> std::string_view {
+        auto next_pos = sv.find_first_not_of("[]");
+        if (next_pos == std::string_view::npos)
+        {
+            return {};
+        }
+        return sv.substr(next_pos);
+    };
+    lg::debug("s is '{}'\n", s);
+    std::string_view next = next_not_brace(s);
+    size_t rows = 0;
+    size_t cols = 0;
+    size_t rows_cols = 0;
+    std::vector<mpq> values{};
+    do
+    {
+        lg::debug("next is '{}'\n", next);
+        const auto& [parse_ok, t, more] = parser.parse_next(next);
+        if (parse_ok)
+        {
+            lg::debug("parsed: {}\n", *t);
+            if (rows == 0)
+            {
+                cols++;
+            }
+            values.emplace_back(t->value);
+            rows_cols++;
+        }
+        next = more;
+        if (!parse_ok)
+        {
+            rows++;
+            lg::debug("end of row {}: cols={}, cows_cols={}\n", rows, cols,
+                      rows_cols);
+            if ((cols != rows_cols) &&
+                ((rows == 2) && ((rows_cols % cols) != 0)))
+            {
+                throw std::invalid_argument(
+                    "Failed to parse matrix: column count is inconsistent");
+            }
+            rows_cols = 0;
+            // end of the row
+            next = next_not_brace(next);
+        }
+    } while (next.size());
+    return matrix(cols, rows, std::move(values));
 }
 
 std::optional<time_> parse_time(std::string_view s)

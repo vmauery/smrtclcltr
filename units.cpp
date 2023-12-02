@@ -226,7 +226,12 @@ numeric unit::conv(unit& o, const numeric& v) const
             [&o, this](const auto& n) -> numeric {
                 lg::debug("type(v) = {}, v = {}, (mpf={})\n", DEBUG_TYPE(n), n,
                           DEBUG_TYPE(mpf{}));
-                if constexpr (std::is_same_v<decltype(n), const mpf&>)
+                if constexpr (std::is_same_v<decltype(n), const matrix&>)
+                {
+                    // no units for matrices
+                    return n;
+                }
+                else if constexpr (std::is_same_v<decltype(n), const mpf&>)
                 {
                     return n * to_mpf((o.exp / exp) * (o.scale / scale));
                 }

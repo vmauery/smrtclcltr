@@ -554,7 +554,8 @@ struct inverse : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<ITypes<mpz>, OTypes<mpq>, LTypes<mpq, mpf, mpc>>::
+        return one_arg_conv<ITypes<mpz>, OTypes<mpq>,
+                            LTypes<mpq, mpf, mpc, matrix>>::
             op(calc,
                [](const auto& a,
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {

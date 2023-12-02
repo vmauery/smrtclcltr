@@ -102,6 +102,10 @@ class Calculator
         }
         return *_this;
     }
+    Parser& get_parser()
+    {
+        return *parser;
+    }
     bool run();
     bool run_help();
 
