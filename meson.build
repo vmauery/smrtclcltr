@@ -108,6 +108,7 @@ smrty_src = [
   version_src,
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',
+  'functions/compound.cpp',
   'functions/factorial.cpp',
   'functions/integer.cpp',
   'functions/log.cpp',

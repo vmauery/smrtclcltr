@@ -225,6 +225,37 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
     return true;
 }
 
+template <typename... AllowedTypes, typename Fn>
+bool one_arg_limited_multi_return_op(Calculator& calc, const Fn& fn)
+{
+    if (calc.stack.size() < 1)
+    {
+        throw std::invalid_argument("Requires 1 argument");
+    }
+    stack_entry a = calc.stack.front();
+    std::variant<AllowedTypes...> la;
+    if (!variant_holds_type<AllowedTypes...>(a.value()))
+    {
+        throw std::invalid_argument("Invalid argument type");
+    }
+    if (!reduce(a.value(), la)())
+    {
+        throw std::runtime_error("Argument failed to reduce after conversion");
+    }
+
+    std::vector<std::tuple<numeric, units::unit>> values = std::visit(
+        [&fn, ua{a.unit()}](const auto& a) { return fn(a, ua); }, la);
+
+    calc.stack.pop_front();
+    for (auto& [cv, nu] : values)
+    {
+        calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
+                                 calc.config.fixed_bits, a.precision,
+                                 calc.config.is_signed);
+    }
+    return true;
+}
+
 template <typename Fn>
 bool two_arg_op(Calculator& calc, const Fn& fn)
 {
