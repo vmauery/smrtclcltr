@@ -527,7 +527,7 @@ struct negate : public CalcFunction
         return one_arg_op(calc,
                           [](const auto& a, const units::unit& ua)
                               -> std::tuple<numeric, units::unit> {
-                              return {std::decay_t<decltype(a)>{} - a, ua};
+                              return {mpz{-1} * a, ua};
                           });
     }
 };
