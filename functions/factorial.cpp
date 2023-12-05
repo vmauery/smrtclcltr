@@ -21,7 +21,7 @@ mpf factorial(const mpf& x)
 
 mpf factorial(const mpq& x)
 {
-    mpf xp = to_mpf(x + one);
+    mpf xp = static_cast<mpf>(x + one);
     // non-int types get gamma treatment
     return gamma_fn(xp);
 }

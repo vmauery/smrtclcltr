@@ -112,7 +112,7 @@ struct to_date_time : public CalcFunction
         }
         else if (const mpz* v = std::get_if<mpz>(&e.value()); v)
         {
-            ts = to_mpq(*v);
+            ts = static_cast<mpq>(*v);
         }
         else
         {

@@ -60,7 +60,7 @@ column_layout find_best_layout(const std::vector<std::string_view>& words,
         {
             size_t col_count = layout.cols.size();
             size_t row_count =
-                ceil(static_cast<double>(words.size()) / col_count);
+                std::ceil(static_cast<double>(words.size()) / col_count);
             size_t this_col = idx / row_count;
             if (layout.valid)
             {
@@ -157,7 +157,7 @@ bool Calculator::run_help()
         column_layout l = find_best_layout(_op_names, WIDTH);
         size_t col_count = l.cols.size();
         size_t row_count =
-            ceil(static_cast<double>(_op_names.size()) / col_count);
+            std::ceil(static_cast<double>(_op_names.size()) / col_count);
         for (size_t i = 0; i < row_count; i++)
         {
             for (size_t j = 0; j < col_count; j++)

@@ -102,7 +102,15 @@ struct dropn : public CalcFunction
         {
             return false;
         }
-        size_t count = static_cast<size_t>(to_mpz(n.value()));
+        size_t count = 0;
+        if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
+        {
+            count = static_cast<size_t>(*np);
+        }
+        else if (count == 0)
+        {
+            return false;
+        }
         if (calc.stack.size() < (count + 1))
         {
             return false;
@@ -206,7 +214,15 @@ struct dupn : public CalcFunction
             return false;
         }
         stack_entry& n = calc.stack.front();
-        size_t count = static_cast<size_t>(to_mpz(n.value()));
+        size_t count = 0;
+        if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
+        {
+            count = static_cast<size_t>(*np);
+        }
+        else if (count == 0)
+        {
+            return false;
+        }
         if (calc.stack.size() < (count + 1))
         {
             return false;
@@ -404,7 +420,15 @@ struct rolln : public CalcFunction
         {
             return false;
         }
-        size_t count = static_cast<size_t>(to_mpz(n.value()));
+        size_t count = 0;
+        if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
+        {
+            count = static_cast<size_t>(*np);
+        }
+        else if (count == 0)
+        {
+            return false;
+        }
         if (calc.stack.size() < (count + 1))
         {
             return false;
@@ -479,7 +503,15 @@ struct rolldn : public CalcFunction
             return false;
         }
         stack_entry& n = calc.stack.front();
-        size_t count = static_cast<size_t>(to_mpz(n.value()));
+        size_t count = 0;
+        if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
+        {
+            count = static_cast<size_t>(*np);
+        }
+        else if (count == 0)
+        {
+            return false;
+        }
         if (calc.stack.size() < (count + 1))
         {
             return false;
@@ -522,7 +554,15 @@ struct pick : public CalcFunction
             return false;
         }
         stack_entry& n = calc.stack.front();
-        size_t count = static_cast<size_t>(to_mpz(n.value()));
+        size_t count = 0;
+        if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
+        {
+            count = static_cast<size_t>(*np);
+        }
+        else if (count == 0)
+        {
+            return false;
+        }
         if (calc.stack.size() < (count + 1))
         {
             return false;

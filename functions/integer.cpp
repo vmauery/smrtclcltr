@@ -16,7 +16,7 @@ namespace util
 std::vector<mpz> factor_mpz(const mpz& x)
 {
     std::vector<mpz> facts;
-    mpz maxf = to_mpz(ceil_fn(sqrt(mpf(x))));
+    mpz maxf = static_cast<mpz>(ceil_fn(sqrt(mpf(x))));
     mpz n{2};
     while (n < maxf)
     {
@@ -33,7 +33,7 @@ std::vector<mpz> factor_mpz(const mpz& x)
 
 mpz next_factor(const mpz& x, mpz& n)
 {
-    mpz maxf = to_mpz(ceil_fn(sqrt(mpf(x))));
+    mpz maxf = static_cast<mpz>(ceil_fn(sqrt(mpf(x))));
     while (n <= maxf)
     {
         if (x % n == 0)
@@ -48,7 +48,7 @@ mpz next_factor(const mpz& x, mpz& n)
 std::vector<mpz> prime_factor(mpz x)
 {
     std::vector<mpz> facts;
-    mpz maxf = to_mpz(ceil_fn(sqrt(mpf(x))));
+    mpz maxf = static_cast<mpz>(ceil_fn(sqrt(mpf(x))));
     mpz n(2);
     while (n <= maxf)
     {
@@ -57,7 +57,7 @@ std::vector<mpz> prime_factor(mpz x)
         {
             facts.push_back(n);
             x = nf;
-            maxf = to_mpz(ceil_fn(sqrt(mpf(x))));
+            maxf = static_cast<mpz>(ceil_fn(sqrt(mpf(x))));
             n = 1;
         }
         else

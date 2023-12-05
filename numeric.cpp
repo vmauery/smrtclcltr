@@ -59,11 +59,11 @@ mpq make_quotient(std::string_view s)
         // FIXME: check to see if this will get too big? Then what?
         if (exp < zero)
         {
-            val /= to_mpq(powul_fn(ten, -exp));
+            val /= static_cast<mpq>(powul_fn(ten, -exp));
         }
         else
         {
-            val *= to_mpq(powul_fn(ten, exp));
+            val *= static_cast<mpq>(powul_fn(ten, exp));
         }
     }
     return val;
@@ -89,15 +89,11 @@ mpq make_quotient(std::string_view s)
  * Instead of keeping the sequence of continued fraction terms,
  * we just keep the last partial product of these matrices.
  */
-
-mpq make_quotient(const mpf& f, int digits)
+static std::tuple<mpq, mpf> calculate_quotient(const mpf& f, int digits)
 {
     int orig_prec = default_precision;
     set_default_precision(orig_prec + 2);
     const mpf one(1.0l);
-    // require error of at least original precision
-    const mpf max_error =
-        pow_fn(mpf(10.0l), static_cast<mpf>(static_cast<mpz>(-orig_prec)));
 
     mpz m[2][2];
     mpf x(f);
@@ -109,7 +105,7 @@ mpq make_quotient(const mpf& f, int digits)
     m[0][1] = m[1][0] = 0;
 
     /* loop finding terms until denom gets too big */
-    while (m[1][0] * (ai = to_mpz(x)) + m[1][1] <= maxden)
+    while (m[1][0] * (ai = static_cast<mpz>(x)) + m[1][1] <= maxden)
     {
         mpz t;
         t = m[0][0] * ai + m[0][1];
@@ -118,13 +114,12 @@ mpq make_quotient(const mpf& f, int digits)
         t = m[1][0] * ai + m[1][1];
         m[1][1] = m[1][0];
         m[1][0] = t;
-        if (x == to_mpf(ai))
+        if (x == static_cast<mpf>(ai))
             break; // AF: division by zero
-        x = one / (x - to_mpf(ai));
+        x = one / (x - static_cast<mpf>(ai));
     }
 
     mpq result(m[0][0], m[1][0]);
-    // throw something; not a perfect representation
     mpf error = abs_fn(f - static_cast<mpf>((result)));
     lg::debug("Q: {}, error = {}\n", result, error);
 
@@ -136,16 +131,35 @@ mpq make_quotient(const mpf& f, int digits)
     mpf error2 = abs_fn(f - static_cast<mpf>(result2));
     lg::debug("Q: {}, error2 = {}\n", result2, error2);
     set_default_precision(orig_prec);
-    if (error > max_error && error2 > max_error)
+    if (error <= error2)
     {
+        return {result, error};
+    }
+    return {result2, error2};
+}
+
+/* attempt making a rational, but maybe fail if the losses are too great */
+mpq make_quotient(const mpf& f, int digits)
+{
+    // require error of at least original precision
+    const mpf max_error = pow_fn(
+        mpf(10.0l), static_cast<mpf>(static_cast<mpz>(-default_precision)));
+
+    auto&& [q, error] = calculate_quotient(f, digits);
+    if (error > max_error)
+    {
+        // throw something; not a perfect representation
         lg::info("lossy mpf->mpq; not into it.\n");
         throw std::invalid_argument("Unable to convert mpf to mpq");
     }
-    if (error <= error2)
-    {
-        return result;
-    }
-    return result2;
+    return q;
+}
+
+/* force a float to a rational, dropping losses */
+mpq make_quotient(const mpf& f)
+{
+    auto&& [q, _] = calculate_quotient(f, default_precision);
+    return q;
 }
 
 mpq parse_mpf(std::string_view s)
@@ -208,7 +222,7 @@ mpz parse_mpz(std::string_view s, int base)
 }
 #else  // USE_BASIC_TYPES
 
-namespace std
+namespace smrty
 {
 mpz powul(const mpz& base, int exponent)
 {
@@ -232,9 +246,9 @@ mpz powul(const mpz& base, int exponent)
     }
     return result;
 }
-std::tuple<mpz, mpz> pow(const mpz& base, int exponent)
+std::tuple<mpz, mpz> powl(const mpz& base, int exponent)
 {
-    mpz result = powul(base, static_cast<int>(abs_fn(exponent)));
+    mpz result = powul(base, std::abs(exponent));
     if (exponent < zero)
     {
         return {one, result};
@@ -242,7 +256,7 @@ std::tuple<mpz, mpz> pow(const mpz& base, int exponent)
     return {result, one};
 }
 
-} // namespace std
+} // namespace smrty
 
 mpz parse_mpz(std::string_view s, int base)
 {
@@ -332,66 +346,6 @@ mpc parse_mpc(std::string_view s)
         }
     }
     return mpc(complex_parts[0], complex_parts[1]);
-}
-
-std::string time_::str() const
-{
-    // lg::debug("str(): value={:q}\n", value);
-    if (absolute)
-    {
-#ifdef USE_BASIC_TYPES
-        long long nanos =
-            static_cast<long long>(helper::numerator(value) *
-                                   (one_million / helper::denominator(value)));
-        std::chrono::duration d = std::chrono::microseconds(nanos);
-#else  // !USE_BASIC_TYPES
-        long long nanos =
-            static_cast<long long>(helper::numerator(value) *
-                                   (one_billion / helper::denominator(value)));
-        std::chrono::duration d = std::chrono::nanoseconds(nanos);
-#endif // USE_BASIC_TYPES
-       // lg::debug("value={}, nanos={}\n", value, nanos);
-        std::chrono::time_point<std::chrono::system_clock> tp(d);
-        return std::format("{:%F %T}", tp);
-        // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
-        // return std::strftime(std::localtime(&t_c), "%F %T");
-    }
-
-    // duration
-    static const mpq one_day{86400, 1};
-    static const mpq one_hour{3600, 1};
-    static const mpq one_minute{60, 1};
-    static const mpq one_second{1, 1};
-    static const mpq one_ms{1, 1000};
-    static const mpq one_us{1, 1000000};
-    static const mpq one_ns{1, 1000000000};
-
-    auto pval = abs(value);
-    if (pval >= one_day)
-    {
-        return std::format("{:f}d", value / one_day);
-    }
-    if (pval >= one_hour)
-    {
-        return std::format("{:f}h", value / one_hour);
-    }
-    if (pval >= one_minute)
-    {
-        return std::format("{:f}m", value / one_minute);
-    }
-    if (pval >= one_second)
-    {
-        return std::format("{:f}s", value / one_second);
-    }
-    if (pval >= one_ms)
-    {
-        return std::format("{:f}ms", value / one_ms);
-    }
-    if (pval >= one_us)
-    {
-        return std::format("{:f}us", value / one_us);
-    }
-    return std::format("{:f}ns", value / one_ns);
 }
 
 matrix parse_matrix(std::string_view s)

@@ -34,14 +34,14 @@ std::vector<std::tuple<numeric, units::unit>>
     ret.reserve(2);
     if (calc.config.mpc_mode == Calculator::e_mpc_mode::polar)
     {
-        ret.emplace_back(std::forward_as_tuple(abs(c), units::unit{}));
-        ret.emplace_back(
-            std::forward_as_tuple(atan2(c.real(), c.imag()), units::unit{}));
+        ret.emplace_back(std::forward_as_tuple(abs_fn(c), units::unit{}));
+        ret.emplace_back(std::forward_as_tuple(mpf{atan2(c.real(), c.imag())},
+                                               units::unit{}));
     }
     else
     {
-        ret.emplace_back(std::forward_as_tuple(c.real(), units::unit{}));
-        ret.emplace_back(std::forward_as_tuple(c.imag(), units::unit{}));
+        ret.emplace_back(std::forward_as_tuple(mpf{c.real()}, units::unit{}));
+        ret.emplace_back(std::forward_as_tuple(mpf{c.imag()}, units::unit{}));
     }
     return ret;
 }

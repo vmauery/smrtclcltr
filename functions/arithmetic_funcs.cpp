@@ -630,35 +630,48 @@ struct power : public CalcFunction
                        throw std::invalid_argument(
                            "cannot raise to a unit power");
                    }
-                   if constexpr (std::is_same_v<decltype(a), const mpz&> &&
-                                 std::is_same_v<decltype(b), const mpz&>)
+                   if constexpr (same_type_v<decltype(a), mpz> &&
+                                 same_type_v<decltype(b), mpz>)
                    {
                        lg::debug("mpz pow({}, {})\n", a, b);
                        if (b > zero)
                        {
                            return {powul_fn(a, static_cast<int>(b)),
-                                   units::pow(ua, to_mpf(b))};
+                                   units::pow(ua, static_cast<mpf>(b))};
+                       }
+                       return {mpq{one, powul_fn(a, static_cast<int>(-b))},
+                               units::pow(ua, static_cast<mpf>(b))};
+                   }
+                   else if constexpr (same_type_v<mpc, decltype(a)> ||
+                                      same_type_v<mpc, decltype(b)>)
+                   {
+                       if constexpr (same_type_v<mpc, decltype(b)>)
+                       {
+                           if (ua != units::unit())
+                           {
+                               throw std::invalid_argument(
+                                   "cannot raise units to a complex power");
+                           }
+                           return {pow_fn(static_cast<mpc>(a), b), ua};
                        }
                        else
                        {
-                           return {mpq{one, powul_fn(a, static_cast<int>(-b))},
-                                   units::pow(ua, to_mpf(b))};
+                           return {pow_fn(a, static_cast<mpc>(b)),
+                                   units::pow(ua, static_cast<mpf>(b))};
                        }
                    }
-                   else if constexpr (std::is_same_v<decltype(a), decltype(b)>)
+                   else if constexpr (same_type_v<mpz, decltype(a)> ||
+                                      same_type_v<mpz, decltype(b)>)
                    {
-                       return {pow_fn(a, b), units::pow(ua, to_mpf(b))};
-                   }
-                   else if constexpr (std::is_same_v<decltype(a), const mpc&> ||
-                                      std::is_same_v<decltype(b), const mpc&>)
-                   {
-                       return {pow_fn(to_mpc(a), to_mpc(b)),
-                               units::pow(ua, to_mpf(b))};
+                       // if only one is mpz, convert both to mpf
+                       return {pow_fn(static_cast<mpf>(a), static_cast<mpf>(b)),
+                               units::pow(ua, static_cast<mpf>(b))};
                    }
                    else
                    {
-                       return {pow_fn(to_mpf(a), to_mpf(b)),
-                               units::pow(ua, to_mpf(b))};
+                       // all that is left is mpf
+                       return {pow_fn(a, b),
+                               units::pow(ua, static_cast<mpf>(b))};
                    }
                });
     }

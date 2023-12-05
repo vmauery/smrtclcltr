@@ -233,7 +233,8 @@ numeric unit::conv(unit& o, const numeric& v) const
                 }
                 else if constexpr (std::is_same_v<decltype(n), const mpf&>)
                 {
-                    return n * to_mpf((o.exp / exp) * (o.scale / scale));
+                    return n *
+                           static_cast<mpf>((o.exp / exp) * (o.scale / scale));
                 }
                 else
                 {
@@ -255,9 +256,7 @@ numeric unit::conv(unit& o, const numeric& v) const
             {
                 // K->C
                 numeric vc = std::visit(
-                    [](const auto& n) -> numeric {
-                        return to_mpq(n) - mpq(5463, 20);
-                    },
+                    [](const auto& n) -> numeric { return n - mpq(5463, 20); },
                     v);
                 o = *this;
                 return vc;
@@ -267,8 +266,7 @@ numeric unit::conv(unit& o, const numeric& v) const
                 // K->F
                 numeric vc = std::visit(
                     [](const auto& n) -> numeric {
-                        return (to_mpq(n) - mpq(5463, 20)) * mpq(9, 5) +
-                               mpq(32, 1);
+                        return (n - mpq(5463, 20)) * mpq(9, 5) + mpq(32, 1);
                     },
                     v);
                 o = *this;
@@ -282,8 +280,7 @@ numeric unit::conv(unit& o, const numeric& v) const
                 // F->K
                 numeric vc = std::visit(
                     [](const auto& n) -> numeric {
-                        return (to_mpq(n) - mpq(32, 1)) * mpq(5, 9) +
-                               mpq(5463, 20);
+                        return (n - mpq(32, 1)) * mpq(5, 9) + mpq(5463, 20);
                     },
                     v);
                 o = *this;
@@ -294,7 +291,7 @@ numeric unit::conv(unit& o, const numeric& v) const
                 // F->C
                 numeric vc = std::visit(
                     [](const auto& n) -> numeric {
-                        return (to_mpq(n) - mpq(32, 1)) * mpq(5, 9);
+                        return (n - mpq(32, 1)) * mpq(5, 9);
                     },
                     v);
                 o = *this;
@@ -307,9 +304,7 @@ numeric unit::conv(unit& o, const numeric& v) const
             {
                 // C->K
                 numeric vc = std::visit(
-                    [](const auto& n) -> numeric {
-                        return to_mpq(n) - mpq(5463, 20);
-                    },
+                    [](const auto& n) -> numeric { return n - mpq(5463, 20); },
                     v);
                 o = *this;
                 return vc;
@@ -319,7 +314,7 @@ numeric unit::conv(unit& o, const numeric& v) const
                 // C->F
                 numeric vc = std::visit(
                     [](const auto& n) -> numeric {
-                        return to_mpq(n) * mpq(9, 5) + mpq(32, 1);
+                        return n * mpq(9, 5) + mpq(32, 1);
                     },
                     v);
                 o = *this;
@@ -334,8 +329,9 @@ unit pow(const unit& u, const mpf& p)
 {
     // calculating the 'power' is more accurate if done
     // separately on the numerators and denominators
-    mpq new_id(to_mpq(pow_fn(to_mpf(helper::numerator(u.id)), p)) /
-               to_mpq(pow_fn(to_mpf(helper::denominator(u.id)), p)));
+    mpq new_id(
+        make_quotient(pow_fn(static_cast<mpf>(helper::numerator(u.id)), p)) /
+        make_quotient(pow_fn(static_cast<mpf>(helper::denominator(u.id)), p)));
     return unit(new_id, u.exp, u.scale);
 }
 
