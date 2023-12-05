@@ -9,16 +9,31 @@ Ideas for future development
 	 * Show error messages
 	 * Memory usage? CPU usage?
  * Constants library (interactive lookup for lesser-known constants)
+   * phi c
  * More functions (long list)
- * N-d vector support
+   * cot coth csc csch asec asech atan2 acot acoth acsc acsch sec sech
+   * hex bin oct
+   * eng sci engsi
+   * htonl ntohl be le
+   * abs pow hypot gcf lcm fib root roots div(integer division)
+   * stddev max min mode
+   * sort
+   * conj real imag
+   * rsa_info
+   * cidr netmask =net
+   * db bd (ratio/decibel support)
+   * modulo(modular math mode) down(toggle downcasting)
+   * clreg store recall regs
+   * gamma zeta ncdf(normal prob cdf) invn(inverse of ncdf)
+   * comma mixed brief
+   * < <= == != >= >
+ * N-d vector support [ x y z ]
    * parse / cross / dot / add / subtract / scaler
- * Array support
-   * parse / add / subtract / inv / det / mult
- * List support
+ * List support (a bunch of numerics)
    * sum / product / concatenate / split / scalar ops
+ * Interval support? x+-y / [x,y]
  * Variable store/recall support
  * Scripting? Like the HP language? That might be too much...
- * Saved state?
  * Modes
    * Modular arithmetic mode
    * Polar/rect mode

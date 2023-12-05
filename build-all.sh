@@ -33,7 +33,7 @@ run() {
 			MSG="\rBuilding $NAME / $BACKEND:  "
 			DIR=.test-builds/build-$NAME-$BACKEND
 			mkdir -p $DIR
-			CC=$CC CXX=$CXX meson -Dnumeric=$BACKEND $DIR >>$DIR/log 2>&1
+			CC=$CC CXX=$CXX meson setup -Dnumeric=$BACKEND $DIR >>$DIR/log 2>&1
 			progress_watcher $DIR/log "$MSG" &
 			ninja -v -C $DIR >>$DIR/log 2>&1
 			br=$?
