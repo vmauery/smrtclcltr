@@ -4,7 +4,7 @@ DESC=$(git describe 2>/dev/null)
 if [ $? -ne 0 ]; then
 	DESC=$(git rev-parse --short HEAD 2>/dev/null)
 fi
-if git status | grep -q 'nothing to commit, working tree clean'; then
+if git status -uno | grep -q 'nothing to commit'; then
 	# nothing to do
 	:
 else
