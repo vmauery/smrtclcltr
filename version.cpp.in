@@ -14,7 +14,7 @@ const char* Version::version()
 
 const char* Version::timestamp()
 {
-    static const char* timestamp_str = __TIMESTAMP__;
+    static const char* timestamp_str = __TIMESTAMP_ISO8601__;
     return timestamp_str;
 }
 

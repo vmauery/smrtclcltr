@@ -17,6 +17,10 @@ version_src = vcs_tag(
   replace_string: 'GIT_VERSION_STRING',
   )
 
+ts_cmd = run_command('date', '-Iseconds', check: true)
+timestamp_iso8601 = ts_cmd.stdout().strip()
+add_project_arguments(['-D__TIMESTAMP_ISO8601__="'+timestamp_iso8601+'"'], language: 'cpp')
+
 cxx = meson.get_compiler('cpp')
 build = get_option('buildtype')
 
