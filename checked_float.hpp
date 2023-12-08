@@ -38,6 +38,11 @@ struct checked_float
         std::from_chars(r.begin(), r.end(), value);
         lg::debug("checked_float({}): value: {}\n", r, value);
     }
+    template <integer I>
+    constexpr checked_float(const I& r) : value(static_cast<T>(r))
+    {
+    }
+
     constexpr std::partial_ordering
         operator<=>(const checked_float<T>& r) const = default;
 

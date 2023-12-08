@@ -99,14 +99,14 @@ class Parser
     Rule complex2; // (number,number)
     Rule complex;  // any imaginary or complex number
     Rule rational;
-    Rule any_simple_number;
     Rule number;
-    Rule spaced_simple_numbers;
+    Rule spaced_numbers;
     Rule matrix_row;
     Rule matrix;
     Rule list;
     Rule dd;
     Rule date;
+    Rule any_simple_number;
     Rule duration;
     Rule ttime;
     Rule op;

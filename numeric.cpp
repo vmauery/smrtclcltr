@@ -366,7 +366,7 @@ matrix parse_matrix(std::string_view s)
     size_t rows = 0;
     size_t cols = 0;
     size_t rows_cols = 0;
-    std::vector<mpq> values{};
+    std::vector<mpx> values{};
     do
     {
         lg::debug("next is '{}'\n", next);
@@ -378,7 +378,28 @@ matrix parse_matrix(std::string_view s)
             {
                 cols++;
             }
-            values.emplace_back(t->value);
+            if (t->type == Parser::mpz_type)
+            {
+                values.emplace_back(mpz{t->value});
+            }
+            else if (t->type == Parser::mpf_type)
+            {
+                values.emplace_back(parse_mpf(t->value));
+            }
+            else if (t->type == Parser::mpc_type)
+            {
+                values.emplace_back(parse_mpc(t->value));
+            }
+            else if (t->type == Parser::mpq_type)
+            {
+                values.emplace_back(mpq{t->value});
+            }
+            else
+            {
+                throw std::invalid_argument(
+                    std::format("unsupported matrix entry type {}",
+                                Parser::expr_types[t->type]));
+            }
             rows_cols++;
         }
         next = more;
@@ -566,79 +587,6 @@ std::optional<time_> parse_time(std::string_view s)
     }
     lg::debug("not a date\n");
     return std::nullopt;
-}
-
-numeric reduce_numeric(const numeric& n, int precision)
-{
-    if (precision == 0)
-    {
-        precision = default_precision;
-    }
-    std::visit(
-        [](const auto& v) {
-            lg::debug("reduce({} (type {}))\n", v, DEBUG_TYPE(v));
-        },
-        n);
-    /*
-     * may be lossy if precision is low... mpf to mpq/mpz might be a lie
-     * mpc -> mpf for imaginary = 0
-     * mpf -> mpz if no fractional part
-     * mpf -> mpq for perfect fractions?
-     * mpq -> mpz for denominator = 1
-     */
-    if (auto q = std::get_if<mpq>(&n); q)
-    {
-        if (helper::denominator(*q) == one)
-        {
-            lg::debug("reduce: denominator is one\n");
-            return helper::numerator(*q);
-        }
-#ifndef USE_BASIC_TYPES
-        // multiprecision mpq does not reduce internally
-        mpz c = gcd_fn(helper::numerator(*q), helper::denominator(*q));
-        if (c > 1)
-        {
-            if (c == helper::denominator(*q))
-            {
-                return helper::numerator(*q) / c;
-            }
-            return mpq(helper::numerator(*q) / c, helper::denominator(*q) / c);
-        }
-#endif // !USE_BASIC_TYPES
-        lg::debug("reduce: no change\n");
-        return n;
-    }
-    else if (auto f = std::get_if<mpf>(&n); f)
-    {
-        if (*f == mpf(0.0))
-        {
-            return zero;
-        }
-        // internally, make_quotient will do calculations
-        // with a higher precision than the current precision
-        // but we will limit the size of the denominator to
-        // a reasonable size to keep irrationals from getting
-        // turned into rationals
-        try
-        {
-            // make_quotient might return a reducible q
-            // so call reduce again
-            return reduce_numeric(make_quotient(*f, precision / 5), precision);
-        }
-        catch (const std::exception& e)
-        {
-            return n;
-        }
-    }
-    else if (auto c = std::get_if<mpc>(&n); c)
-    {
-        if (c->imag() == mpf(0.0))
-        {
-            return reduce_numeric(mpf{c->real()}, precision);
-        }
-        return n;
-    }
-    return n;
 }
 
 std::string mpz_to_bin_string(const mpz& v, std::streamsize width)

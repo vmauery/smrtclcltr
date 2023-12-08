@@ -87,6 +87,7 @@ constexpr mpz gcd(const mpz& l, const mpz& r);
 constexpr mpz lcm(const mpz& l, const mpz& r);
 constexpr mpf abs(const mpf& v);
 constexpr mpz abs(const mpz& v);
+constexpr mpq abs(const mpq& v);
 constexpr mpf abs(const mpc& v);
 constexpr mpf log(const mpf& v);
 constexpr mpc log(const mpc& v);
@@ -164,6 +165,14 @@ constexpr mpf abs(const mpf& v)
 constexpr mpz abs(const mpz& v)
 {
     return std::abs(v.value);
+}
+constexpr mpq abs(const mpq& v)
+{
+    if (v < mpq{})
+    {
+        return v * mpq{-1};
+    }
+    return v;
 }
 constexpr mpf abs(const mpc& v)
 {

@@ -383,3 +383,113 @@ struct std::formatter<mpc>
         }
     }
 };
+
+template <typename T>
+struct std::formatter<basic_matrix<T>>
+{
+    std::__format::_Spec<char> spec{};
+
+    // Parses format like the standard int parser
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // this is a simplification of integer format parsing from format
+        auto begin = ctx.begin(), end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        begin = spec._M_parse_width(begin, end, ctx);
+        if (begin == end)
+        {
+            return begin;
+        }
+        // offer a way to specify a different format for each variant type?
+        // offer a one-line format?
+        /*
+        switch (*begin)
+        {
+            case 'b':
+                spec._M_type = std::__format::_Pres_b;
+                ++begin;
+                break;
+            case 'd':
+                spec._M_type = std::__format::_Pres_d;
+                ++begin;
+                break;
+            case 'o':
+                spec._M_type = std::__format::_Pres_o;
+                ++begin;
+                break;
+            case 'x':
+                spec._M_type = std::__format::_Pres_x;
+                ++begin;
+                break;
+            default:
+                // throw something
+                break;
+        }
+        */
+        if (begin == end)
+        {
+            return begin;
+        }
+        return begin;
+    }
+
+    template <typename FormatContext>
+    auto format(const basic_matrix<T>& m, FormatContext& ctx) const
+        -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        int pad = 1 + spec._M_get_width(ctx);
+        *out++ = '[';
+        auto iter = m.values.begin();
+        // FIXME: use column width code?
+        for (size_t r = 0; r < m.rows; r++)
+        {
+            if (r != 0)
+            {
+                *out++ = '\n';
+                for (int i = 0; i < pad; i++)
+                {
+                    *out++ = ' ';
+                }
+            }
+            *out++ = '[';
+            for (size_t c = 0; c < m.cols; c++)
+            {
+                if constexpr (is_variant_v<decltype(m)>)
+                {
+                    if (auto q = std::get_if<mpq>(&m); q)
+                    {
+                        out = std::format_to(out, "{:f}", *q);
+                    }
+                    else if (auto c = std::get_if<mpc>(&m); c)
+                    {
+                        out = std::format_to(out, "{:i}", *c);
+                    }
+                    else if (auto f = std::get_if<mpf>(&m); f)
+                    {
+                        out = std::format_to(out, "{:f}", *f);
+                    }
+                    else if (auto z = std::get_if<mpz>(&m); z)
+                    {
+                        out = std::format_to(out, "{:d}", *z);
+                    }
+                }
+                else
+                {
+                    out = std::format_to(out, "{}", *iter++);
+                }
+                if ((c + 1) < m.cols)
+                {
+                    *out++ = ' ';
+                }
+            }
+            *out++ = ']';
+        }
+        *out++ = ']';
+        return out;
+    }
+};

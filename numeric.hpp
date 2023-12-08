@@ -8,9 +8,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <boost/math/constants/constants.hpp>
 #include <chrono>
+#include <concepts>
 #include <debug.hpp>
 #include <format>
-#include <matrix.hpp>
 #include <type_helpers.hpp>
 #include <variant>
 
@@ -63,12 +63,96 @@ struct is_exact
 template <class T>
 inline constexpr bool is_exact_v = is_exact<T>::value;
 
+template <typename... T>
+std::variant<T...> reduce_numeric(const std::variant<T...>& n,
+                                  int precision = 2)
+{
+    if (precision == 0)
+    {
+        precision = default_precision;
+    }
+    std::visit(
+        [](const auto& v) {
+            lg::debug("reduce({} (type {}))\n", v, DEBUG_TYPE(v));
+        },
+        n);
+    /*
+     * may be lossy if precision is low... mpf to mpq/mpz might be a lie
+     * mpc -> mpf for imaginary = 0
+     * mpf -> mpz if no fractional part
+     * mpf -> mpq for perfect fractions?
+     * mpq -> mpz for denominator = 1
+     */
+    if (auto q = std::get_if<mpq>(&n); q)
+    {
+        if (helper::denominator(*q) == one)
+        {
+            lg::debug("reduce: denominator is one\n");
+            return helper::numerator(*q);
+        }
+#ifndef USE_BASIC_TYPES
+        // multiprecision mpq does not reduce internally
+        mpz c = gcd_fn(helper::numerator(*q), helper::denominator(*q));
+        if (c > 1)
+        {
+            if (c == helper::denominator(*q))
+            {
+                return helper::numerator(*q) / c;
+            }
+            return mpq(helper::numerator(*q) / c, helper::denominator(*q) / c);
+        }
+#endif // !USE_BASIC_TYPES
+        lg::debug("reduce: no change\n");
+        return n;
+    }
+    else if (auto f = std::get_if<mpf>(&n); f)
+    {
+        if (*f == mpf(0.0))
+        {
+            return zero;
+        }
+        // internally, make_quotient will do calculations
+        // with a higher precision than the current precision
+        // but we will limit the size of the denominator to
+        // a reasonable size to keep irrationals from getting
+        // turned into rationals
+        try
+        {
+            // make_quotient might return a reducible q
+            // so call reduce again
+            return reduce_numeric(
+                std::variant<T...>{make_quotient(*f, precision / 5)},
+                precision);
+        }
+        catch (const std::exception& e)
+        {
+            return n;
+        }
+    }
+    else if (auto c = std::get_if<mpc>(&n); c)
+    {
+        if (c->imag() == mpf(0.0))
+        {
+            return reduce_numeric(std::variant<T...>{mpf{c->real()}},
+                                  precision);
+        }
+        return n;
+    }
+    return n;
+}
+
+// clang-format off
+#include <variant_math.hpp>
+#include <matrix.hpp>
 #include <time.hpp>
+// clang-format on
+
+using mpx = std::variant<mpz, mpq, mpf, mpc>;
 
 using time_ = basic_time<mpq>;
-using matrix = basic_matrix<mpq>;
+using matrix = basic_matrix<mpx>;
 
-using numeric = std::variant<mpz, mpf, mpc, mpq, matrix, time_>;
+using numeric = std::variant<mpz, mpq, mpf, mpc, matrix, time_>;
 
 static constexpr auto numeric_types = std::to_array<const char*>({
     "mpz",
@@ -79,60 +163,27 @@ static constexpr auto numeric_types = std::to_array<const char*>({
     "time",
 });
 
-numeric reduce_numeric(const numeric& n, int precision = 2);
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
 mpq parse_mpf(std::string_view s);
 std::optional<time_> parse_time(std::string_view s);
 matrix parse_matrix(std::string_view s);
 
-static inline bool operator<(const numeric& a, const numeric& b)
-{
-    return std::visit(
-        [](const auto& a, const auto& b) {
-            if constexpr (std::is_same_v<decltype(a), decltype(b)>)
-            {
-                return a < b;
-            }
-            else if constexpr (std::is_same_v<decltype(a), mpc> ||
-                               std::is_same_v<decltype(b), mpc>)
-            {
-                return static_cast<mpc>(a) < static_cast<mpc>(b);
-            }
-            else if constexpr (std::is_same_v<decltype(a), mpf> ||
-                               std::is_same_v<decltype(b), mpf>)
-            {
-                return static_cast<mpf>(a) < static_cast<mpf>(b);
-            }
-            else if constexpr (std::is_same_v<decltype(a), mpq> ||
-                               std::is_same_v<decltype(b), mpq>)
-            {
-                return static_cast<mpq>(a) < static_cast<mpq>(b);
-            }
-            else
-            {
-                throw std::invalid_argument("non-comparable values");
-            }
-            return false;
-        },
-        a, b);
-}
-
 template <typename TypeOut, typename TypeIn>
 TypeOut coerce_variant(const TypeIn& in)
 {
-    if constexpr (std::is_same_v<TypeOut, mpz>)
+    if constexpr (same_type_v<TypeOut, mpz>)
     {
         return static_cast<mpz>(in);
     }
-    else if constexpr (std::is_same_v<TypeOut, mpf>)
+    else if constexpr (same_type_v<TypeOut, mpf>)
     {
         return static_cast<mpf>(in);
     }
-    else if constexpr (std::is_same_v<TypeOut, mpc>)
+    else if constexpr (same_type_v<TypeOut, mpc>)
     {
         return static_cast<mpc>(in);
     }
-    else if constexpr (std::is_same_v<TypeOut, mpq>)
+    else if constexpr (same_type_v<TypeOut, mpq>)
     {
         return static_cast<mpq>(in);
     }
@@ -345,8 +396,8 @@ template <typename T, std::enable_if_t<!std::is_same<T, matrix>::value &&
                                        bool> = true>
 static inline matrix operator*(const matrix&, const T&)
 {
-    throw std::invalid_argument(
-        "Scalar multiplication with a matrix is not allowed with this type");
+    throw std::invalid_argument("Scalar multiplication with a matrix is "
+                                "not allowed with this type");
 }
 template <typename T, std::enable_if_t<!std::is_same<T, matrix>::value &&
                                            !std::is_same<T, mpq>::value &&
@@ -354,12 +405,12 @@ template <typename T, std::enable_if_t<!std::is_same<T, matrix>::value &&
                                        bool> = true>
 static inline matrix operator*(const T&, const matrix&)
 {
-    throw std::invalid_argument(
-        "Scalar multiplication with a matrix is not allowed with this type");
+    throw std::invalid_argument("Scalar multiplication with a matrix is "
+                                "not allowed with this type");
 }
 static inline matrix operator*(const mpz& z, const matrix& m)
 {
-    return m * static_cast<mpq>(z);
+    return m * static_cast<matrix::default_element_type>(z);
 }
 static inline matrix operator*(const mpq& q, const matrix& m)
 {

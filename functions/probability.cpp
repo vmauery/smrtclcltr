@@ -283,7 +283,6 @@ struct median : public CalcFunction
         {
             return false;
         }
-        std::vector<numeric> items;
         units::unit first_unit = calc.stack.front().unit();
         size_t count = static_cast<size_t>(*v);
         if (calc.stack.size() < (count + 1))
@@ -291,6 +290,7 @@ struct median : public CalcFunction
             throw std::invalid_argument("Insufficient arguments");
         }
         calc.stack.pop_front();
+        std::vector<std::variant<mpz, mpq, mpf>> items{};
         for (; count > 0; count--)
         {
             stack_entry e = calc.stack.front();
@@ -298,31 +298,45 @@ struct median : public CalcFunction
             {
                 throw std::invalid_argument("units do not match");
             }
-            items.push_back(e.value());
+            auto& v = e.value();
+            if (auto zp = std::get_if<mpz>(&v); zp)
+            {
+                items.emplace_back(*zp);
+            }
+            else if (auto qp = std::get_if<mpq>(&v); qp)
+            {
+                items.emplace_back(*qp);
+            }
+            else if (auto fp = std::get_if<mpf>(&v); fp)
+            {
+                items.emplace_back(*fp);
+            }
+            else
+            {
+                throw std::invalid_argument(
+                    "items must all be integer, rational, or real");
+            }
             calc.stack.pop_front();
         }
         std::sort(items.begin(), items.end());
-        if (items.size() % 2)
-        {
-            auto& item = items[items.size() / 2];
-            calc.stack.emplace_front(std::move(item), first_unit,
+        auto stack_inserter = [&](auto&& v) {
+            calc.stack.emplace_front(numeric{std::move(v)}, first_unit,
                                      calc.config.base, calc.config.fixed_bits,
                                      calc.config.precision,
                                      calc.config.is_signed);
+        };
+        if (items.size() % 2)
+        {
+            auto& item = items[items.size() / 2];
+            std::visit(stack_inserter, item);
             return true;
         }
         else
         {
             auto& item1 = items[(items.size() / 2) - 1];
-            calc.stack.emplace_front(std::move(item1), first_unit,
-                                     calc.config.base, calc.config.fixed_bits,
-                                     calc.config.precision,
-                                     calc.config.is_signed);
+            std::visit(stack_inserter, item1);
             auto& item2 = items[items.size() / 2];
-            calc.stack.emplace_front(std::move(item2), first_unit,
-                                     calc.config.base, calc.config.fixed_bits,
-                                     calc.config.precision,
-                                     calc.config.is_signed);
+            std::visit(stack_inserter, item2);
             calc.stack.emplace_front(
                 two, calc.config.base, calc.config.fixed_bits,
                 calc.config.precision, calc.config.is_signed);

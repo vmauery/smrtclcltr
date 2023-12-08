@@ -22,7 +22,11 @@ std::vector<std::tuple<numeric, units::unit>>
     ret.emplace_back(std::forward_as_tuple(mpz{m.rows}, units::unit{}));
     for (const auto& v : m.values)
     {
-        ret.emplace_back(std::forward_as_tuple(v, units::unit{}));
+        std::visit(
+            [&ret](const auto& vv) {
+                ret.emplace_back(std::forward_as_tuple(vv, units::unit{}));
+            },
+            v);
     }
     return ret;
 }

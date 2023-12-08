@@ -10,11 +10,13 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <debug.hpp>
 #include <exception>
 #include <format>
+#include <type_helpers.hpp>
 
 template <typename T>
 struct basic_matrix
 {
     using element_type = T;
+    using default_element_type = typename variant0_or_single<T>::type;
 
     size_t cols;
     size_t rows;
@@ -28,6 +30,7 @@ struct basic_matrix
     {
         // pad or truncate, based on size
         values.resize(cols * rows);
+        reduce();
     }
     basic_matrix(size_t cols, size_t rows) : cols(cols), rows(rows)
     {
@@ -40,12 +43,14 @@ struct basic_matrix
         values.insert(values.begin(), init.begin(), init.end());
         // pad or truncate, based on size
         values.resize(cols * rows);
+        reduce();
     }
     basic_matrix(size_t cols, size_t rows, std::vector<T>&& init) :
         cols(cols), rows(rows), values(std::forward<std::vector<T>>(init))
     {
         // pad or truncate, based on size
         values.resize(cols * rows);
+        reduce();
     }
 
     // basic_matrix(const basic_matrix<T>& o) = default;
@@ -56,9 +61,20 @@ struct basic_matrix
         basic_matrix<T> m(n, n);
         for (size_t i = 0; i < n; i++)
         {
-            m.values[i + i * n] = 1;
+            m.values[i + i * n] = default_element_type{1};
         }
         return m;
+    }
+
+    void reduce()
+    {
+        if constexpr (is_variant_v<T>)
+        {
+            for (auto iter = values.begin(); iter != values.end(); iter++)
+            {
+                *iter = reduce_numeric(*iter);
+            }
+        }
     }
 
     std::span<const T> row(size_t r) const
@@ -151,19 +167,18 @@ struct basic_matrix
         }
     }
 
-    auto operator<=>(const basic_matrix<T>&) const = default;
-
     basic_matrix<T> operator+(const basic_matrix<T>& r) const
     {
         if (r.size() != size())
         {
             throw std::invalid_argument("matrix size mismatch for addition");
         }
-        basic_matrix<T> s = *this;
+        basic_matrix<T> s(cols, rows);
         for (size_t i = 0; i < values.size(); i++)
         {
-            s.values[i] += r.values[i];
+            s.values[i] = values[i] + r.values[i];
         }
+        s.reduce();
         return s;
     }
 
@@ -173,11 +188,12 @@ struct basic_matrix
         {
             throw std::invalid_argument("matrix size mismatch for subtraction");
         }
-        basic_matrix<T> s = *this;
+        basic_matrix<T> s(cols, rows);
         for (size_t i = 0; i < values.size(); i++)
         {
-            s.values[i] -= r.values[i];
+            s.values[i] = values[i] - r.values[i];
         }
+        s.reduce();
         return s;
     }
 
@@ -199,20 +215,21 @@ struct basic_matrix
                 auto col_iter = r.values.begin() + j;
                 for (size_t k = 0; k < cols; k++)
                 {
-                    *out_iter += (*col_iter) * (*row_iter);
+                    *out_iter = *out_iter + (*col_iter) * (*row_iter);
                     col_iter += r.cols;
                     row_iter += 1;
                 }
                 out_iter++;
             }
         }
+        p.reduce();
         return p;
     }
 
     basic_matrix<T> operator*(const T& v) const
     {
         // special case for unitary multiplication
-        if (v == T{1})
+        if (std::visit([](const auto& a) { return a == decltype(a){1}; }, v))
         {
             return *this;
         }
@@ -221,24 +238,31 @@ struct basic_matrix
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = *in_iter * v;
+            *out_iter = (*in_iter) * v;
             out_iter++;
             in_iter++;
         }
+        r.reduce();
         return r;
     }
 
     basic_matrix<T> operator/(const T& v) const
     {
+        // special case for unitary division
+        if (std::visit([](const auto& a) { return a == decltype(a){1}; }, v))
+        {
+            return *this;
+        }
         basic_matrix<T> r(cols, rows);
         auto out_iter = r.values.begin();
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = *in_iter / v;
+            *out_iter = (*in_iter) / v;
             out_iter++;
             in_iter++;
         }
+        r.reduce();
         return r;
     }
 
@@ -246,8 +270,9 @@ struct basic_matrix
     {
         for (auto& iter : values)
         {
-            iter *= v;
+            iter = iter * v;
         }
+        reduce();
         return *this;
     }
 
@@ -269,11 +294,11 @@ struct basic_matrix
         }
         // calculate recursively
         T d{};
-        T sign = 1;
+        T sign = default_element_type{1};
         for (size_t c = 0; c < cols; c++)
         {
-            d += sign * values[c] * minor(c, 0).det();
-            sign *= -1;
+            d = d + sign * values[c] * minor(c, 0).det();
+            sign = sign * T{default_element_type{-1}};
         }
         return d;
     }
@@ -282,10 +307,10 @@ struct basic_matrix
     {
         basic_matrix<T> a(cols, rows);
         auto in = values.begin();
-        for (auto i = 0; i < cols; i++)
+        for (size_t i = 0; i < cols; i++)
         {
             auto out = a.values.begin() + i;
-            for (auto j = 0; j < rows; j++)
+            for (size_t j = 0; j < rows; j++)
             {
                 *out = *in;
                 in++;
@@ -304,14 +329,15 @@ struct basic_matrix
         auto iter = values.begin() + row * cols;
         for (size_t c = 0; c < cols; c++)
         {
-            *iter /= v;
+            *iter = *iter / v;
             iter++;
         }
     }
 
     void row_op(size_t dst, size_t src, T factor)
     {
-        if (factor == 0)
+        if (std::visit([](const auto& a) { return a == decltype(a){0}; },
+                       factor))
         {
             return;
         }
@@ -323,7 +349,7 @@ struct basic_matrix
         auto out_iter = values.begin() + dst * cols;
         for (size_t i = 0; i < cols; i++)
         {
-            *out_iter -= (*in_iter * factor);
+            *out_iter = *out_iter - ((*in_iter) * factor);
             out_iter++;
             in_iter++;
         }
@@ -347,12 +373,15 @@ struct basic_matrix
         {
             auto v = m.values.begin() + cols * c + c;
             // need to swap if this entry has a zero
-            if (*v == 0)
+            if (std::visit([](const auto& a) { return a == decltype(a){0}; },
+                           *v))
             {
                 size_t j = c;
                 for (; j < cols; j++)
                 {
-                    if (m.values[j + cols * j] != 0)
+                    if (std::visit(
+                            [](const auto& a) { return a == decltype(a){0}; },
+                            m.values[j + cols * j]))
                     {
                         m.row_swap(c, j);
                         i.row_swap(c, j);
@@ -383,93 +412,7 @@ struct basic_matrix
             }
         }
 
+        i.reduce();
         return i;
-    }
-};
-
-template <typename T>
-struct std::formatter<basic_matrix<T>>
-{
-    std::__format::_Spec<char> spec{};
-
-    // Parses format like the standard int parser
-    template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
-    {
-        // this is a simplification of integer format parsing from format
-        auto begin = ctx.begin(), end = ctx.end();
-        if (begin == end)
-        {
-            return begin;
-        }
-        begin = spec._M_parse_width(begin, end, ctx);
-        if (begin == end)
-        {
-            return begin;
-        }
-        // offer a one-line format?
-        /*
-        switch (*begin)
-        {
-            case 'b':
-                spec._M_type = std::__format::_Pres_b;
-                ++begin;
-                break;
-            case 'd':
-                spec._M_type = std::__format::_Pres_d;
-                ++begin;
-                break;
-            case 'o':
-                spec._M_type = std::__format::_Pres_o;
-                ++begin;
-                break;
-            case 'x':
-                spec._M_type = std::__format::_Pres_x;
-                ++begin;
-                break;
-            default:
-                // throw something
-                break;
-        }
-        */
-        if (begin == end)
-        {
-            return begin;
-        }
-        return begin;
-    }
-
-    template <typename FormatContext>
-    auto format(const basic_matrix<T>& m, FormatContext& ctx) const
-        -> decltype(ctx.out())
-    {
-        auto out = ctx.out();
-        int pad = 1 + spec._M_get_width(ctx);
-        *out++ = '[';
-        auto iter = m.values.begin();
-        // FIXME: use column width code?
-        for (size_t r = 0; r < m.rows; r++)
-        {
-            if (r != 0)
-            {
-                *out++ = '\n';
-                for (int i = 0; i < pad; i++)
-                {
-                    *out++ = ' ';
-                }
-            }
-            *out++ = '[';
-            for (size_t c = 0; c < m.cols; c++)
-            {
-                out = std::format_to(out, "{:f}", *iter++);
-                if ((c + 1) < m.cols)
-                {
-                    *out++ = ' ';
-                }
-            }
-            *out++ = ']';
-        }
-        *out++ = ']';
-        return out;
     }
 };

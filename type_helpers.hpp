@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
 #include <type_traits>
+#include <variant>
 
 template <class T, class O>
 struct same_type
@@ -22,3 +23,27 @@ concept integer = std::is_integral<T>::value;
 
 template <class T>
 concept floating = std::is_floating_point<T>::value;
+
+template <typename T>
+struct variant0_or_single
+{
+    using type = T;
+};
+template <typename T, typename... Types>
+struct variant0_or_single<std::variant<T, Types...>>
+{
+    using type = T;
+};
+
+template <typename T>
+struct is_variant : std::false_type
+{
+};
+
+template <typename... Args>
+struct is_variant<std::variant<Args...>> : std::true_type
+{
+};
+
+template <typename T>
+inline constexpr bool is_variant_v = is_variant<T>::value;

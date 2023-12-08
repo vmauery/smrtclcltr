@@ -130,15 +130,12 @@ void Parser::rebuild(int base)
                         char_(')'))];
     complex = qi::hold[imag] | qi::hold[complex1] | complex2;
     rational = integer >> char_('/') >> uinteger;
-    any_simple_number =
-        qi::hold[floating] | qi::hold[rational] | qi::hold[integer];
     number = qi::hold[complex] | qi::hold[floating] | qi::hold[rational] |
              qi::hold[integer];
-    spaced_simple_numbers =
-        *space >> any_simple_number >> *(+space >> any_simple_number) >> *space;
-    matrix_row = char_('[') >> spaced_simple_numbers >> char_(']');
-    matrix = char_('[') >> matrix_row >>
-             *(matrix_row | spaced_simple_numbers) >> char_(']');
+    spaced_numbers = *space >> number >> *(+space >> number) >> *space;
+    matrix_row = char_('[') >> spaced_numbers >> char_(']');
+    matrix = char_('[') >> matrix_row >> *(matrix_row | spaced_numbers) >>
+             char_(']');
     list = char_('{') >> *(*space >> number >> *space) >> char_('}');
 
     // time literals ns, us, ms, s, m, h, d, or
@@ -146,6 +143,8 @@ void Parser::rebuild(int base)
     dd = digit >> digit;
     date = dd >> dd >> char_('-') >> dd >> char_('-') >> dd >>
            -(char_('T') >> dd >> char_(':') >> dd >> char_(':') >> dd);
+    any_simple_number =
+        qi::hold[floating] | qi::hold[rational] | qi::hold[integer];
     duration = no_skip[any_simple_number >>
                        (char_('d') | char_('h') | char_('m') | char_('s') |
                         string("ns") | string("us") | string("ms"))];

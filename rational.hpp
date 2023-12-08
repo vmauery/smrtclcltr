@@ -39,7 +39,7 @@ struct rational
     }
 
     template <integer I>
-    constexpr rational(const I& n) : num(static_cast<T>(n)), den(1)
+    explicit constexpr rational(const I& n) : num(static_cast<T>(n)), den(1)
     {
     }
 
@@ -90,10 +90,14 @@ struct rational
         return den;
     }
 
-    constexpr operator mpf() const
+    explicit constexpr operator mpf() const
     {
-        return mpf{static_cast<mpf::value_type>(num) /
-                   static_cast<mpf::value_type>(den)};
+        return mpf{num} / mpf{den};
+    }
+
+    explicit constexpr operator mpc() const
+    {
+        return mpc{mpf{num} / mpf{den}, mpf{0}};
     }
 
     auto operator<=>(const rational<T>& r) const

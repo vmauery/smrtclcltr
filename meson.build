@@ -1,6 +1,6 @@
 project('smrtclcltr', 'cpp',
   version : '1.0',
-  meson_version: '>=1.1.0',
+  meson_version: '>=1.3.0',
   default_options : [
     'werror=true',
     'warning_level=3',

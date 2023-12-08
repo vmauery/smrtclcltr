@@ -13,6 +13,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <source_location>
 #include <string>
 #include <string_view>
+#include <type_helpers.hpp>
 #include <type_traits>
 #include <typeinfo>
 #include <ui.hpp>
@@ -99,19 +100,6 @@ MK_LOG_LVL(debug);
 #undef MK_LOG_LVL
 
 } // namespace lg
-
-template <typename T>
-struct is_variant : std::false_type
-{
-};
-
-template <typename... Args>
-struct is_variant<std::variant<Args...>> : std::true_type
-{
-};
-
-template <typename T>
-inline constexpr bool is_variant_v = is_variant<T>::value;
 
 template <typename T>
 struct debug_type
