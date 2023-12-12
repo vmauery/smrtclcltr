@@ -480,6 +480,7 @@ void Calculator::show_stack()
     size_t c = stack.size();
     for (auto it = stack.rbegin(); it != stack.rend(); it++)
     {
+        size_t first_col = 0;
         try
         {
             if (config.debug)
@@ -500,14 +501,18 @@ void Calculator::show_stack()
                         base = "hex";
                         break;
                 }
-                ui->out("{}{},p:{},{},{} | ", it->is_signed ? 's' : 'u',
-                        it->fixed_bits, it->precision, base,
-                        numeric_types[it->value().index()]);
+                auto debug_prefix =
+                    std::format("{}{},p:{},{},{} | ", it->is_signed ? 's' : 'u',
+                                it->fixed_bits, it->precision, base,
+                                numeric_types[it->value().index()]);
+                ui->out(debug_prefix);
+                first_col += debug_prefix.size();
             }
             std::string row_idx{};
             if (config.interactive)
             {
                 row_idx = std::format("{:d}: ", c);
+                first_col += row_idx.size();
             }
             auto& v = it->value();
 
@@ -572,8 +577,7 @@ void Calculator::show_stack()
             }
             else if (auto m = std::get_if<matrix>(&v); m)
             {
-                ui->out("{0}{1:{2}}{3}\n", row_idx, *m, row_idx.size(),
-                        it->unit());
+                ui->out("{0}{1:{2}}{3}\n", row_idx, *m, first_col, it->unit());
             }
             else
             {
