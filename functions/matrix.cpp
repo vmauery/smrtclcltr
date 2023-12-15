@@ -11,6 +11,42 @@ namespace smrty
 namespace function
 {
 
+struct adjoint : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"adjoint"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x adjoint\n"
+            "\n"
+            "    Returns the adjoint of the matrix x\n"
+            "    calculated by swapping rows and columns\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_limited_op<matrix>(
+            calc,
+            [](const matrix& a,
+               const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                if (ua != units::unit())
+                {
+                    throw std::invalid_argument("units not permitted");
+                }
+                numeric inv{a.adjoint()};
+                return {inv, ua};
+            });
+    }
+};
+
 struct determinant : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -84,5 +120,6 @@ struct eye : public CalcFunction
 } // namespace function
 } // namespace smrty
 
+register_calc_fn(adjoint);
 register_calc_fn(determinant);
 register_calc_fn(eye);
