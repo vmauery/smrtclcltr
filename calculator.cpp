@@ -577,7 +577,9 @@ void Calculator::show_stack()
             }
             else if (auto m = std::get_if<matrix>(&v); m)
             {
-                ui->out("{0}{1:{2}}{3}\n", row_idx, *m, first_col, it->unit());
+                constexpr int screen_width = 80;
+                ui->out("{0}{1:{2}.{3}{:d}{:.5f}{:.5f}{:.5i}}{4}\n", row_idx,
+                        *m, first_col, screen_width, it->unit());
             }
             else
             {

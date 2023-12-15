@@ -9,6 +9,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #error "Do not include this file directly"
 #endif
 
+#include <std_container_format.hpp>
+
 // This assumes that mpz, mpf, mpc, mpq are already fully defined
 // These formatters are common for both boost types and basic types
 
@@ -368,17 +370,17 @@ struct std::formatter<mpc>
         // ctx.out() is an output iterator to write to.
         if (spec._M_type == std::__format::_Pres_f)
         {
-            return std::format_to(ctx.out(), "({0:.{2}f},{1:.{2}f})", c.real(),
+            return std::format_to(ctx.out(), "({0:.{2}},{1:.{2}})", c.real(),
                                   c.imag(), precision);
         }
         else if (spec._M_type == std::__format::_Pres_p)
         {
-            return std::format_to(ctx.out(), "({0:.{2}f},<{1:.{2}f})", abs(c),
+            return std::format_to(ctx.out(), "({0:.{2}},<{1:.{2}})", abs(c),
                                   atan2(c.real(), c.imag()), precision);
         }
         else // if (spec._M_type == std::__format::_Pres_g)
         {
-            return std::format_to(ctx.out(), "{0:.{2}f}{1:+.{2}}i", c.real(),
+            return std::format_to(ctx.out(), "{0:.{2}}{1:+.{2}}i", c.real(),
                                   c.imag(), precision);
         }
     }
@@ -388,13 +390,27 @@ template <typename T>
 struct std::formatter<basic_matrix<T>>
 {
     std::__format::_Spec<char> spec{};
+    static constexpr std::string_view default_format{"{}"};
+    std::string vfmt{default_format};
 
-    // Parses format like the standard int parser
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
     {
-        // this is a simplification of integer format parsing from format
-        auto begin = ctx.begin(), end = ctx.end();
+        // format:
+        // {[name]:[[#][padding][.width][{type0-format}[{type1-format}...]]]}
+        //   e.g.: for std::variant<mpz,mpq,mpf,mpc>:
+        //         {:#80{:> 3i}{:> 3.3f}{:> 3.3f}{:> 1.2i}}
+        //     or: {[name]:[[#][.width][{type-format}]]}
+        //   e.g.: for std::variant<mpz,mpq,mpf,mpc>:
+        //         {:#80{:> 3i}{:> 3.3f}{:> 3.3f}{:> 1.2i}}
+        auto begin = ctx.begin();
+        auto end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        // alternate form for a matrix is one-line
+        begin = spec._M_parse_alternate_form(begin, end);
         if (begin == end)
         {
             return begin;
@@ -404,35 +420,37 @@ struct std::formatter<basic_matrix<T>>
         {
             return begin;
         }
-        // offer a way to specify a different format for each variant type?
-        // offer a one-line format?
-        /*
-        switch (*begin)
-        {
-            case 'b':
-                spec._M_type = std::__format::_Pres_b;
-                ++begin;
-                break;
-            case 'd':
-                spec._M_type = std::__format::_Pres_d;
-                ++begin;
-                break;
-            case 'o':
-                spec._M_type = std::__format::_Pres_o;
-                ++begin;
-                break;
-            case 'x':
-                spec._M_type = std::__format::_Pres_x;
-                ++begin;
-                break;
-            default:
-                // throw something
-                break;
-        }
-        */
+        begin = spec._M_parse_precision(begin, end, ctx);
         if (begin == end)
         {
             return begin;
+        }
+        auto fmts_begin = begin;
+        if constexpr (is_variant_v<T>)
+        {
+            std::array<std::string_view, std::variant_size_v<T>> sub_formats;
+            for (size_t i = 0; i < sub_formats.size(); i++)
+            {
+                auto v = parse_sub_format(begin, end, sub_formats[i]);
+                if (v == end)
+                {
+                    break;
+                }
+                begin = v;
+            }
+        }
+        else
+        {
+            std::string_view sub_format{};
+            begin = parse_sub_format(begin, end, sub_format);
+        }
+        if (fmts_begin != begin)
+        {
+            vfmt = std::format("{{:{}}}", std::string_view{fmts_begin, begin});
+        }
+        else
+        {
+            vfmt = default_format;
         }
         return begin;
     }
@@ -443,45 +461,34 @@ struct std::formatter<basic_matrix<T>>
     {
         auto out = ctx.out();
         int pad = 1 + spec._M_get_width(ctx);
+        [[maybe_unused]] int width = spec._M_get_precision(ctx);
         *out++ = '[';
         auto iter = m.values.begin();
+        lg::debug("matrix::vfmt = '{}'\n", vfmt);
         // FIXME: use column width code?
         for (size_t r = 0; r < m.rows; r++)
         {
             if (r != 0)
             {
-                *out++ = '\n';
-                for (int i = 0; i < pad; i++)
+                // oneline
+                if (spec._M_alt)
                 {
                     *out++ = ' ';
+                }
+                else
+                {
+                    *out++ = '\n';
+                    for (int i = 0; i < pad; i++)
+                    {
+                        *out++ = ' ';
+                    }
                 }
             }
             *out++ = '[';
             for (size_t c = 0; c < m.cols; c++)
             {
-                if constexpr (is_variant_v<decltype(m)>)
-                {
-                    if (auto q = std::get_if<mpq>(&m); q)
-                    {
-                        out = std::format_to(out, "{:f}", *q);
-                    }
-                    else if (auto c = std::get_if<mpc>(&m); c)
-                    {
-                        out = std::format_to(out, "{:i}", *c);
-                    }
-                    else if (auto f = std::get_if<mpf>(&m); f)
-                    {
-                        out = std::format_to(out, "{:f}", *f);
-                    }
-                    else if (auto z = std::get_if<mpz>(&m); z)
-                    {
-                        out = std::format_to(out, "{:d}", *z);
-                    }
-                }
-                else
-                {
-                    out = std::format_to(out, "{}", *iter++);
-                }
+                out = std::vformat_to(out, vfmt, std::make_format_args(*iter));
+                iter++;
                 if ((c + 1) < m.cols)
                 {
                     *out++ = ' ';
