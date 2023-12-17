@@ -456,8 +456,8 @@ struct std::formatter<basic_matrix<T>>
     }
 
     template <typename FormatContext>
-    auto format(const basic_matrix<T>& m, FormatContext& ctx) const
-        -> decltype(ctx.out())
+    auto format(const basic_matrix<T>& m,
+                FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto out = ctx.out();
         int pad = 1 + spec._M_get_width(ctx);

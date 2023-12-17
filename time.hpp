@@ -365,8 +365,8 @@ struct std::formatter<basic_time<T>>
     }
 
     template <typename FormatContext>
-    auto format(const basic_time<T>& t, FormatContext& ctx) const
-        -> decltype(ctx.out())
+    auto format(const basic_time<T>& t,
+                FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto s = t.str();
         return std::copy(s.begin(), s.end(), ctx.out());

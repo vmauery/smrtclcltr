@@ -101,7 +101,7 @@ constexpr Iter parse_sub_format(Iter begin, Iter end, std::string_view& fmt)
 }
 
 template <typename Cntnr>
-requires formattable_container<Cntnr>
+    requires formattable_container<Cntnr>
 struct std::formatter<Cntnr>
 {
     std::string_view delimiter{};
@@ -181,8 +181,8 @@ struct std::formatter<std::variant<Types...>>
     }
 
     template <typename FormatContext>
-    auto format(const std::variant<Types...>& t, FormatContext& ctx) const
-        -> decltype(ctx.out())
+    auto format(const std::variant<Types...>& t,
+                FormatContext& ctx) const -> decltype(ctx.out())
     {
         static bool once = false;
         if (!once)

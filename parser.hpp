@@ -133,8 +133,7 @@ struct Token
     }
     Token(const std::type_index& type, const std::string_view& value,
           const std::vector<std::string>& matches) :
-        type(type),
-        value(value), matches(matches)
+        type(type), value(value), matches(matches)
     {
     }
 

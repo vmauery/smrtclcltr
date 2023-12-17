@@ -58,8 +58,7 @@ std::map<std::type_index, std::string> Parser::expr_types{
 Parser::Parser(
     int base, const std::vector<std::string_view>& function_names,
     const std::map<size_t, std::shared_ptr<std::regex>>& fn_regexps) :
-    fns(function_names),
-    regexps(fn_regexps)
+    fns(function_names), regexps(fn_regexps)
 {
     rebuild(base);
 }

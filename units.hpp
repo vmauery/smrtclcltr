@@ -324,8 +324,8 @@ struct std::formatter<smrty::units::unit>
     // Formats the point p using the parsed format specification (presentation)
     // stored in this formatter.
     template <typename FormatContext>
-    auto format(const smrty::units::unit& u, FormatContext& ctx) const
-        -> decltype(ctx.out())
+    auto format(const smrty::units::unit& u,
+                FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto out = ctx.out();
         bool debug = spec._M_type == std::__format::_Pres_d;

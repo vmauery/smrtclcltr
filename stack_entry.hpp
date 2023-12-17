@@ -32,9 +32,8 @@ class stack_entry
 
     stack_entry(numeric&& v, const smrty::units::unit& u, int b, int f, int p,
                 bool s) :
-        _unit(u),
-        base(b), fixed_bits(f), precision(p), is_signed(s), overflow(false),
-        sign(false), carry(false), zero(false)
+        _unit(u), base(b), fixed_bits(f), precision(p), is_signed(s),
+        overflow(false), sign(false), carry(false), zero(false)
     {
         _value = reduce_numeric(v, precision);
         if (mpz* v = std::get_if<mpz>(&_value); v != nullptr)
