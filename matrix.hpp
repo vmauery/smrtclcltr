@@ -37,10 +37,10 @@ struct basic_matrix
         // pad or truncate, based on size
         values.resize(cols * rows);
     }
-    basic_matrix(size_t cols, size_t rows, const std::span<T>& init) :
+    basic_matrix(size_t cols, size_t rows, const std::vector<T>& init) :
         cols(cols), rows(rows)
     {
-        values.insert(values.begin(), init.begin(), init.end());
+        values = init;
         // pad or truncate, based on size
         values.resize(cols * rows);
         reduce();
