@@ -31,11 +31,8 @@ std::vector<std::tuple<numeric, units::unit>>
     ret.reserve(lst.size() + 1);
     for (const auto& v : lst.values)
     {
-        std::visit(
-            [&ret](const auto& vv) {
-                ret.emplace_back(std::forward_as_tuple(vv, units::unit{}));
-            },
-            v);
+        numeric vv = variant_cast(v);
+        ret.emplace_back(std::forward_as_tuple(vv, units::unit{}));
     }
     ret.emplace_back(std::forward_as_tuple(mpz{lst.size()}, units::unit{}));
     return ret;

@@ -119,6 +119,7 @@ smrty_src = [
   'functions/probability.cpp',
   'functions/product.cpp',
   'functions/range.cpp',
+  'functions/sign.cpp',
   'functions/sqr.cpp',
   'functions/sqrt.cpp',
   'functions/stack_funcs.cpp',

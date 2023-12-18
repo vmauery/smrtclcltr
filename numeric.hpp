@@ -664,5 +664,13 @@ static inline mpf operator%(const mpf& f, const mpq& q)
 
 std::string mpz_to_bin_string(const mpz& v, std::streamsize width);
 
+namespace smrty
+{
+static inline numeric abs(const matrix& m)
+{
+    return variant_cast(m.det());
+}
+} // namespace smrty
+
 #define NEED_NUMERIC_TYPE_FORMATTERS 1
 #include <numeric_format.hpp>

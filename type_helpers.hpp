@@ -55,3 +55,22 @@ struct is_one_of<T, std::variant<Ts...>>
 };
 template <typename T, typename... Args>
 inline constexpr bool is_one_of_v = is_one_of<T, Args...>::value;
+
+template <class... Types>
+struct variant_cast_helper
+{
+    std::variant<Types...> v;
+
+    template <class... OTypes>
+    operator std::variant<OTypes...>() const
+    {
+        return std::visit(
+            [](auto&& arg) -> std::variant<OTypes...> { return arg; }, v);
+    }
+};
+template <class... Types>
+auto variant_cast(const std::variant<Types...>& v)
+    -> variant_cast_helper<Types...>
+{
+    return {v};
+}

@@ -76,8 +76,7 @@ struct determinant : public CalcFunction
                 {
                     throw std::invalid_argument("units not permitted");
                 }
-                numeric det = std::visit(
-                    [](const auto& a) -> numeric { return a; }, a.det());
+                numeric det = variant_cast(a.det());
                 return {det, ua};
             });
     }

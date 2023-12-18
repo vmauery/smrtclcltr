@@ -276,35 +276,6 @@ struct rshift : public CalcFunction
     }
 };
 
-struct negate : public CalcFunction
-{
-    virtual const std::string& name() const final
-    {
-        static const std::string _name{"neg"};
-        return _name;
-    }
-    virtual const std::string& help() const final
-    {
-        static const std::string _help{
-            // clang-format off
-            "\n"
-            "    Usage: x neg\n"
-            "\n"
-            "    Returns the negation of the bottom item on the stack (-x)\n"
-            // clang-format on
-        };
-        return _help;
-    }
-    virtual bool op(Calculator& calc) const final
-    {
-        return one_arg_op(calc,
-                          [](const auto& a, const units::unit& ua)
-                              -> std::tuple<numeric, units::unit> {
-                              return {mpz{-1} * a, ua};
-                          });
-    }
-};
-
 struct inverse : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -460,7 +431,6 @@ register_calc_fn(divide);
 register_calc_fn(percent_change);
 register_calc_fn(lshift);
 register_calc_fn(rshift);
-register_calc_fn(negate);
 register_calc_fn(inverse);
 register_calc_fn(divmod);
 register_calc_fn(power);
