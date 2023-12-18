@@ -500,3 +500,74 @@ struct std::formatter<basic_matrix<T>>
         return out;
     }
 };
+
+template <typename T>
+struct std::formatter<basic_list<T>>
+{
+    std::__format::_Spec<char> spec{};
+    static constexpr std::string_view default_format{"{}"};
+    std::string vfmt{default_format};
+
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // format:
+        // {[name]:[[{type0-format}[{type1-format}...]]]}
+        //   e.g.: for std::variant<mpz,mpq,mpf,mpc>:
+        //         {:{:> 3i}{:> 3.3f}{:> 3.3f}{:> 1.2i}}
+        auto begin = ctx.begin();
+        auto end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        auto fmts_begin = begin;
+        if constexpr (is_variant_v<T>)
+        {
+            std::array<std::string_view, std::variant_size_v<T>> sub_formats;
+            for (size_t i = 0; i < sub_formats.size(); i++)
+            {
+                auto v = parse_sub_format(begin, end, sub_formats[i]);
+                if (v == end)
+                {
+                    break;
+                }
+                begin = v;
+            }
+        }
+        else
+        {
+            std::string_view sub_format{};
+            begin = parse_sub_format(begin, end, sub_format);
+        }
+        if (fmts_begin != begin)
+        {
+            vfmt = std::format("{{:{}}}", std::string_view{fmts_begin, begin});
+        }
+        else
+        {
+            vfmt = default_format;
+        }
+        return begin;
+    }
+
+    template <typename FormatContext>
+    auto format(const basic_list<T>& lst,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        [[maybe_unused]] int width = spec._M_get_precision(ctx);
+        *out++ = '{';
+        size_t remaining = lst.size() - 1;
+        for (const auto& v : lst.values)
+        {
+            out = std::vformat_to(out, vfmt, std::make_format_args(v));
+            if (remaining--)
+            {
+                *out++ = ' ';
+            }
+        }
+        *out++ = '}';
+        return out;
+    }
+};

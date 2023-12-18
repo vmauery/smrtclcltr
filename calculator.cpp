@@ -277,6 +277,7 @@ bool Calculator::run_one(std::shared_ptr<Token>& token)
         }
         else if (token->type == Parser::list_type)
         {
+            e.value(parse_list(expr));
         }
         else if (token->type == Parser::time_type)
         {
@@ -580,6 +581,11 @@ void Calculator::show_stack()
                 constexpr int screen_width = 80;
                 ui->out("{0}{1:{2}.{3}{:d}{:.5f}{:.5f}{:.5i}}{4}\n", row_idx,
                         *m, first_col, screen_width, it->unit());
+            }
+            else if (auto lst = std::get_if<list>(&v); lst)
+            {
+                ui->out("{}{:{:d}{:.5f}{:.5f}{:.5i}}{}\n", row_idx, *lst,
+                        it->unit());
             }
             else
             {

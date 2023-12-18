@@ -32,7 +32,7 @@ bool add_from_stack(Calculator& calc)
 bool divide_from_stack(Calculator& calc)
 {
     return two_arg_conv<ITypes<mpz>, OTypes<mpq>,
-                        LTypes<mpq, mpf, mpc, time_>>::
+                        LTypes<mpq, mpf, mpc, time_, matrix, list>>::
         op(calc,
            [](const auto& a, const auto& b, const units::unit& ua,
               const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -61,6 +61,7 @@ struct add : public CalcFunction
             "    Usage: x y +\n"
             "\n"
             "    Returns the sum of the bottom two items on the stack (x + y)\n"
+            "    This can merge two lists into one or add to each item\n"
             // clang-format on
         };
         return _help;

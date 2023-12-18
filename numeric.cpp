@@ -366,7 +366,7 @@ matrix parse_matrix(std::string_view s)
     size_t rows = 0;
     size_t cols = 0;
     size_t rows_cols = 0;
-    std::vector<mpx> values{};
+    std::vector<matrix::element_type> values{};
     do
     {
         lg::debug("next is '{}'\n", next);
@@ -420,6 +420,62 @@ matrix parse_matrix(std::string_view s)
         }
     } while (next.size());
     return matrix(cols, rows, std::move(values));
+}
+
+list parse_list(std::string_view s)
+{
+    smrty::Calculator& calc = smrty::Calculator::get();
+    Parser& parser = calc.get_parser();
+    // strip off the braces and parse the values
+    auto next_not_brace = [](std::string_view sv) -> std::string_view {
+        auto next_pos = sv.find_first_not_of("{}");
+        if (next_pos == std::string_view::npos)
+        {
+            return {};
+        }
+        return sv.substr(next_pos);
+    };
+    lg::debug("s is '{}'\n", s);
+    std::string_view next = next_not_brace(s);
+    std::vector<list::element_type> values{};
+    do
+    {
+        lg::debug("next is '{}'\n", next);
+        const auto& [parse_ok, t, more] = parser.parse_next(next);
+        if (parse_ok)
+        {
+            lg::debug("parsed: {}\n", *t);
+            if (t->type == Parser::mpz_type)
+            {
+                values.emplace_back(mpz{t->value});
+            }
+            else if (t->type == Parser::mpf_type)
+            {
+                values.emplace_back(parse_mpf(t->value));
+            }
+            else if (t->type == Parser::mpc_type)
+            {
+                values.emplace_back(parse_mpc(t->value));
+            }
+            else if (t->type == Parser::mpq_type)
+            {
+                values.emplace_back(mpq{t->value});
+            }
+            else
+            {
+                throw std::invalid_argument(
+                    std::format("unsupported list entry type {}",
+                                Parser::expr_types[t->type]));
+            }
+        }
+        next = more;
+        if (!parse_ok)
+        {
+            // end of the list
+            next = next_not_brace(next);
+        }
+    } while (next.size());
+    return list(std::move(values));
 }
 
 std::optional<time_> parse_time(std::string_view s)

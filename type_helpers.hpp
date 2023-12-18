@@ -39,11 +39,19 @@ template <typename T>
 struct is_variant : std::false_type
 {
 };
-
 template <typename... Args>
 struct is_variant<std::variant<Args...>> : std::true_type
 {
 };
+template <typename... Args>
+inline constexpr bool is_variant_v = is_variant<Args...>::value;
 
-template <typename T>
-inline constexpr bool is_variant_v = is_variant<T>::value;
+template <class T, class U>
+struct is_one_of;
+template <class T, class... Ts>
+struct is_one_of<T, std::variant<Ts...>>
+    : public std::disjunction<same_type<T, Ts>...>
+{
+};
+template <typename T, typename... Args>
+inline constexpr bool is_one_of_v = is_one_of<T, Args...>::value;

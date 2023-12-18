@@ -184,17 +184,6 @@ struct std::formatter<std::variant<Types...>>
     auto format(const std::variant<Types...>& t,
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
-        static bool once = false;
-        if (!once)
-        {
-            once = true;
-            int i = 0;
-            for (const auto& f : sub_formats)
-            {
-                lg::debug("sub_formats[{}] = '{}'\n", i, f);
-                i++;
-            }
-        }
         const auto& fmtstr = sub_formats[t.index()];
         lg::debug("fmtstr[{}] = {}\n", t.index(), fmtstr);
         return std::visit(
