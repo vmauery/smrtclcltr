@@ -20,6 +20,7 @@ namespace util
 {
 
 bool add_from_stack(Calculator& calc);
+bool multiply_from_stack(Calculator& calc);
 bool divide_from_stack(Calculator& calc);
 
 mpz factorial(const mpz&);

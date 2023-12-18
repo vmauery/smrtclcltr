@@ -29,8 +29,6 @@ Ideas for future development
    * < <= == != >= >
  * N-d vector support [ x y z ]
    * parse / cross / dot / add / subtract / scaler
- * List support (a bunch of numerics)
-   * sum / product / concatenate / split / scalar ops
  * Interval support? x+-y / [x,y]
  * Variable store/recall support
  * Scripting? Like the HP language? That might be too much...
