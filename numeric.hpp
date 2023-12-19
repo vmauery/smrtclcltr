@@ -167,6 +167,14 @@ static constexpr auto numeric_types = std::to_array<const char*>({
 });
 
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
+
+// string parsers
+extern mpz parse_mpz(std::string_view s, int base = 10);
+extern mpc parse_mpc(std::string_view s);
+static inline mpq parse_mpq(std::string_view s)
+{
+    return mpq(s);
+}
 mpq parse_mpf(std::string_view s);
 std::optional<time_> parse_time(std::string_view s);
 matrix parse_matrix(std::string_view s);

@@ -304,13 +304,4 @@ constexpr mpc atanh(const mpc& v)
 }
 } // namespace smrty
 
-// string parsers
-extern mpz parse_mpz(std::string_view s, int base = 10);
-extern mpc parse_mpc(std::string_view s);
-
-static inline mpq parse_mpq(std::string_view s)
-{
-    return mpq(s);
-}
-
 #endif // USE_BASIC_TYPES

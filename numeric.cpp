@@ -190,7 +190,6 @@ mpz make_fixed(const mpz& v, int bits, bool is_signed)
     return s1;
 }
 
-#ifndef USE_BASIC_TYPES
 mpz parse_mpz(std::string_view s, int base)
 {
     std::string nc{};
@@ -215,12 +214,13 @@ mpz parse_mpz(std::string_view s, int base)
         {
             throw std::invalid_argument("input has an invalid exponent");
         }
-        ret *= mpz(powul_fn(mpf(10), static_cast<int>(exp)));
+        ret *= mpz{powul_fn(mpz{10}, static_cast<int>(exp))};
         return ret;
     }
-    return mpz(s);
+    return mpz{s};
 }
-#else  // USE_BASIC_TYPES
+
+#ifdef USE_BASIC_TYPES
 
 namespace smrty
 {
@@ -258,52 +258,6 @@ std::tuple<mpz, mpz> powl(const mpz& base, int exponent)
 
 } // namespace smrty
 
-mpz parse_mpz(std::string_view s, int base)
-{
-    std::string nc{};
-    // remove any commas
-    if (s.find(",") != std::string::npos)
-    {
-        nc = s;
-        nc.erase(std::remove(nc.begin(), nc.end(), ','), nc.end());
-        s = nc;
-    }
-    if (base != 10)
-    {
-        // skip the prefix
-        s = s.substr(2);
-    }
-    mpz ret{};
-    auto [ptr, ec] =
-        std::from_chars(s.data(), s.data() + s.size(), ret.value, base);
-    if (ec != std::errc{})
-    {
-        throw std::invalid_argument(std::error_condition(ec).message());
-    }
-    // possible exponent?
-    if (ptr != s.end())
-    {
-        size_t end = ptr - s.begin();
-        if (s[end] == 'e')
-        {
-            auto exps = s.substr(end + 1);
-            end = 0;
-            mpz exp{};
-            auto [ptr, ec] =
-                std::from_chars(exps.begin(), exps.end(), exp.value);
-            if (ptr != exps.end())
-            {
-                throw std::invalid_argument("input has an invalid exponent");
-            }
-            ret *= powul_fn(ten, exp);
-        }
-        else
-        {
-            throw std::invalid_argument("input is not an integer");
-        }
-    }
-    return ret;
-}
 #endif // USE_BASIC_TYPES
 
 // accept the form 3.2e7+4.3e6i, (3.2e7,4.3e6), or (3.2e7,<4.3e6)
