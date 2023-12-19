@@ -310,7 +310,7 @@ mpz parse_mpz(std::string_view s, int base)
 const std::regex cmplx_regex[] = {
     std::regex("^(?=[ij.\\d+-])([-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]"
                "?\\d+)?(?![ij.\\d]))?([+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)("
-               "?:[eE][+-]?\\d+)?)?)?[ij]$",
+               "?:[eE][+-]?\\d+)?)?)[ij]$",
                std::regex::ECMAScript),
     std::regex("^[(]([-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?),(["
                "-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)[)]$",
@@ -318,34 +318,41 @@ const std::regex cmplx_regex[] = {
 };
 mpc parse_mpc(std::string_view s)
 {
-    mpf complex_parts[2]{};
+    mpf real{};
+    mpf imag{1};
     for (int j = 0; j < 2; j++)
     {
         std::cmatch parts;
         if (std::regex_search(s.begin(), s.end(), parts, cmplx_regex[j]))
         {
-            for (unsigned long i = 0; i < 2; i++)
+            if (parts[1].matched)
             {
-                if (parts[i + 1].matched)
+                std::string s = parts[1].str();
+                lg::debug("match[1] = '{}'\n", s);
+                real = mpf{s};
+            }
+            if (parts[2].matched)
+            {
+                std::string s = parts[2].str();
+                lg::debug("match[2] = '{}'\n", s);
+                if (s[0] == '+')
                 {
-#ifdef USE_BASIC_TYPES
-                    std::string s = parts[i + 1].str();
-                    char* end = nullptr;
-                    complex_parts[i] = mpf{std::strtold(s.c_str(), &end)};
-                    if (*end)
-                    {
-                        throw std::invalid_argument(
-                            "input is not a complex number");
-                    }
-#else
-                    std::string s = parts[i + 1].str();
-                    complex_parts[i] = mpf(s);
-#endif
+                    s = s.substr(1);
+                    lg::debug("match[2] = '{}'\n", s);
+                }
+                else if (s == "-")
+                {
+                    s += '1';
+                    lg::debug("match[2] = '{}'\n", s);
+                }
+                if (s.size())
+                {
+                    imag = mpf{s};
                 }
             }
         }
     }
-    return mpc(complex_parts[0], complex_parts[1]);
+    return mpc{real, imag};
 }
 
 matrix parse_matrix(std::string_view s)

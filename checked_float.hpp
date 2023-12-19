@@ -35,7 +35,12 @@ struct checked_float
     }
     explicit checked_float(std::string_view r)
     {
-        std::from_chars(r.begin(), r.end(), value);
+        auto [ptr, ec] = std::from_chars(r.begin(), r.end(), value);
+        if (ec != std::errc{} || ptr != r.end())
+        {
+            throw std::invalid_argument(
+                std::format("'{}' failed to parse as a float", r));
+        }
         lg::debug("checked_float({}): value: {}\n", r, value);
     }
     template <integer I>
