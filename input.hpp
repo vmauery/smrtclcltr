@@ -5,6 +5,7 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #pragma once
 
+#include <cstdio>
 #if HAVE_READLINE == 1
 #include <readline/history.h>
 #include <readline/readline.h>

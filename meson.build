@@ -27,6 +27,17 @@ if (cxx.get_id() == 'gcc')
 endif
 build = get_option('buildtype')
 
+# boost (1.77-1.84) has complex_adaptor issues and will not build
+# new clang and boost-1.76 works, but has lots of warnings. 1.85 is better
+boost_dep = dependency('boost', version: '>=1.85.0', required: true)
+#    boost_algorithm
+#    boost_bimap
+#    boost_integer
+#    boost_math
+#    boost_multiprecision
+#    boost_random
+#    boost_spirit
+
 numeric = dependency('mpfr')
 if (get_option('numeric') == 'mpfr')
   numeric = dependency('mpfr')
@@ -40,7 +51,7 @@ elif (get_option('numeric') == 'native')
   add_project_arguments(['-DUSE_BASIC_TYPES'], language: 'cpp')
 endif
 
-base_deps = [ numeric ]
+base_deps = [ numeric, boost_dep ]
 
 add_project_arguments(
   cxx.get_supported_arguments([
@@ -53,6 +64,9 @@ add_project_arguments(
     # '-Wnull-dereference', # gcc gives false positives
     '-Woverloaded-virtual',
     '-Wunused',
+    # needed for new clang for boost warnings
+    '-Wno-double-promotion',
+    # end boost list
     ]),
   language: 'cpp'
   )
@@ -130,7 +144,11 @@ smrty_src = [
   'functions/util_funcs.cpp',
   ]
 
-smrty_lib = static_library('smtrty', smrty_src)
+smrty_lib = static_library(
+  'smtrty',
+  smrty_src,
+  dependencies: base_deps
+)
 
 cli_deps = base_deps
 cli_src = [

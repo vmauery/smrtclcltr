@@ -42,8 +42,6 @@ static constexpr unsigned int max_precision = 1000000;
 static constexpr unsigned int max_bits = 64 * 1024;
 
 #ifdef USE_BOOST_CPP_BACKEND
-#include <boost/serialization/nvp.hpp>
-// stay
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/multiprecision/cpp_complex.hpp>
 #include <boost/multiprecision/cpp_int.hpp>

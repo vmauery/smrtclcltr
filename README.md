@@ -19,7 +19,7 @@ The idea here is that you have a keyboard attached to your HP48GX. Remember the 
  - libstdc++ or libc++ that support c++23 features
  - libmpfr-dev (optional, but recommended for speed and usability)
  - libgmp-dev (optional, but second choice, and needed for mpfr anyway)
- - libboost-dev (header-only libraries)
+ - libboost-dev (header-only libraries) (1.85 or later)
 
 ### Incantation
 SmrtClcltr's build system is meson-based. So build it just like any other meson application.
@@ -35,4 +35,11 @@ CC=clang CXX=clang++ meson setup build-clang
 
 # build
 meson compile -C build-clang
+
+# configure with an alternate compiler and custom boost
+# use the path to the boost root (source), not installed version
+BOOST_ROOT=/usr/src/boost CC=clang CXX=clang++ meson setup build-clang-boost
+
+# build
+meson compile -C build-clang-boost
 ```
