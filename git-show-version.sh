@@ -1,10 +1,8 @@
 #!/bin/bash
 
-DESC=$(git describe --tags 2>/dev/null)
+DESC=$(git describe --tags --long 2>/dev/null)
 REV=$(git rev-parse --short HEAD 2>/dev/null)
-if [ -n "$DESC" ]; then
-	DESC="${DESC}-${REV}"
-else
+if [ -z "$DESC" ]; then
 	DESC="$REV"
 fi
 if git status -uno | grep -q 'nothing to commit'; then
