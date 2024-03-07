@@ -4,6 +4,8 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <boost/version.hpp>
+#include <format>
 #include <version.hpp>
 
 const char* Version::version()
@@ -20,5 +22,20 @@ const char* Version::timestamp()
 
 std::string Version::full()
 {
-    return std::string(version()) + ", built " + timestamp();
+#if defined(__clang__)
+#define CXX_VERSION_MAJOR __clang_major__
+#define CXX_VERSION_MINOR __clang_minor__
+#define CXX_NAME "clang++"
+#elif defined(__GNUC__)
+#define CXX_VERSION_MAJOR __GNUC__
+#define CXX_VERSION_MINOR __GNUC_MINOR__
+#define CXX_NAME "g++"
+#endif
+    return std::format("smrtclcltr-{}\n"
+                       "         built {}\n"
+                       "         {}-{}.{}\n"
+                       "         boost-{}.{}",
+                       version(), timestamp(), CXX_NAME, CXX_VERSION_MAJOR,
+                       CXX_VERSION_MINOR, BOOST_VERSION / 100000,
+                       (BOOST_VERSION / 100) % 1000);
 }
