@@ -354,13 +354,16 @@ bool Calculator::run()
         }
         else if (token->type == Parser::eol_type)
         {
-            try
+            if (config.interactive)
             {
-                show_stack();
-            }
-            catch (const std::exception& e)
-            {
-                lg::error("Exception: {}\n", e.what());
+                try
+                {
+                    show_stack();
+                }
+                catch (const std::exception& e)
+                {
+                    lg::error("Exception: {}\n", e.what());
+                }
             }
         }
         else
@@ -375,6 +378,17 @@ bool Calculator::run()
             {
                 lg::error("Exception: {}\n", e.what());
             }
+        }
+    }
+    if (!config.interactive)
+    {
+        try
+        {
+            show_stack();
+        }
+        catch (const std::exception& e)
+        {
+            lg::error("Exception: {}\n", e.what());
         }
     }
     return true;
