@@ -29,7 +29,7 @@ build = get_option('buildtype')
 
 # boost (1.77-1.84) has complex_adaptor issues and will not build
 # new clang and boost-1.76 works, but has lots of warnings. 1.85 is better
-boost_dep = dependency('boost', version: '>=1.85.0', required: true)
+boost_dep = dependency('boost', version: '>=1.74.0', required: true)
 #    boost_algorithm
 #    boost_bimap
 #    boost_integer
@@ -37,6 +37,10 @@ boost_dep = dependency('boost', version: '>=1.85.0', required: true)
 #    boost_multiprecision
 #    boost_random
 #    boost_spirit
+boost_ver = boost_dep.version()
+if boost_ver.version_compare('>=1.77') and boost_ver.version_compare('<=1.84')
+  error('boost 1.77 through 1.84 do not build correctly')
+endif
 
 numeric = dependency('mpfr')
 if (get_option('numeric') == 'mpfr')
