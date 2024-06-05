@@ -2,57 +2,49 @@
 
 #include <array>
 #include <cstdio>
+#include <deque>
 #include <format>
+#include <list>
+#include <set>
+#include <span>
+#include <unordered_set>
 #include <variant>
+#include <vector>
 
-// The ifdefs below are a bit of a hack, making it so this file
-// needs to be included AFTER any types to print... Ick.
 template <typename T>
 struct is_formattable_container : std::false_type
 {
 };
 
-#if (defined(_GLIBCXX_DEQUE) || defined(_LIBCPP_DEQUE))
-template <typename T, typename... A>
-struct is_formattable_container<std::deque<T, A...>> : std::true_type
+template <typename T, typename A>
+struct is_formattable_container<std::deque<T, A>> : std::true_type
 {
 };
-#endif
 
-#if (defined(_GLIBCXX_VECTOR) || defined(_LIBCPP_VECTOR))
-template <typename T, typename... A>
-struct is_formattable_container<std::vector<T, A...>> : std::true_type
+template <typename T, typename A>
+struct is_formattable_container<std::vector<T, A>> : std::true_type
 {
 };
-#endif
 
-#if (defined(_GLIBCXX_LIST) || defined(_LIBCPP_LIST))
 template <typename T, typename... A>
 struct is_formattable_container<std::list<T, A...>> : std::true_type
 {
 };
-#endif
 
-#if (defined(_GLIBCXX_UNORDERED_SET) || defined(_LIBCPP_UNORDERED_SET))
 template <typename T, typename... A>
 struct is_formattable_container<std::unordered_set<T, A...>> : std::true_type
 {
 };
-#endif
 
-#if (defined(_GLIBCXX_SET) || defined(_LIBCPP_SET))
 template <typename T, typename... A>
 struct is_formattable_container<std::set<T, A...>> : std::true_type
 {
 };
-#endif
 
-#if (defined(_GLIBCXX_SPAN) || defined(_LIBCPP_SPAN))
 template <typename T, size_t N>
 struct is_formattable_container<std::span<T, N>> : std::true_type
 {
 };
-#endif
 
 template <typename T, size_t N>
 struct is_formattable_container<std::array<T, N>> : std::true_type

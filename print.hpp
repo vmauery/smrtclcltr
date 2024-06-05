@@ -22,14 +22,13 @@ template <class... Args>
 static inline void print(std::FILE* f, std::format_string<Args...> format,
                          Args&&... args)
 {
-    vprint(f, format.get(), std::make_format_args(std::forward<Args>(args)...));
+    vprint(f, format.get(), std::make_format_args(args...));
 }
 
 template <class... Args>
 static inline void print(std::format_string<Args...> format, Args&&... args)
 {
-    vprint(stdout, format.get(),
-           std::make_format_args(std::forward<Args>(args)...));
+    vprint(stdout, format.get(), std::make_format_args(args...));
 }
 
 // degenerate cases (no formatting required)
