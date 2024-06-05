@@ -195,7 +195,6 @@ struct basic_time
     {
         return basic_time<T>(value + static_cast<T>(t), absolute);
     }
-    template <>
     basic_time<T> operator+(const mpf& t) const
     {
         return basic_time<T>(value + make_quotient(t), absolute);
@@ -205,7 +204,6 @@ struct basic_time
     {
         return basic_time<T>(value - static_cast<T>(t), absolute);
     }
-    template <>
     basic_time<T> operator-(const mpf& t) const
     {
         return basic_time<T>(value - make_quotient(t), absolute);
@@ -216,7 +214,6 @@ struct basic_time
         // mult on absolute time makes it a duration
         return basic_time<T>(value * static_cast<T>(t), false);
     }
-    template <>
     basic_time<T> operator*(const mpf& t) const
     {
         return basic_time<T>(value * make_quotient(t), false);
@@ -227,7 +224,6 @@ struct basic_time
         // div on absolute time makes it a duration
         return basic_time<T>(value / static_cast<T>(t), false);
     }
-    template <>
     basic_time<T> operator/(const mpf& t) const
     {
         // div on absolute time makes it a duration
