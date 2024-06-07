@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <format>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <source_location>
 #include <string>
 #include <string_view>
@@ -124,20 +125,21 @@ struct debug_type
 
 static inline std::string DEBUG_TYPE(const auto& x)
 {
+    debug_type t(x);
+    std::string& name = t.name;
     if constexpr (is_variant_v<typename std::decay_t<decltype(x)>>)
     {
-        return "variant<" +
-               std::visit(
-                   [](const auto& x) {
-                       debug_type t(x);
-                       return t.name;
-                   },
-                   x) +
-               ">";
+        std::string selected = std::visit(
+            [](const auto& x) {
+                debug_type t(x);
+                return t.name;
+            },
+            x);
+        name = std::regex_replace(name, std::regex{selected}, "[$&]");
+        return name;
     }
     else
     {
-        debug_type t(x);
-        return t.name;
+        return name;
     }
 }
