@@ -5,8 +5,11 @@
 #include <deque>
 #include <format>
 #include <list>
+#include <regex>
 #include <set>
 #include <span>
+#include <tuple>
+#include <type_traits>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -184,5 +187,116 @@ struct std::formatter<std::variant<Types...>>
                                        std::make_format_args(v));
             },
             t);
+    }
+};
+
+template <auto Start, auto End, auto Inc, class F>
+constexpr void constexpr_for(F&& f)
+{
+    if constexpr (Start < End)
+    {
+        f(std::integral_constant<decltype(Start), Start>());
+        constexpr_for<Start + Inc, End, Inc>(f);
+    }
+}
+
+template <class F, class Tuple>
+constexpr void constexpr_for_each_tuple_item(F&& f, Tuple&& tuple)
+{
+    constexpr size_t cnt = std::tuple_size_v<std::decay_t<Tuple>>;
+
+    constexpr_for<size_t(0), cnt, size_t(1)>(
+        [&](auto i) { f(i.value, std::get<i.value>(tuple)); });
+}
+
+template <typename... Types>
+struct std::formatter<std::tuple<Types...>>
+{
+    std::array<std::string_view, std::variant_size_v<std::variant<Types...>>>
+        sub_formats;
+    static constexpr std::string_view default_format{"{}"};
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // format: {[name]:[{type0-format}[{type1-format}...]]}
+        //   e.g.: for std::tuple<mpz,mpq,mpf,mpc>:
+        //         {:{:> 3i}{:> 3.3f}{:> 3.3f}{:> 1.2i}}
+        auto begin = ctx.begin();
+        auto end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        for (size_t i = 0; i < sub_formats.size(); i++)
+        {
+            auto v = parse_sub_format(begin, end, sub_formats[i]);
+            if (v == end)
+            {
+                break;
+            }
+            begin = v;
+        }
+        return begin;
+    }
+
+    template <typename FormatContext>
+    auto format(const std::tuple<Types...>& t,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        *out++ = '(';
+        constexpr_for_each_tuple_item(
+            [&out, this](size_t i, const auto& v) {
+                const auto& fmtstr = sub_formats[i];
+                // lg::debug("fmtstr[{}] = {}\n", i, fmtstr);
+                out = std::vformat_to(out, fmtstr, std::make_format_args(v));
+            },
+            t);
+        *out++ = ')';
+        return out;
+    }
+};
+
+template <typename... T>
+struct std::formatter<std::match_results<T...>>
+{
+    // Parses format like the standard int parser
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // TODO: at some point, a pretty vs oneline option might be nice
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const std::match_results<T...>& m,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        if (!m.ready())
+        {
+            constexpr std::string_view none{"<no-match>"};
+            out = std::copy(none.begin(), none.end(), out);
+            return out;
+        }
+        std::string sm = m.str(0);
+        out = std::copy(sm.begin(), sm.end(), out);
+        if (m.size() > 1)
+        {
+            *out++ = ':';
+            *out++ = ' ';
+        }
+        else
+        {
+            return out;
+        }
+        for (size_t i = 1; i < m.size(); i++)
+        {
+            sm = m.str(i);
+            *out++ = '[';
+            out = std::copy(sm.begin(), sm.end(), out);
+            *out++ = ']';
+        }
+        return out;
     }
 };

@@ -79,7 +79,7 @@ struct verbose : public CalcFunction
             "\n"
             "    Usage: n verbose\n"
             "\n"
-            "    Set verbosity to level n (0-7)\n"
+            "    Set verbosity to level n (0-9)\n"
             // clang-format on
         };
         return _help;
@@ -93,14 +93,17 @@ struct verbose : public CalcFunction
             auto lvl = static_cast<lg::level>(static_cast<int>(*v));
             std::print("request to set verbosity to {} ({})\n",
                        static_cast<int>(lvl), *v);
-            if (lvl >= lg::level::emergency && lvl <= lg::level::debug)
+            if (lvl >= lg::level::emergency && lvl <= lg::level::trace)
             {
                 lg::debug_level = lvl;
                 calc.stack.pop_front();
                 return true;
             }
         }
-        throw std::invalid_argument("Invalid verbosity: must be 0..7");
+        throw std::invalid_argument(
+            std::format("Invalid verbosity: must be {}..{}",
+                        static_cast<int>(lg::level::emergency),
+                        static_cast<int>(lg::level::trace)));
     }
 };
 
@@ -487,10 +490,9 @@ struct int_type : public CalcFunction
         }
         return calc.signed_mode(mode) && calc.fixed_bits(bits);
     }
-    virtual const std::shared_ptr<std::regex>& regex() const final
+    virtual const std::string_view regex() const final
     {
-        static const auto _regex =
-            std::make_shared<std::regex>("([us])([0-9]+)");
+        static const auto _regex = "([us])([0-9]+)";
         return _regex;
     }
 };
@@ -593,6 +595,17 @@ struct Help : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return calc.run_help();
+    }
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
+    {
+        std::string fn = match[1];
+        return calc.run_help(fn);
+    }
+    virtual const std::string_view regex() const final
+    {
+        static constexpr auto _regex{"help\\s+([^\\s]+)"};
+        return _regex;
     }
 };
 

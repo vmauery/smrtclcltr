@@ -226,10 +226,12 @@ struct basic_matrix
         return p;
     }
 
-    basic_matrix<T> operator*(const T& v) const
+    template <typename Type>
+        requires is_one_of_v<Type, T>
+    basic_matrix<T> operator*(const Type& v) const
     {
         // special case for unitary multiplication
-        if (std::visit([](const auto& a) { return a == decltype(a){1}; }, v))
+        if (v == decltype(v){1})
         {
             return *this;
         }
@@ -238,7 +240,8 @@ struct basic_matrix
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = (*in_iter) * v;
+            *out_iter = std::visit([&v](const auto& a) -> T { return a * v; },
+                                   *in_iter);
             out_iter++;
             in_iter++;
         }
@@ -246,10 +249,12 @@ struct basic_matrix
         return r;
     }
 
-    basic_matrix<T> operator/(const T& v) const
+    template <typename Type>
+        requires is_one_of_v<Type, T>
+    basic_matrix<T> operator/(const Type& v) const
     {
         // special case for unitary division
-        if (std::visit([](const auto& a) { return a == decltype(a){1}; }, v))
+        if (v == decltype(v){1})
         {
             return *this;
         }
@@ -258,7 +263,8 @@ struct basic_matrix
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = (*in_iter) / v;
+            *out_iter = std::visit([&v](const auto& a) -> T { return a / v; },
+                                   *in_iter);
             out_iter++;
             in_iter++;
         }
@@ -266,11 +272,18 @@ struct basic_matrix
         return r;
     }
 
-    basic_matrix<T>& operator*=(const T& v)
+    template <typename Type>
+        requires is_one_of_v<Type, T>
+    basic_matrix<T>& operator*=(const Type& v)
     {
+        // special case for unitary multiplication
+        if (v == decltype(v){1})
+        {
+            return *this;
+        }
         for (auto& iter : values)
         {
-            iter = iter * v;
+            iter = std::visit([&v](const auto& a) -> T { return a * v; }, iter);
         }
         reduce();
         return *this;

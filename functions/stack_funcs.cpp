@@ -352,7 +352,7 @@ struct depth : public CalcFunction
     {
         stack_entry e(mpz(calc.stack.size()), calc.config.base,
                       calc.config.fixed_bits, calc.config.precision,
-                      calc.config.is_signed);
+                      calc.config.is_signed, calc.flags);
         calc.stack.push_front(std::move(e));
         return true;
     }

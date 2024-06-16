@@ -11,6 +11,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <concepts>
 #include <debug.hpp>
 #include <format>
+#include <program.hpp>
+#include <symbolic.hpp>
 #include <type_helpers.hpp>
 #include <variant>
 
@@ -44,13 +46,20 @@ struct is_rational
 };
 
 template <class T>
-struct is_mathy
+struct is_complex
+    : std::integral_constant<bool,
+                             std::is_same<mpc, std::remove_cvref_t<T>>::value>
+{
+};
+
+template <class T>
+struct is_real
     : std::integral_constant<bool, is_integer<T>::value || is_float<T>::value ||
                                        is_rational<T>::value>
 {
 };
 template <class T>
-inline constexpr bool is_mathy_v = is_mathy<T>::value;
+inline constexpr bool is_real_v = is_real<T>::value;
 
 // exact things lose no precision on conversions
 template <class T>
@@ -154,7 +163,8 @@ using time_ = basic_time<mpq>;
 using matrix = basic_matrix<mpx>;
 using list = basic_list<mpx>;
 
-using numeric = std::variant<mpz, mpq, mpf, mpc, list, matrix, time_>;
+using numeric = std::variant<mpz, mpq, mpf, mpc, list, matrix, time_,
+                             smrty::program, smrty::symbolic>;
 
 static constexpr auto numeric_types = std::to_array<const char*>({
     "mpz",
@@ -170,15 +180,22 @@ mpz make_fixed(const mpz& v, int bits, bool is_signed);
 
 // string parsers
 extern mpz parse_mpz(std::string_view s, int base = 10);
+extern numeric parse_mpz(const smrty::single_number_parts&);
 extern mpc parse_mpc(std::string_view s);
 static inline mpq parse_mpq(std::string_view s)
 {
     return mpq(s);
 }
 mpq parse_mpf(std::string_view s);
-std::optional<time_> parse_time(std::string_view s);
+time_ parse_time(std::string_view s);
 matrix parse_matrix(std::string_view s);
 list parse_list(std::string_view s);
+
+numeric make_numeric(const smrty::number_parts&);
+numeric make_numeric(const smrty::single_number_parts&);
+numeric make_numeric(const smrty::two_number_parts&);
+numeric make_numeric(const smrty::time_parts&);
+numeric make_numeric(const smrty::compound_parts&);
 
 template <typename TypeOut, typename TypeIn>
 TypeOut coerce_variant(const TypeIn& in)
@@ -203,8 +220,40 @@ TypeOut coerce_variant(const TypeIn& in)
     throw std::invalid_argument("incorrect argument to coerce_variant");
 }
 
+/*********************************************************************
+ *
+ *   numeric operators
+ *
+ ********************************************************************/
+
+// As the number of types are held within numeric grows, the
+// number of operators between them that *might* be needed
+// grows as a factorial of N. Since this quickly gets out of
+// hand for writing each pair, we start with a catch-all
+// operator of each kind that throws a runtime error saying
+// that this kind of operation is not supported between these
+// two types. Then, we go ahead and implement all the pairs
+// that actually make sense.
+
+numeric operator+(const auto& l, const auto& r)
+{
+    throw std::invalid_argument("Invalid operands for addition");
+}
+numeric operator-(const auto& l, const auto& r)
+{
+    throw std::invalid_argument("Invalid operands for subtraction");
+}
+numeric operator*(const auto& l, const auto& r)
+{
+    throw std::invalid_argument("Invalid operands for multiplication");
+}
+numeric operator/(const auto& l, const auto& r)
+{
+    throw std::invalid_argument("Invalid operands for division");
+}
+
 /* scaler ops with time_ */
-template <typename S, std::enable_if_t<is_mathy_v<S>, bool> = true>
+template <typename S, std::enable_if_t<is_real_v<S>, bool> = true>
 static inline time_ operator+(const S& s, const time_& t)
 {
     return time_(t.value + static_cast<mpq>(s), t.absolute);
@@ -214,7 +263,7 @@ inline time_ operator+(const mpf& s, const time_& t)
 {
     return time_(t.value + make_quotient(s), t.absolute);
 }
-template <typename S, std::enable_if_t<is_mathy_v<S>, bool> = true>
+template <typename S, std::enable_if_t<is_real_v<S>, bool> = true>
 static inline time_ operator-(const S& s, const time_& t)
 {
     return time_(t.value - static_cast<mpq>(s), t.absolute);
@@ -224,7 +273,7 @@ inline time_ operator-(const mpf& s, const time_& t)
 {
     return time_(t.value - make_quotient(s), t.absolute);
 }
-template <typename S, std::enable_if_t<is_mathy_v<S>, bool> = true>
+template <typename S, std::enable_if_t<is_real_v<S>, bool> = true>
 static inline time_ operator*(const S& s, const time_& t)
 {
     // mult on absolute time makes it a duration
@@ -236,54 +285,103 @@ inline time_ operator*(const mpf& s, const time_& t)
     // mult on absolute time makes it a duration
     return time_(t.value * make_quotient(s), t.absolute);
 }
-template <typename S, std::enable_if_t<is_mathy_v<S>, bool> = true>
-static inline time_ operator/(const S&, const time_&)
+
+static inline smrty::symbolic operator+(const smrty::symbolic& s, const auto& o)
 {
-    throw std::invalid_argument("Scalar division by time is not allowed");
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("symbolic+bob"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
 }
-static inline time_ operator+(const list&, const time_&)
+static inline smrty::symbolic operator-(const smrty::symbolic& s, const auto& o)
 {
-    throw std::invalid_argument("Time is an invalid list type");
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("symbolic-bob"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
 }
-static inline time_ operator+(const time_&, const list&)
+static inline smrty::symbolic operator*(const smrty::symbolic& s, const auto& o)
 {
-    throw std::invalid_argument("Time is an invalid list type");
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("symbolic*bob"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
+}
+static inline smrty::symbolic operator/(const smrty::symbolic& s, const auto& o)
+{
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("symbolic/bob"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
+}
+static inline smrty::symbolic operator+(const auto& o, const smrty::symbolic& s)
+{
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("bob+symbolic"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
+}
+static inline smrty::symbolic operator-(const auto& o, const smrty::symbolic& s)
+{
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("bob-symbolic"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
+}
+static inline smrty::symbolic operator*(const auto& o, const smrty::symbolic& s)
+{
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("bob*symbolic"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
+}
+static inline smrty::symbolic operator/(const auto& o, const smrty::symbolic& s)
+{
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(std::string("bob/symbolic"));
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
 }
 
 // OPERATORS between numerics
 // ADD
 template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>))
-static inline matrix operator+(const matrix&, const T&)
-{
-    throw std::invalid_argument("Scalar addition with a matrix is not allowed");
-}
-template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>))
-static inline matrix operator+(const T&, const matrix&)
-{
-    throw std::invalid_argument("Scalar addition with a matrix is not allowed");
-}
-template <typename T>
     requires is_one_of_v<T, list::element_type>
 static inline list operator+(const T& t, const list& lst)
 {
     return lst + t;
-}
-template <typename L, typename R>
-    requires((!same_type_v<L, R>) &&
-             (same_type_v<L, matrix> || same_type_v<L, list>) &&
-             (same_type_v<R, matrix> || same_type_v<R, list>))
-static inline list operator+(const L&, const R&)
-{
-    throw std::invalid_argument(
-        "Addition with matrices and lists is not allowed");
-}
-template <typename T>
-    requires((!is_one_of_v<T, list::element_type>) && (!same_type_v<T, matrix>))
-static inline list operator+(const T&, const list&)
-{
-    throw std::invalid_argument("Invalid type for list addition");
 }
 static inline time_ operator+(const mpq& q, const time_& t)
 {
@@ -291,19 +389,11 @@ static inline time_ operator+(const mpq& q, const time_& t)
     nt.value += q;
     return nt;
 }
-static inline time_ operator+(const mpc&, const time_&)
-{
-    throw std::invalid_argument("complex time not allowed");
-}
 static inline time_ operator+(const time_& t, const mpq& q)
 {
     time_ nt = t;
     nt.value += q;
     return nt;
-}
-static inline time_ operator+(const time_&, const mpc&)
-{
-    throw std::invalid_argument("complex time not allowed");
 }
 static inline mpf operator+(const mpf& l, const mpz& r)
 {
@@ -355,31 +445,6 @@ static inline mpc operator+(const mpc& c, const mpq& q)
 }
 
 // SUBTRACT
-template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>))
-static inline matrix operator-(const matrix&, const T&)
-{
-    throw std::invalid_argument(
-        "Scalar subtraction with a matrix is not allowed");
-}
-template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>))
-static inline matrix operator-(const T&, const matrix&)
-{
-    throw std::invalid_argument(
-        "Scalar subtraction with a matrix is not allowed");
-}
-template <typename T>
-static inline list operator-(const T&, const list&)
-{
-    throw std::invalid_argument("Subtracting a list from any type is invalid");
-}
-template <typename T>
-    requires((!is_one_of_v<T, list::element_type>) && (!same_type_v<T, list>))
-static inline list operator-(const list&, const T&)
-{
-    throw std::invalid_argument("Invalid type for list subtraction");
-}
 static inline time_ operator-(const mpq& q, const time_& t)
 {
     time_ nt = t;
@@ -391,14 +456,6 @@ static inline time_ operator-(const time_& t, const mpq& q)
     time_ nt = t;
     nt.value -= q;
     return nt;
-}
-static inline time_ operator-(const mpc&, const time_&)
-{
-    throw std::invalid_argument("complex time not allowed");
-}
-static inline time_ operator-(const time_&, const mpc&)
-{
-    throw std::invalid_argument("complex time not allowed");
 }
 static inline mpc operator-(const mpc& c, const mpz& z)
 {
@@ -443,22 +500,6 @@ static inline mpc operator-(const mpc& c, const mpq& q)
 
 // MULTIPLY
 template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>) &&
-             (!is_one_of_v<T, matrix::element_type>))
-static inline matrix operator*(const matrix&, const T&)
-{
-    throw std::invalid_argument("Scalar multiplication with a matrix is "
-                                "not allowed with this type");
-}
-template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>) &&
-             (!is_one_of_v<T, matrix::element_type>))
-static inline matrix operator*(const T&, const matrix&)
-{
-    throw std::invalid_argument("Scalar multiplication with a matrix is "
-                                "not allowed with this type");
-}
-template <typename T>
     requires(is_one_of_v<T, matrix::element_type>)
 static inline matrix operator*(const T& t, const matrix& m)
 {
@@ -469,18 +510,6 @@ template <typename T>
 static inline list operator*(const T& t, const list& lst)
 {
     return lst * t;
-}
-template <typename T>
-    requires(!is_one_of_v<T, list::element_type>)
-static inline list operator*(const T&, const list&)
-{
-    throw std::invalid_argument("Invalid type for list multiplication");
-}
-template <typename T>
-    requires((!is_one_of_v<T, list::element_type>) && (!same_type_v<T, list>))
-static inline list operator*(const list&, const T&)
-{
-    throw std::invalid_argument("Invalid type for list multiplication");
 }
 static inline mpq operator*(const mpz& z, const mpq& q)
 {
@@ -528,19 +557,11 @@ static inline time_ operator*(const mpq& q, const time_& t)
     nt.value *= q;
     return nt;
 }
-static inline time_ operator*(const mpc&, const time_&)
-{
-    throw std::invalid_argument("complex time not allowed");
-}
 static inline time_ operator*(const time_& t, const mpq& q)
 {
     time_ nt = t;
     nt.value *= q;
     return nt;
-}
-static inline time_ operator*(const time_&, const mpc&)
-{
-    throw std::invalid_argument("complex time not allowed");
 }
 
 // DIVIDE
@@ -555,50 +576,10 @@ static inline matrix operator/(const matrix& ml, const matrix& mr)
     return ml * mr.inv();
 }
 template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>) &&
-             (!is_one_of_v<T, matrix::element_type>))
-static inline matrix operator/(const matrix&, const T&)
-{
-    throw std::invalid_argument("Scalar division with a matrix is "
-                                "not allowed with this type");
-}
-template <typename T>
-    requires((!same_type_v<T, matrix>) && (!same_type_v<T, list>) &&
-             (!is_one_of_v<T, matrix::element_type>))
-static inline matrix operator/(const T&, const matrix&)
-{
-    throw std::invalid_argument("Scalar division with a matrix is "
-                                "not allowed with this type");
-}
-template <typename T>
     requires(is_one_of_v<T, list::element_type>)
 static inline list operator/(const T& t, const list& lst)
 {
     return lst / t;
-}
-template <typename T>
-    requires(!is_one_of_v<T, list::element_type>)
-static inline list operator/(const T&, const list&)
-{
-    throw std::invalid_argument("Invalid type for list division");
-}
-template <typename T>
-    requires((!is_one_of_v<T, list::element_type>) && (!same_type_v<T, list>))
-static inline list operator/(const list&, const T&)
-{
-    throw std::invalid_argument("Invalid type for list division");
-}
-static inline time_ operator/(const mpq&, const time_&)
-{
-    throw std::invalid_argument("inverse time not allowed");
-}
-static inline time_ operator/(const mpc&, const time_&)
-{
-    throw std::invalid_argument("complex time not allowed");
-}
-static inline time_ operator/(const time_&, const mpc&)
-{
-    throw std::invalid_argument("complex time not allowed");
 }
 static inline time_ operator/(const time_& t, const mpq& q)
 {

@@ -57,7 +57,7 @@ struct product : public CalcFunction
             [&](auto&& v) {
                 calc.stack.emplace_front(
                     numeric{v}, calc.config.base, calc.config.fixed_bits,
-                    calc.config.precision, calc.config.is_signed);
+                    calc.config.precision, calc.config.is_signed, calc.flags);
             },
             std::move(sum));
         return true;

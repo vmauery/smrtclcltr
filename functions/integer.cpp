@@ -109,7 +109,7 @@ struct factor : public CalcFunction
         {
             calc.stack.emplace_front(
                 f, calc.config.base, calc.config.fixed_bits,
-                calc.config.precision, calc.config.is_signed);
+                calc.config.precision, calc.config.is_signed, calc.flags);
         }
         return true;
     }
@@ -152,7 +152,7 @@ struct prime_factor : public CalcFunction
         {
             calc.stack.emplace_front(
                 f, calc.config.base, calc.config.fixed_bits,
-                calc.config.precision, calc.config.is_signed);
+                calc.config.precision, calc.config.is_signed, calc.flags);
         }
         return true;
     }
@@ -196,7 +196,8 @@ struct gcd : public CalcFunction
         calc.stack.pop_front();
         mpz f = gcd_fn(*v, *u);
         calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };
@@ -239,7 +240,8 @@ struct lcm : public CalcFunction
         calc.stack.pop_front();
         mpz f = lcm_fn(*v, *u);
         calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };

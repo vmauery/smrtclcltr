@@ -22,6 +22,8 @@ timestamp_iso8601 = ts_cmd.stdout().strip()
 add_project_arguments(['-D__TIMESTAMP_ISO8601__="'+timestamp_iso8601+'"'], language: 'cpp')
 
 cxx = meson.get_compiler('cpp')
+add_project_arguments(['-Wno-unused-parameter'], language: 'cpp')
+
 if (cxx.get_id() == 'gcc')
   add_project_arguments(['-fpermissive'], language: 'cpp')
 endif
@@ -115,15 +117,8 @@ add_project_arguments(
     ],
   language : 'cpp')
 
-smrty_src = [
-  'calculator.cpp',
+smrty_functions = [
   'constants.cpp',
-  'debug.cpp',
-  'input.cpp',
-  'numeric.cpp',
-  'parser.cpp',
-  'units.cpp',
-  version_src,
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',
   'functions/compound.cpp',
@@ -136,6 +131,7 @@ smrty_src = [
   'functions/modular_funcs.cpp',
   'functions/probability.cpp',
   'functions/product.cpp',
+  'functions/program.cpp',
   'functions/range.cpp',
   'functions/sign.cpp',
   'functions/sqr.cpp',
@@ -145,22 +141,49 @@ smrty_src = [
   'functions/time_funcs.cpp',
   'functions/trig_funcs.cpp',
   'functions/unit_funcs.cpp',
-  'functions/util_funcs.cpp',
   ]
 
 smrty_lib = static_library(
   'smtrty',
-  smrty_src,
+  smrty_functions,
   dependencies: base_deps
 )
+
+common_src = [
+  'debug.cpp',
+  'input.cpp',
+  'parser.cpp',
+  'program.cpp',
+  ]
+
+common_lib = static_library(
+  'common',
+  common_src,
+  dependencies: base_deps
+)
+
+clcltr_src = [
+  'calculator.cpp',
+  'numeric.cpp',
+  'stack_entry.cpp',
+  'units.cpp',
+  version_src,
+  ]
 
 cli_deps = base_deps
 cli_src = [
   'main_cli.cpp',
   ]
+cli_src += clcltr_src
 
 executable('smrtclcltr',
   sources: cli_src,
   dependencies: cli_deps,
-  link_whole: smrty_lib,
+  link_whole: [smrty_lib, common_lib],
+  )
+
+executable('smrtprsr',
+  sources: 'parser_main.cpp',
+  dependencies: base_deps,
+  link_whole: common_lib,
   )

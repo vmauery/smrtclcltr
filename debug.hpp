@@ -38,6 +38,8 @@ enum class level
     notice,
     info,
     debug,
+    verbose,
+    trace,
 };
 extern level debug_level;
 
@@ -97,6 +99,8 @@ MK_LOG_LVL(warning);
 MK_LOG_LVL(notice);
 MK_LOG_LVL(info);
 MK_LOG_LVL(debug);
+MK_LOG_LVL(verbose);
+MK_LOG_LVL(trace);
 
 #undef MK_LOG_LVL
 

@@ -5,6 +5,9 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #pragma once
 
+#include <stdio.h>
+#include <sys/ioctl.h>
+
 #include <memory>
 #include <print.hpp>
 #include <string_view>
@@ -40,6 +43,16 @@ struct ui : public std::enable_shared_from_this<ui>
         // stderr is non-buffering, so just flush stdout
         fflush(stdout);
         return shared_from_this();
+    }
+
+    std::pair<int, int> size()
+    {
+        struct winsize w;
+        if (ioctl(0, TIOCGWINSZ, &w) < 0)
+        {
+            return {25, 80};
+        }
+        return {w.ws_row, w.ws_col};
     }
 
     std::shared_ptr<ui> err(const std::string& m)

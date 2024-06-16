@@ -137,11 +137,10 @@ struct bitwise_inv : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_limited_op<mpz>(calc,
-                                       [](const auto& a, const units::unit& ua)
-                                           -> std::tuple<numeric, units::unit> {
-                                           return {~a, ua};
-                                       });
+        return one_arg_limited_op<mpz>(
+            calc,
+            [](const auto& a, const units::unit& ua)
+                -> std::tuple<numeric, units::unit> { return {~a, ua}; });
     }
 };
 

@@ -37,7 +37,8 @@ struct date_time : public CalcFunction
         lg::debug("tp: {} ({})\n", tp, tp.time_since_epoch());
         time_ now(tp);
         calc.stack.emplace_front(now, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };
@@ -70,7 +71,8 @@ struct unix_ts : public CalcFunction
         auto value = now_ns.time_since_epoch();
         mpq ts(value.count(), 1ul * 1000 * 1000 * 1000);
         calc.stack.emplace_front(ts, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };
@@ -123,7 +125,7 @@ struct to_date_time : public CalcFunction
         time_ t{ts, true};
         calc.stack.emplace_front(std::move(t), calc.config.base,
                                  calc.config.fixed_bits, calc.config.precision,
-                                 calc.config.is_signed);
+                                 calc.config.is_signed, calc.flags);
         return true;
     }
 };
@@ -167,7 +169,8 @@ struct to_unix_ts : public CalcFunction
 
         mpq ts = v->value;
         calc.stack.emplace_front(ts, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };

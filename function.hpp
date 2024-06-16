@@ -15,95 +15,11 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <numeric.hpp>
 #include <string>
 #include <tuple>
-#include <type_traits>
+#include <type_helpers.hpp>
 #include <units.hpp>
 
 namespace smrty
 {
-
-constexpr bool const_or(bool b0)
-{
-    return b0;
-}
-
-template <typename B0, typename... BN>
-constexpr bool const_or(B0 b0, BN... bN)
-{
-    return b0 | const_or(bN...);
-}
-
-template <typename... Ttypes, typename... Vtypes>
-bool variant_holds_type(const std::variant<Vtypes...>& v)
-{
-    return const_or(std::holds_alternative<Ttypes>(v)...);
-}
-
-template <typename T, typename Vtype>
-struct variant_has_member;
-
-template <typename T, typename... Vtypes>
-struct variant_has_member<T, std::variant<Vtypes...>>
-    : public std::disjunction<std::is_same<T, Vtypes>...>
-{
-};
-
-template <typename Vin, typename Vout>
-struct reduce
-{
-    constexpr static size_t A_size = std::variant_size<Vin>::value;
-
-    const Vin& _vin;
-    Vout& _vout;
-
-    reduce(const Vin& vin, Vout& vout) : _vin(vin), _vout(vout)
-    {
-    }
-
-    bool extract_I(std::integral_constant<size_t, A_size>)
-    {
-        return false;
-    }
-
-    template <size_t I>
-    bool extract_I(
-        std::integral_constant<size_t, I> = std::integral_constant<size_t, 0>())
-    {
-        if constexpr (variant_has_member<std::variant_alternative_t<I, Vin>,
-                                         Vout>::value)
-        {
-            auto p = std::get_if<I>(&_vin);
-            if (p)
-            {
-                _vout = *p;
-                return true;
-            }
-        }
-        return extract_I(std::integral_constant<size_t, I + 1>());
-    }
-
-    bool operator()()
-    {
-        return extract_I<0>();
-    }
-};
-
-template <typename...>
-struct ITypes
-{
-};
-
-template <typename...>
-struct OTypes
-{
-};
-
-template <typename...>
-struct LTypes
-{
-};
-
-template <std::size_t N, class... Args>
-using list_type_t = std::tuple_element_t<N, std::tuple<Args...>>;
 
 template <typename... I>
 struct conversion
@@ -153,7 +69,7 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
     calc.stack.pop_front();
     calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                              calc.config.fixed_bits, a.precision,
-                             calc.config.is_signed);
+                             calc.config.is_signed, calc.flags);
     return true;
 }
 
@@ -192,7 +108,7 @@ struct one_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
 
         calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                                  calc.config.fixed_bits, a.precision,
-                                 calc.config.is_signed);
+                                 calc.config.is_signed, calc.flags);
         return true;
     }
 };
@@ -221,7 +137,7 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
     calc.stack.pop_front();
     calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                              calc.config.fixed_bits, a.precision,
-                             calc.config.is_signed);
+                             calc.config.is_signed, calc.flags);
     return true;
 }
 
@@ -251,7 +167,7 @@ bool one_arg_limited_multi_return_op(Calculator& calc, const Fn& fn)
     {
         calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                                  calc.config.fixed_bits, a.precision,
-                                 calc.config.is_signed);
+                                 calc.config.is_signed, calc.flags);
     }
     return true;
 }
@@ -269,7 +185,7 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
     if (a.unit().compat(b.unit()))
     {
         // convert b to a units
-        b.value(units::convert(b.value(), b.unit(), a.unit()));
+        b.value(units::convert(b.value(), b.unit(), a.unit()), calc.flags);
     }
     auto [cv, nu] = std::visit(
         [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
@@ -282,7 +198,7 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
 
     calc.stack.emplace_front(
         std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
-        std::min(a.precision, b.precision), calc.config.is_signed);
+        std::min(a.precision, b.precision), calc.config.is_signed, calc.flags);
     return true;
 }
 
@@ -293,23 +209,24 @@ bool two_arg_uconv_op(Calculator& calc, const Fn& fn)
     {
         throw std::invalid_argument("Requires 2 arguments");
     }
-    stack_entry a = calc.stack[1];
-    stack_entry b = calc.stack[0];
+    stack_entry& a = calc.stack[1];
+    stack_entry& b = calc.stack[0];
 
     if (a.unit() != b.unit())
     {
         if (a.unit().compat(b.unit()))
         {
             // convert b to a units
-            b.value(units::convert(b.value(), b.unit(), a.unit()));
+            b.value(units::convert(b.value(), b.unit(), a.unit()), calc.flags);
         }
         else if (units::are_temp_units(a.unit(), b.unit()))
         {
             b.value(std::visit(
-                [ub{b.unit()}, ua{a.unit()}](const auto& v) {
-                    return units::scale_temp_units(v, ub, ua);
-                },
-                b.value()));
+                        [ub{b.unit()}, ua{a.unit()}](const auto& v) {
+                            return units::scale_temp_units(v, ub, ua);
+                        },
+                        b.value()),
+                    calc.flags);
             b.unit(a.unit());
         }
     }
@@ -325,7 +242,7 @@ bool two_arg_uconv_op(Calculator& calc, const Fn& fn)
 
     calc.stack.emplace_front(
         std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
-        std::min(a.precision, b.precision), calc.config.is_signed);
+        std::min(a.precision, b.precision), calc.config.is_signed, calc.flags);
     return true;
 }
 
@@ -357,7 +274,7 @@ struct two_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
         if (a.unit() != b.unit() && a.unit().compat(b.unit()))
         {
             // convert b to a units
-            b.value(units::convert(b.value(), b.unit(), a.unit()));
+            b.value(units::convert(b.value(), b.unit(), a.unit()), calc.flags);
         }
         lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
         lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
@@ -385,9 +302,10 @@ struct two_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
         calc.stack.pop_front();
         calc.stack.pop_front();
 
-        calc.stack.emplace_front(
-            std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
-            std::min(a.precision, b.precision), calc.config.is_signed);
+        calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
+                                 calc.config.fixed_bits,
+                                 std::min(a.precision, b.precision),
+                                 calc.config.is_signed, calc.flags);
         return true;
     }
 };
@@ -419,7 +337,7 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
     if (a.unit().compat(b.unit()))
     {
         // convert b to a units
-        b.value(units::convert(b.value(), b.unit(), a.unit()));
+        b.value(units::convert(b.value(), b.unit(), a.unit()), calc.flags);
     }
     auto [cv, nu] = std::visit(
         [&fn, ua{a.unit()}, ub{b.unit()}](const auto& a, const auto& b) {
@@ -431,7 +349,7 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
 
     calc.stack.emplace_front(
         std::move(cv), nu, calc.config.base, calc.config.fixed_bits,
-        std::min(a.precision, b.precision), calc.config.is_signed);
+        std::min(a.precision, b.precision), calc.config.is_signed, calc.flags);
     return true;
 }
 
@@ -451,12 +369,12 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
     if (a.unit().compat(b.unit()))
     {
         // convert b to a units
-        b.value(units::convert(b.value(), b.unit(), a.unit()));
+        b.value(units::convert(b.value(), b.unit(), a.unit()), calc.flags);
     }
     if (a.unit().compat(c.unit()))
     {
         // convert c to a units
-        c.value(units::convert(c.value(), c.unit(), a.unit()));
+        c.value(units::convert(c.value(), c.unit(), a.unit()), calc.flags);
     }
     if (!variant_holds_type<AllowedTypes...>(a.value()) ||
         !variant_holds_type<AllowedTypes...>(b.value()) ||
@@ -487,7 +405,7 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
     calc.stack.emplace_front(std::move(cv), nu, calc.config.base,
                              calc.config.fixed_bits,
                              std::min({a.precision, b.precision, c.precision}),
-                             calc.config.is_signed);
+                             calc.config.is_signed, calc.flags);
     return true;
 }
 

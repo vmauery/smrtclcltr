@@ -33,7 +33,7 @@ struct _e : public CalcFunction
     {
         stack_entry e(boost::math::constants::e<mpf>(), calc.config.base,
                       calc.config.fixed_bits, calc.config.precision,
-                      calc.config.is_signed);
+                      calc.config.is_signed, calc.flags);
         calc.stack.push_front(std::move(e));
         return true;
     }
@@ -63,7 +63,7 @@ struct _pi : public CalcFunction
     {
         stack_entry pi(boost::math::constants::pi<mpf>(), calc.config.base,
                        calc.config.fixed_bits, calc.config.precision,
-                       calc.config.is_signed);
+                       calc.config.is_signed, calc.flags);
         calc.stack.push_front(std::move(pi));
         return true;
     }
@@ -92,7 +92,36 @@ struct _i : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         stack_entry i(mpc(0, 1), calc.config.base, calc.config.fixed_bits,
-                      calc.config.precision, calc.config.is_signed);
+                      calc.config.precision, calc.config.is_signed, calc.flags);
+        calc.stack.push_front(std::move(i));
+        return true;
+    }
+};
+
+struct _j : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"j"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: j\n"
+            "\n"
+            "    Returns constant j (square root of -1)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry i(mpc(0, 1), calc.config.base, calc.config.fixed_bits,
+                      calc.config.precision, calc.config.is_signed, calc.flags);
         calc.stack.push_front(std::move(i));
         return true;
     }
@@ -104,3 +133,4 @@ struct _i : public CalcFunction
 register_calc_fn(_e);
 register_calc_fn(_pi);
 register_calc_fn(_i);
+register_calc_fn(_j);

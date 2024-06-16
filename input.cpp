@@ -75,7 +75,7 @@ std::optional<std::string> Input::readline()
                 add_history(buf.get());
                 return nextline;
             }
-            return "\n";
+            return "";
         }
 #else  // ! HAVE_READLINE
         ui::get()->out("> ")->flush();
@@ -85,7 +85,7 @@ std::optional<std::string> Input::readline()
             {
                 return nextline;
             }
-            return "\n";
+            return "";
         }
 #endif // HAVE_READLINE
         return std::nullopt;
@@ -99,7 +99,7 @@ std::optional<std::string> Input::readline()
             {
                 return nextline;
             }
-            return "\n";
+            return "";
         }
         return std::nullopt;
     }

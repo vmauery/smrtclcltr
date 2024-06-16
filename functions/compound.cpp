@@ -16,57 +16,49 @@ namespace util
 std::vector<std::tuple<numeric, units::unit>>
     split(Calculator&, const matrix& m, const units::unit&)
 {
-    std::vector<std::tuple<numeric, units::unit>> ret{};
-    ret.reserve(1 + 2); // list of elements and two dimensions
-    ret.emplace_back(std::forward_as_tuple(list{m.values}, units::unit{}));
-    ret.emplace_back(std::forward_as_tuple(mpz{m.cols}, units::unit{}));
-    ret.emplace_back(std::forward_as_tuple(mpz{m.rows}, units::unit{}));
+    std::vector<std::tuple<numeric, units::unit>> ret{
+        std::forward_as_tuple(list{m.values}, units::unit{}),
+        std::forward_as_tuple(mpz{m.cols}, units::unit{}),
+        std::forward_as_tuple(mpz{m.rows}, units::unit{})};
     return ret;
 }
 
 std::vector<std::tuple<numeric, units::unit>>
     split(Calculator&, const list& lst, const units::unit&)
 {
-    std::vector<std::tuple<numeric, units::unit>> ret{};
-    ret.reserve(lst.size() + 1);
+    std::vector<std::tuple<numeric, units::unit>> ret{lst.size() + 1};
+    size_t i = 0;
     for (const auto& v : lst.values)
     {
-        numeric vv = variant_cast(v);
-        ret.emplace_back(std::forward_as_tuple(vv, units::unit{}));
+        ret[i++] = std::make_tuple(
+            std::visit([](const auto& a) -> numeric { return a; }, v),
+            units::unit{});
     }
-    ret.emplace_back(std::forward_as_tuple(mpz{lst.size()}, units::unit{}));
+    ret[i] = std::make_tuple(numeric{mpz{lst.size()}}, units::unit{});
     return ret;
 }
 
 std::vector<std::tuple<numeric, units::unit>>
     split(Calculator& calc, const mpc& c, const units::unit&)
 {
-    std::vector<std::tuple<numeric, units::unit>> ret{};
-    ret.reserve(2);
     if (calc.config.mpc_mode == Calculator::e_mpc_mode::polar)
     {
-        ret.emplace_back(std::forward_as_tuple(abs_fn(c), units::unit{}));
-        ret.emplace_back(std::forward_as_tuple(mpf{atan2(c.real(), c.imag())},
-                                               units::unit{}));
+        return {std::forward_as_tuple(abs_fn(c), units::unit{}),
+                std::forward_as_tuple(mpf{atan2(c.real(), c.imag())},
+                                      units::unit{})};
     }
     else
     {
-        ret.emplace_back(std::forward_as_tuple(mpf{c.real()}, units::unit{}));
-        ret.emplace_back(std::forward_as_tuple(mpf{c.imag()}, units::unit{}));
+        return {std::forward_as_tuple(mpf{c.real()}, units::unit{}),
+                std::forward_as_tuple(mpf{c.imag()}, units::unit{})};
     }
-    return ret;
 }
 
 std::vector<std::tuple<numeric, units::unit>> split(Calculator&, const mpq& q,
                                                     const units::unit&)
 {
-    std::vector<std::tuple<numeric, units::unit>> ret{};
-    ret.reserve(2);
-    ret.emplace_back(
-        std::forward_as_tuple(helper::numerator(q), units::unit{}));
-    ret.emplace_back(
-        std::forward_as_tuple(helper::denominator(q), units::unit{}));
-    return ret;
+    return {std::forward_as_tuple(helper::numerator(q), units::unit{}),
+            std::forward_as_tuple(helper::denominator(q), units::unit{})};
 }
 
 } // namespace util
@@ -153,7 +145,7 @@ struct Matrix : public CalcFunction
         calc.stack.pop_front();
         calc.stack.emplace_front(numeric{m}, calc.config.base,
                                  calc.config.fixed_bits, calc.config.precision,
-                                 calc.config.is_signed);
+                                 calc.config.is_signed, calc.flags);
         return true;
     }
 };
@@ -243,7 +235,8 @@ struct List : public CalcFunction
         }
         calc.stack.emplace_front(numeric{list{std::move(items)}},
                                  calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };

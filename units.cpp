@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <algorithm>
 #include <calculator.hpp>
 #include <charconv>
+#include <numeric.hpp>
 #include <units.hpp>
 #include <vector>
 
@@ -209,8 +210,14 @@ unit::unit(std::string_view u) : id(1, 1), exp(1, 1), scale(1, 1)
     }
 }
 
-numeric unit::conv(unit& o, const numeric& v) const
+numeric unit::conv(unit& o, const numeric& nv) const
 {
+    mpx v{};
+    if (!reduce(nv, v)())
+    {
+        // no units on non-mpx types, so no conversion needed
+        return nv;
+    }
     if (id == o.id)
     {
         std::visit(
@@ -226,12 +233,7 @@ numeric unit::conv(unit& o, const numeric& v) const
             [&o, this](const auto& n) -> numeric {
                 lg::debug("type(v) = {}, v = {}, (mpf={})\n", DEBUG_TYPE(n), n,
                           DEBUG_TYPE(mpf{}));
-                if constexpr (std::is_same_v<decltype(n), const matrix&>)
-                {
-                    // no units for matrices
-                    return n;
-                }
-                else if constexpr (std::is_same_v<decltype(n), const mpf&>)
+                if constexpr (std::is_same_v<decltype(n), const mpf&>)
                 {
                     return n *
                            static_cast<mpf>((o.exp / exp) * (o.scale / scale));

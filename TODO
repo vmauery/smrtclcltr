@@ -31,7 +31,6 @@ Ideas for future development
    * parse / cross / dot / add / subtract / scaler
  * Interval support? x+-y / [x,y]
  * Variable store/recall support
- * Scripting? Like the HP language? That might be too much...
  * Modes
    * Modular arithmetic mode
    * Polar/rect mode

@@ -58,10 +58,10 @@ struct range : public CalcFunction
         for (; count > 0; count--)
         {
             stack_entry ve;
-            ve.value(v);
+            ve.value(v, calc.flags);
             calc.stack.emplace_front(
                 v, calc.config.base, calc.config.fixed_bits,
-                calc.config.precision, calc.config.is_signed);
+                calc.config.precision, calc.config.is_signed, calc.flags);
             v += step;
         }
         return true;

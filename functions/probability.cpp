@@ -131,7 +131,8 @@ struct combination : public CalcFunction
         calc.stack.pop_front();
         mpz f = util::comb(*x, *y);
         calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };
@@ -186,7 +187,8 @@ struct permutation : public CalcFunction
         calc.stack.pop_front();
         mpz f = util::perm(*x, *y);
         calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };
@@ -323,7 +325,7 @@ struct median : public CalcFunction
             calc.stack.emplace_front(numeric{std::move(v)}, first_unit,
                                      calc.config.base, calc.config.fixed_bits,
                                      calc.config.precision,
-                                     calc.config.is_signed);
+                                     calc.config.is_signed, calc.flags);
         };
         if (items.size() % 2)
         {
@@ -339,7 +341,7 @@ struct median : public CalcFunction
             std::visit(stack_inserter, item2);
             calc.stack.emplace_front(
                 two, calc.config.base, calc.config.fixed_bits,
-                calc.config.precision, calc.config.is_signed);
+                calc.config.precision, calc.config.is_signed, calc.flags);
             mean mean_fn{};
             return mean_fn.op(calc);
         }
@@ -369,7 +371,8 @@ struct rand : public CalcFunction
     {
         mpq r = util::rand(calc.config.precision);
         calc.stack.emplace_front(r, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };
@@ -419,7 +422,8 @@ struct rand_dist : public CalcFunction
         calc.stack.pop_front();
         mpz r = util::rand_dist(*x, *y);
         calc.stack.emplace_front(r, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed);
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
 };

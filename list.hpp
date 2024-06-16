@@ -84,19 +84,22 @@ struct basic_list
         return s;
     }
 
-    basic_list<T> operator+(const T& v) const
+    template <typename Type>
+        requires is_one_of_v<Type, T>
+    basic_list<T> operator+(const Type& v) const
     {
         // special case for zero addition
-        if (std::visit([](const auto& a) { return a == decltype(a){0}; }, v))
+        if (v == decltype(v){0})
         {
             return *this;
         }
+        T tv{v};
         basic_list<T> r(size());
         auto out_iter = r.values.begin();
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = (*in_iter) + v;
+            *out_iter = (*in_iter) + tv;
             out_iter++;
             in_iter++;
         }
@@ -106,39 +109,20 @@ struct basic_list
 
     template <typename Type>
         requires is_one_of_v<Type, T>
-    basic_list<T> operator+(const T& v) const
-    {
-        // special case for zero addition
-        if (std::visit([](const auto& a) { return a == decltype(a){0}; }, v))
-        {
-            return *this;
-        }
-        basic_list<T> r(size());
-        auto out_iter = r.values.begin();
-        auto in_iter = values.begin();
-        for (size_t j = 0; j < size(); j++)
-        {
-            *out_iter = (*in_iter) + v;
-            out_iter++;
-            in_iter++;
-        }
-        r.reduce();
-        return r;
-    }
-
-    basic_list<T> operator-(const T& v) const
+    basic_list<T> operator-(const Type& v) const
     {
         // special case for zero subtraction
-        if (std::visit([](const auto& a) { return a == decltype(a){0}; }, v))
+        if (v == decltype(v){0})
         {
             return *this;
         }
+        T tv{v};
         basic_list<T> r(size());
         auto out_iter = r.values.begin();
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = (*in_iter) - v;
+            *out_iter = (*in_iter) - tv;
             out_iter++;
             in_iter++;
         }
@@ -146,19 +130,22 @@ struct basic_list
         return r;
     }
 
-    basic_list<T> operator*(const T& v) const
+    template <typename Type>
+        requires is_one_of_v<Type, T>
+    basic_list<T> operator*(const Type& v) const
     {
         // special case for unitary multiplication
-        if (std::visit([](const auto& a) { return a == decltype(a){1}; }, v))
+        if (v == decltype(v){1})
         {
             return *this;
         }
+        T tv{v};
         basic_list<T> r(size());
         auto out_iter = r.values.begin();
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = (*in_iter) * v;
+            *out_iter = (*in_iter) * tv;
             out_iter++;
             in_iter++;
         }
@@ -166,19 +153,22 @@ struct basic_list
         return r;
     }
 
-    basic_list<T> operator/(const T& v) const
+    template <typename Type>
+        requires is_one_of_v<Type, T>
+    basic_list<T> operator/(const Type& v) const
     {
         // special case for unitary division
-        if (std::visit([](const auto& a) { return a == decltype(a){1}; }, v))
+        if (v == decltype(v){1})
         {
             return *this;
         }
+        T tv{v};
         basic_list<T> r(size());
         auto out_iter = r.values.begin();
         auto in_iter = values.begin();
         for (size_t j = 0; j < size(); j++)
         {
-            *out_iter = (*in_iter) / v;
+            *out_iter = (*in_iter) / tv;
             out_iter++;
             in_iter++;
         }

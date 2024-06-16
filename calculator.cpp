@@ -16,6 +16,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <input.hpp>
 #include <iostream>
 #include <numeric>
+#include <parser.hpp>
 #include <string>
 #include <ui.hpp>
 
@@ -100,9 +101,6 @@ Calculator::Calculator()
 
     // add all the functions
     make_functions();
-
-    // set up the grammar
-    parser = std::make_unique<Parser>(10, _op_names, _reops);
 }
 
 std::string binary_to_hex(std::string_view v)
@@ -145,234 +143,169 @@ std::string binary_to_hex(std::string_view v)
     return out;
 }
 
-bool Calculator::run_help()
+bool Calculator::run_help(std::string_view fn)
 {
     auto ui = ui::get();
     // get the next token, but drain the input so stack doesn't get printed
-    auto next = get_next_token(true);
-    lg::debug("help token is: {}\n", *next);
-    if (next->type == Parser::eol_type || next->type == Parser::null_type)
+    lg::debug("help item is: {}\n", fn);
+    if (fn.size())
     {
-        constexpr size_t WIDTH = 80; // FIXME: get this from the window
-        column_layout l = find_best_layout(_op_names, WIDTH);
-        size_t col_count = l.cols.size();
-        size_t row_count =
-            std::ceil(static_cast<double>(_op_names.size()) / col_count);
-        for (size_t i = 0; i < row_count; i++)
+        auto help_op = _operations.find(fn);
+        if (help_op != _operations.end())
         {
-            for (size_t j = 0; j < col_count; j++)
-            {
-                size_t idx = row_count * j + i;
-                if (idx >= _op_names.size())
-                {
-                    break;
-                }
-                ui->out("{0: <{1}}", _op_names[idx], l.cols[j]);
-            }
-            ui->out("\n");
+            ui->out("{}\n\t{}\n", help_op->second->name(),
+                    help_op->second->help());
+            return false;
         }
-        return true;
     }
-    auto help_op = _operations.find(next->value);
-    if (help_op != _operations.end())
+    auto size = ui->size();
+    auto& tcols = std::get<1>(size);
+    column_layout l = find_best_layout(_op_names, tcols);
+    size_t col_count = l.cols.size();
+    size_t row_count =
+        std::ceil(static_cast<double>(_op_names.size()) / col_count);
+    for (size_t i = 0; i < row_count; i++)
     {
-        ui->out("{}\n\t{}\n", help_op->second->name(), help_op->second->help());
+        for (size_t j = 0; j < col_count; j++)
+        {
+            size_t idx = row_count * j + i;
+            if (idx >= _op_names.size())
+            {
+                break;
+            }
+            ui->out("{0: <{1}}", _op_names[idx], l.cols[j]);
+        }
+        ui->out("\n");
     }
-    return true;
+    return false;
 }
 
-bool Calculator::run_one(std::shared_ptr<Token>& token)
+bool Calculator::run_one(const simple_instruction& itm)
 {
-    if (token->type == Parser::cmd_type)
+    lg::debug("Calculator::run_one({})\n", itm);
+    if (lg::debug_level == lg::level::debug)
+    {
+        try
+        {
+            show_stack();
+            lg::debug("flags before: z({}) c({}) o({}) s({})\n", flags.zero,
+                      flags.carry, flags.overflow, flags.sign);
+        }
+        catch (const std::exception& e)
+        {
+            lg::error("Exception: {}\n", e.what());
+        }
+    }
+    if (auto n = std::get_if<function_parts>(&itm); n)
     {
         // operation should always be present,
         // but find is the same speed as []
-        auto opiter = _operations.find(token->value);
-        if (opiter == _operations.end())
+        auto& fn_name = _op_names[n->index];
+        auto& fn = _operations[fn_name];
+        if (n->args.size())
         {
-            lg::error("function not found: '{}'\n", token->value);
-            return false;
-        }
-        if (token->matches.size())
-        {
-            lg::debug("executing function '{}({})'\n", token->value,
-                      token->matches[0]);
-            return opiter->second->reop(*this, token->matches);
+            lg::debug("executing function '{}({})'\n", fn_name, n->args);
+            return fn->reop(*this, n->args);
         }
         else
         {
-            lg::debug("executing function '{}'\n", token->value);
-            return opiter->second->op(*this);
+            lg::debug("executing function '{}'\n", fn_name);
+            return fn->op(*this);
         }
+        return false;
     }
-    // not a function
-    stack_entry e;
-    e.base = config.base;
-    e.precision = config.precision;
-    e.fixed_bits = config.fixed_bits;
-    e.is_signed = config.is_signed;
-    std::string expr = token->value;
     try
     {
-        if (auto ubar = expr.find("_"); ubar != std::string::npos)
+        stack_entry e;
+        e.base = config.base;
+        e.precision = config.precision;
+        e.fixed_bits = config.fixed_bits;
+        e.is_signed = config.is_signed;
+        if (auto n = std::get_if<number_parts>(&itm); n)
         {
-            // parse units off the end and then let the numeric get parsed below
-            std::string unitstr = expr.substr(ubar + 1);
-            expr = expr.substr(0, ubar);
-            e.unit(unitstr);
+            // put it on the stack
+            e.value(make_numeric(*n), flags);
         }
-        if (token->type == Parser::mpz_type)
+        else if (auto n = std::get_if<compound_parts>(&itm); n)
         {
-            lg::debug("mpz(\"{}\")\n", expr);
-            std::string_view num;
-            int base{config.base};
-            if (expr[0] == '0' && expr.size() > 1)
-            {
-                // check for base prefix
-                if (expr.starts_with("0x"))
-                {
-                    base = e.base = 16;
-                    num = expr;
-                }
-                else if (expr.starts_with("0d"))
-                {
-                    base = e.base = 10;
-                    num = expr.substr(2);
-                }
-                else if (expr.starts_with("0b"))
-                {
-                    base = e.base = 2;
-                    num = binary_to_hex(expr);
-                }
-                else
-                {
-                    base = e.base = 8;
-                    num = expr;
-                }
-            }
-            else
-            {
-                num = expr;
-            }
-            e.value(parse_mpz(num, base));
+            // put it on the stack
+            e.value(make_numeric(*n), flags);
         }
-        else if (token->type == Parser::mpf_type)
+        else if (auto n = std::get_if<time_parts>(&itm); n)
         {
-            lg::debug("mpf(\"{}\")\n", expr);
-            e.value(parse_mpf(expr));
+            // put it on the stack
+            e.value(make_numeric(*n), flags);
         }
-        else if (token->type == Parser::mpc_type)
+        else if (auto n = std::get_if<program>(&itm); n)
         {
-            lg::debug("mpc(\"{}\")\n", expr);
-            e.value(parse_mpc(expr));
+            // put it on the stack
+            e.value(*n, flags);
         }
-        else if (token->type == Parser::mpq_type)
-        {
-            lg::debug("mpq(\"{}\")\n", expr);
-            e.value(mpq(expr));
-        }
-        else if (token->type == Parser::matrix_type)
-        {
-            e.value(parse_matrix(expr));
-        }
-        else if (token->type == Parser::list_type)
-        {
-            e.value(parse_list(expr));
-        }
-        else if (token->type == Parser::time_type)
-        {
-            // time literals ns, us, ms, s, m, h, d, or
-            // absolute times of the ISO8601 format: yyyy-mm-dd[Thh:mm:ss]
-            if (std::optional<time_> t = parse_time(expr); t)
-            {
-                e.value(*t);
-            }
-        }
+        stack.push_front(std::move(e));
     }
     catch (const std::exception& e)
     {
-        lg::error("bad expression '{}': {}\n", expr, e.what());
+        lg::error("failed to parse '{}': {}\n", itm, e.what());
         return false;
     }
-    stack.push_front(std::move(e));
+    lg::debug("flags after: z({}) c({}) o({}) s({})\n", flags.zero, flags.carry,
+              flags.overflow, flags.sign);
     return true;
-}
-
-std::shared_ptr<Token> Calculator::get_next_token(bool drain)
-{
-    static std::deque<std::shared_ptr<Token>> current_line{};
-    if (current_line.size() == 0)
-    {
-        std::optional<std::string> nextline = input->readline();
-        if (!nextline)
-        {
-            _running = false;
-            return std::make_shared<Token>();
-        }
-        std::string_view next = *nextline;
-        do
-        {
-            const auto& [parse_ok, t, more] = parser->parse_next(next);
-            if (parse_ok)
-            {
-                lg::debug("parsed: {}\n", *t);
-            }
-            next = more;
-            if (!parse_ok)
-            {
-                lg::debug("\n");
-                auto ui = ui::get();
-                ui->out("Failed to parse at '{}'\n", more);
-                current_line.clear();
-                return std::make_shared<Token>();
-            }
-            current_line.push_back(t);
-        } while (next.size());
-        current_line.push_back(std::make_shared<Token>(Parser::eol_type));
-    }
-    auto next_token = current_line.front();
-    if (drain)
-    {
-        current_line.clear();
-    }
-    else
-    {
-        current_line.pop_front();
-    }
-    lg::debug("next token is: {}\n", *next_token);
-    return next_token;
 }
 
 bool Calculator::run()
 {
+    auto ui = ui::get();
     while (_running)
     {
-        // get the next token
-        std::shared_ptr<Token> token = get_next_token(false);
-        if (token->type == Parser::null_type)
+        std::optional<std::string> nextline = input->readline();
+        if (!nextline)
         {
+            break;
         }
-        else if (token->type == Parser::eol_type)
+        bool exe_ok = true;
+        if (nextline->size())
         {
-            if (config.interactive)
+            std::string errmsg{};
+            auto maybe_program = parser::parse_user_input(
+                *nextline, [&errmsg](std::string_view msg) { errmsg = msg; });
+            if (!maybe_program || errmsg.size())
             {
-                try
+                if (errmsg.size())
                 {
-                    show_stack();
+                    ui->out("{}\n", errmsg);
                 }
-                catch (const std::exception& e)
+                else
                 {
-                    lg::error("Exception: {}\n", e.what());
+                    ui->out("Invalid input: {}\n", *nextline);
                 }
+                continue;
+            }
+            // attempt to execute the program
+            // if the program is aborted, do not print the stack
+            try
+            {
+                saved_stacks.push_front(stack);
+                exe_ok = maybe_program->execute(
+                    [this](const simple_instruction& itm,
+                           execution_flags& eflags) {
+                        bool retval = run_one(itm);
+                        eflags = flags;
+                        return retval;
+                    },
+                    flags);
+            }
+            catch (const std::exception& e)
+            {
+                lg::error("Exception: {}\n", e.what());
+                saved_stacks.pop_front();
             }
         }
-        else
+        if (exe_ok && config.interactive)
         {
             try
             {
-                // before executing the next token, save the stack
-                saved_stacks.push_front(stack);
-                run_one(token);
+                show_stack();
             }
             catch (const std::exception& e)
             {
@@ -459,7 +392,7 @@ bool Calculator::base(unsigned int b)
         case 10:
         case 16:
             config.base = b;
-            parser->rebuild(b);
+            parser::set_current_base(b);
             return true;
     }
     return false;
@@ -639,16 +572,20 @@ void Calculator::make_functions()
                    });
     std::sort(_op_names.begin(), _op_names.end());
 
+    std::vector<std::tuple<size_t, std::string_view>> reop_list{};
     for (const auto& [k, v] : _operations)
     {
         auto re = v->regex();
-        if (re)
+        if (re.size())
         {
             auto first = _op_names.begin();
             auto iter = std::find(first, _op_names.end(), k);
             _reops.emplace(std::distance(first, iter), re);
+            reop_list.emplace_back(
+                std::make_tuple(std::distance(first, iter), re));
         }
     }
+    parser::set_function_lists(_op_names, reop_list);
 }
 
 std::optional<std::string_view> Calculator::auto_complete(std::string_view in,

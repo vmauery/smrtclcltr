@@ -190,7 +190,7 @@ struct basic_time
     }
 
     /* ops with scalers */
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T> operator+(const I& t) const
     {
         return basic_time<T>(value + static_cast<T>(t), absolute);
@@ -199,7 +199,7 @@ struct basic_time
     {
         return basic_time<T>(value + make_quotient(t), absolute);
     }
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T> operator-(const I& t) const
     {
         return basic_time<T>(value - static_cast<T>(t), absolute);
@@ -208,7 +208,7 @@ struct basic_time
     {
         return basic_time<T>(value - make_quotient(t), absolute);
     }
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T> operator*(const I& t) const
     {
         // mult on absolute time makes it a duration
@@ -218,7 +218,7 @@ struct basic_time
     {
         return basic_time<T>(value * make_quotient(t), false);
     }
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T> operator/(const I& t) const
     {
         // div on absolute time makes it a duration
@@ -229,7 +229,7 @@ struct basic_time
         // div on absolute time makes it a duration
         return basic_time<T>(value / make_quotient(t), false);
     }
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T>& operator+=(const I& t)
     {
         if constexpr (std::is_same_v<mpf, std::remove_cvref<I>>)
@@ -242,7 +242,7 @@ struct basic_time
         }
         return *this;
     }
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T>& operator-=(const I& t)
     {
         if constexpr (std::is_same_v<mpf, std::remove_cvref<I>>)
@@ -255,7 +255,7 @@ struct basic_time
         }
         return *this;
     }
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T>& operator*=(const I& t)
     {
         // mult on absolute time makes it a duration
@@ -270,7 +270,7 @@ struct basic_time
         absolute = false;
         return *this;
     }
-    template <typename I, std::enable_if_t<is_mathy_v<I>, bool> = true>
+    template <typename I, std::enable_if_t<is_real_v<I>, bool> = true>
     basic_time<T>& operator/=(const I& t)
     {
         // div on absolute time makes it a duration

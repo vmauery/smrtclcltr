@@ -42,6 +42,7 @@ struct sum : public CalcFunction
         {
             if (!util::add_from_stack(calc))
             {
+                lg::debug("add_from_stack failed\n");
                 return false;
             }
         }
@@ -59,7 +60,7 @@ struct sum : public CalcFunction
             [&](auto&& v) {
                 calc.stack.emplace_front(
                     numeric{v}, calc.config.base, calc.config.fixed_bits,
-                    calc.config.precision, calc.config.is_signed);
+                    calc.config.precision, calc.config.is_signed, calc.flags);
             },
             std::move(sum));
         return true;
@@ -70,7 +71,7 @@ struct sum : public CalcFunction
         {
             return false;
         }
-        stack_entry e = calc.stack.front();
+        stack_entry& e = calc.stack.front();
         if (e.unit() != units::unit())
         {
             return false;

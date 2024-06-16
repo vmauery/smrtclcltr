@@ -11,7 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <map>
 #include <numeric.hpp>
 #include <optional>
-#include <parser.hpp>
+#include <program.hpp>
 #include <regex>
 #include <stack_entry.hpp>
 #include <string>
@@ -32,9 +32,9 @@ struct CalcFunction
     {
         return false;
     };
-    virtual const std::shared_ptr<std::regex>& regex() const
+    virtual const std::string_view regex() const
     {
-        static std::shared_ptr<std::regex> _regex{};
+        static std::string_view _regex{};
         return _regex;
     }
 };
@@ -82,6 +82,7 @@ class Calculator
 
     Config config;
     Stack stack;
+    execution_flags flags;
 
     // enforce singleton
   protected:
@@ -102,12 +103,8 @@ class Calculator
         }
         return *_this;
     }
-    Parser& get_parser()
-    {
-        return *parser;
-    }
     bool run();
-    bool run_help();
+    bool run_help(std::string_view fn = {});
 
     // used by functions
     bool undo();
@@ -120,6 +117,7 @@ class Calculator
     bool angle_mode(e_angle_mode);
     bool mpq_mode(e_mpq_mode);
     bool mpc_mode(e_mpc_mode);
+    bool run_one(const simple_instruction& itm);
 
   protected:
     Calculator();
@@ -131,17 +129,14 @@ class Calculator
                                                   int state);
 
     void show_stack();
-    std::shared_ptr<Token> get_next_token(bool flush);
-    bool run_one(std::shared_ptr<Token>& token);
 
     bool _running = true;
 
     std::map<std::string_view, const CalcFunction*> _operations;
     std::vector<std::string_view> _op_names;
-    std::map<size_t, std::shared_ptr<std::regex>> _reops;
+    std::map<size_t, std::string_view> _reops;
     size_t _op_names_max_strlen;
     std::shared_ptr<Input> input;
-    std::unique_ptr<Parser> parser;
 };
 
 } // namespace smrty
