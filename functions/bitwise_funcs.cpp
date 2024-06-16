@@ -145,6 +145,78 @@ struct bitwise_inv : public CalcFunction
     }
 };
 
+struct lshift : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"<<"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y <<\n"
+            "\n"
+            "    Returns the next-to-bottom item left-shifted by the "
+            "bottom item\n"
+            "    on the stack (x << y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw std::invalid_argument("units do not match");
+                }
+                return {a << static_cast<unsigned long long>(b), ua};
+            });
+    }
+};
+
+struct rshift : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{">>"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x y >>\n"
+            "\n"
+            "    Returns the next-to-bottom item right-shifted by the "
+            "bottom item\n"
+            "    on the stack (x >> y)\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return two_arg_limited_op<mpz>(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw std::invalid_argument("units do not match");
+                }
+                return {a >> static_cast<unsigned long long>(b), ua};
+            });
+    }
+};
+
 } // namespace function
 } // namespace smrty
 
@@ -152,3 +224,5 @@ register_calc_fn(bitwise_and);
 register_calc_fn(bitwise_or);
 register_calc_fn(bitwise_xor);
 register_calc_fn(bitwise_inv);
+register_calc_fn(lshift);
+register_calc_fn(rshift);
