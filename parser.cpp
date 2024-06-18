@@ -187,6 +187,7 @@ namespace
 struct global_state
 {
     int base = 10;
+    bool allow_commas = true;
 };
 
 global_state globals{};
@@ -620,19 +621,35 @@ auto const set_hexadecimal = [](auto& ctx) {
     val.base = 16;
 };
 
-auto const ufloating_def =
-    bp::raw[bp::lexeme[(-(bp::char_('1', '9') >> *bp::digit | "0"_l) >>
-                        (bp::char_('.') >>
-                         +bp::digit))[parse_floating_mantissa] >>
-                       -(bp::omit[bp::char_("eE")] >>
-                         -bp::char_("+-")[capture_exponent_sign] >>
-                         +bp::digit)[parse_exponent]]][parse_ufloating];
+auto const set_no_commas = [](auto& ctx) {
+    auto& g = globals;
+    g.allow_commas = false;
+};
+
+auto const set_commas_ok = [](auto& ctx) {
+    auto& g = globals;
+    g.allow_commas = true;
+};
+
+auto const allow_commas = [](auto& ctx) {
+    auto& g = globals;
+    return g.allow_commas;
+};
+
+auto const ufloating_def = bp::raw
+    [bp::lexeme[bp::skip(bp::if_(allow_commas)[","_l])[(
+                    -(bp::char_('1', '9') >> *bp::digit | "0"_l) >>
+                    (bp::char_('.') >> +bp::digit))[parse_floating_mantissa]] >>
+                -(bp::omit[bp::char_("eE")] >>
+                  -bp::char_("+-")[capture_exponent_sign] >>
+                  +bp::digit)[parse_exponent]]][parse_ufloating];
 auto const floating_def = bp::lexeme[-bp::char_('-')[capture_mantissa_sign] >>
                                      ufloating][parse_floating];
 
 auto const uinteger_def =
-    bp::raw[bp::lexeme[((bp::char_('1', '9') >> *bp::digit) |
-                        bp::string("0"))[parse_int_mantissa] >>
+    bp::raw[bp::lexeme[bp::skip(bp::if_(allow_commas)[","_l])[(
+                           (bp::char_('1', '9') >> *bp::digit) |
+                           bp::string("0"))[parse_int_mantissa]] >>
                        -(bp::omit[bp::char_("eE")] >>
                          -bp::char_("+-")[capture_exponent_sign] >>
                          +bp::digit)[parse_exponent]]][parse_uinteger];
@@ -659,9 +676,9 @@ auto const c0mplex_def =
     bp::lexeme[(-bp::char_("-")[capture_imaginary_sign] >>
                 (ufloating | uinteger)[parse_angle_or_imag] >> bp::char_("ij"))]
               [parse_complex] |
-    ('('_l >> (floating | integer)[parse_real] >> ','_l >>
+    ('('_l[set_no_commas] >> (floating | integer)[parse_real] >> ','_l >>
      -'<'_l[set_polar_mode] >> (floating | integer)[parse_angle_or_imag] >>
-     ')'_l) |
+     ')'_l[set_commas_ok]) |
     bp::lexeme[(floating | integer)[parse_real] >>
                bp::char_("+-")[capture_imaginary_sign] >>
                (ufloating | uinteger)[parse_angle_or_imag] >> bp::char_("ij")]
