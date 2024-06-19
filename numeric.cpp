@@ -408,9 +408,21 @@ list parse_list(const smrty::compound_parts& num)
     return list(std::move(values));
 }
 
+template <typename T>
+std::string_view from_chars(std::string_view s, T& t, int base = 10)
+{
+    auto endp = s.data() + s.size();
+    auto [ptr, ec] = std::from_chars(s.data(), endp, t, base);
+    if (ec != std::error_code{})
+    {
+        return s;
+    }
+    return {ptr, endp};
+}
+
 time_ parse_time(const smrty::time_parts& num)
 {
-    if (num.absolute)
+    if (!num.absolute)
     {
         mpq value = parse_mpf(num.duration);
         std::string_view units = num.suffix;
@@ -449,19 +461,22 @@ time_ parse_time(const smrty::time_parts& num)
     else
     {
         std::tm tm{};
-        time_ value;
-        std::stringstream strs(
-            std::format("{}-{}-{}", num.year, num.month, num.day));
-        if (num.h.size())
+        try
         {
-            strs << std::format("T{}:{}:{}", num.h, num.m, num.s);
-            strs >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+            size_t pos{};
+            tm.tm_year = std::stoi(num.year, &pos) - 1900;
+
+            tm.tm_mon = std::stoi(num.month, &pos) - 1;
+            tm.tm_mday = std::stoi(num.day, &pos);
+            if (num.h.size())
+            {
+                tm.tm_hour = std::stoi(num.h, &pos);
+                tm.tm_min = std::stoi(num.m, &pos);
+                tm.tm_sec = std::stoi(num.s, &pos);
+            }
+            tm.tm_isdst = -1;
         }
-        else
-        {
-            strs >> std::get_time(&tm, "%Y-%m-%d");
-        }
-        if (strs.fail())
+        catch (const std::exception& e)
         {
             throw std::invalid_argument("Failed to parse ISO 8601 date");
         }
@@ -478,14 +493,41 @@ time_ parse_time(const smrty::time_parts& num)
         // adjust for tz
         if (num.tz.size())
         {
-            // FIXME
-            // do nothing for now; more research needed
+            std::string_view tzs{num.tz};
+            int tzh{0}, tzm{0};
+            if (tzs.size() >= 2)
+            {
+                tzs = from_chars(tzs, tzh);
+                if (tzs.size() && tzs[0] == ':')
+                {
+                    tzs = tzs.substr(1);
+                }
+                else
+                {
+                    throw std::invalid_argument(
+                        "Failed to parse ISO 8601 timezone");
+                }
+            }
+            if (tzs.size() == 2)
+            {
+                tzs = from_chars(tzs, tzm);
+            }
+            if (!tzs.empty())
+            {
+                throw std::invalid_argument(
+                    "Failed to parse ISO 8601 timezone");
+            }
+            int tzsign = tzh < 0 ? -1 : 1;
+            tzh *= tzsign;
+            int tzo = tzsign * (60 * tzh + tzm);
+            tm.tm_min += tzo;
         }
+        auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+        // std::mktime may adjust tm based on invalid values in fields
         lg::debug("tm{{ sec:{}, min:{}, hour:{}, mday:{}, mon:{}, "
                   "year:{}, wday:{}, yday:{}, dst:{} }}\n",
                   tm.tm_sec, tm.tm_min, tm.tm_hour, tm.tm_mday, tm.tm_mon,
                   tm.tm_year, tm.tm_wday, tm.tm_yday, tm.tm_isdst);
-        auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
         time_ t(tp);
         return t + subsecond;
     }

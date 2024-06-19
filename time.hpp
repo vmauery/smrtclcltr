@@ -305,9 +305,9 @@ struct basic_time
 #endif // USE_BASIC_TYPES
        // lg::debug("value={}, nanos={}\n", value, nanos);
             std::chrono::time_point<std::chrono::system_clock> tp(d);
-            return std::format("{:%F %T}", tp);
+            return std::format("{:%FT%T}", tp);
             // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
-            // return std::strftime(std::localtime(&t_c), "%F %T");
+            // return std::strftime(std::localtime(&t_c), "%FT%T");
         }
 
         // duration
