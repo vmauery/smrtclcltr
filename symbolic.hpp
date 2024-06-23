@@ -14,6 +14,16 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace smrty
 {
+
+enum class symbolic_op
+{
+    none,
+    paren,
+    prefix,
+    infix,
+    postfix,
+};
+
 struct symbolic
 {
     symbolic(const std::string& value) : value(value)

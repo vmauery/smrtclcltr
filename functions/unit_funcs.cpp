@@ -32,12 +32,7 @@ struct uconv : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        // require two items on the stack
-        //
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // require two items on the stack; provided by num_args
         stack_entry a = calc.stack[1];
         stack_entry b = calc.stack[0];
 
@@ -45,7 +40,19 @@ struct uconv : public CalcFunction
         calc.stack.pop_front();
         calc.stack.pop_front();
         calc.stack.push_front(a);
-        return false;
+        return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 } // namespace function

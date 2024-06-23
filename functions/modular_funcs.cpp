@@ -64,6 +64,18 @@ struct modexp : public CalcFunction
             },
             std::tuple<mpz>{});
     }
+    int num_args() const final
+    {
+        return 3;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct modinv : public CalcFunction
@@ -117,6 +129,18 @@ struct modinv : public CalcFunction
                 }
                 return {t, ua};
             });
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 

@@ -43,6 +43,18 @@ struct bitwise_and : public CalcFunction
                 return {a & b, ua};
             });
     }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
+    }
 };
 
 struct bitwise_or : public CalcFunction
@@ -77,6 +89,18 @@ struct bitwise_or : public CalcFunction
                 }
                 return {a | b, ua};
             });
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
     }
 };
 
@@ -113,6 +137,18 @@ struct bitwise_xor : public CalcFunction
                 return {a ^ b, ua};
             });
     }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
+    }
 };
 
 struct bitwise_inv : public CalcFunction
@@ -141,6 +177,18 @@ struct bitwise_inv : public CalcFunction
             calc,
             [](const auto& a, const units::unit& ua)
                 -> std::tuple<numeric, units::unit> { return {~a, ua}; });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::prefix;
     }
 };
 
@@ -178,6 +226,18 @@ struct lshift : public CalcFunction
                 return {a << static_cast<unsigned long long>(b), ua};
             });
     }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
+    }
 };
 
 struct rshift : public CalcFunction
@@ -213,6 +273,18 @@ struct rshift : public CalcFunction
                 }
                 return {a >> static_cast<unsigned long long>(b), ua};
             });
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
     }
 };
 

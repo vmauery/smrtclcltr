@@ -209,6 +209,14 @@ bool Calculator::run_one(const simple_instruction& itm)
         }
         else
         {
+            size_t min_items = std::abs(fn->num_args());
+            if (min_items > stack.size())
+            {
+                lg::error("{} requires at least {} items on the stack; only {} "
+                          "items are currently present\n",
+                          fn_name, min_items, stack.size());
+                return false;
+            }
             lg::debug("executing function '{}'\n", fn_name);
             return fn->op(*this);
         }

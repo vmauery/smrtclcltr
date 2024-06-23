@@ -38,6 +38,18 @@ struct version : public CalcFunction
         ui::get()->out("Version: {}\n", Version::full());
         return true;
     }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
 };
 
 struct debug : public CalcFunction
@@ -62,6 +74,18 @@ struct debug : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return calc.debug();
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -105,6 +129,18 @@ struct verbose : public CalcFunction
                         static_cast<int>(lg::level::emergency),
                         static_cast<int>(lg::level::trace)));
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
 };
 
 struct undo : public CalcFunction
@@ -129,6 +165,18 @@ struct undo : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return calc.undo();
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -159,9 +207,22 @@ struct base : public CalcFunction
         {
             calc.stack.pop_front();
             auto iv = static_cast<unsigned int>(*v);
-            return calc.base(iv);
+            calc.base(iv);
+            return false;
         }
-        return false;
+        throw std::invalid_argument("requires an integer (2, 8, 10, 16)");
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -187,6 +248,18 @@ struct cbase : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return calc.cbase();
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -214,13 +287,26 @@ struct fixed_bits : public CalcFunction
     {
         stack_entry e = calc.stack.front();
         const mpz* v = std::get_if<mpz>(&e.value());
-        if (v)
+        if (v && *v > mpz{0})
         {
             calc.stack.pop_front();
             auto iv = static_cast<unsigned int>(*v);
-            return calc.fixed_bits(iv);
+            calc.fixed_bits(iv);
+            return false;
         }
-        return false;
+        throw std::invalid_argument("requires a positive integer");
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -247,13 +333,26 @@ struct precision : public CalcFunction
     {
         stack_entry e = calc.stack.front();
         const mpz* v = std::get_if<mpz>(&e.value());
-        if (v)
+        if (v && (*v > mpz{0}))
         {
             calc.stack.pop_front();
             auto iv = static_cast<unsigned int>(*v);
-            return calc.precision(iv);
+            calc.precision(iv);
+            return false;
         }
-        return false;
+        throw std::invalid_argument("requires a positive integer");
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -278,7 +377,20 @@ struct quotient : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.mpq_mode(Calculator::e_mpq_mode::quotient);
+        calc.mpq_mode(Calculator::e_mpq_mode::quotient);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -294,7 +406,7 @@ struct floats : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: x f\n"
+            "    Usage: f\n"
             "\n"
             "    Print quotients as floats instead of quotients\n"
             // clang-format on
@@ -303,7 +415,20 @@ struct floats : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.mpq_mode(Calculator::e_mpq_mode::floating);
+        calc.mpq_mode(Calculator::e_mpq_mode::floating);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -328,7 +453,20 @@ struct ij : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.mpc_mode(Calculator::e_mpc_mode::ij);
+        calc.mpc_mode(Calculator::e_mpc_mode::ij);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -353,7 +491,20 @@ struct rectangular : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.mpc_mode(Calculator::e_mpc_mode::rectangular);
+        calc.mpc_mode(Calculator::e_mpc_mode::rectangular);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -378,7 +529,20 @@ struct polar : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.mpc_mode(Calculator::e_mpc_mode::polar);
+        calc.mpc_mode(Calculator::e_mpc_mode::polar);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -403,7 +567,20 @@ struct signed_mode : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.signed_mode(true);
+        calc.signed_mode(true);
+        return false;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -428,7 +605,20 @@ struct unsigned_mode : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.signed_mode(false);
+        calc.signed_mode(false);
+        return false;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -450,7 +640,7 @@ struct int_type : public CalcFunction
             "    and denotes unsigned (0) or signed (1) and\n"
             "    y denotes the number of bits\n"
             "\n"
-            "    Alternate mechanism is of the form [su][0-9]+ where\n"
+            "    Alternate mechanism is of the form [su][1-9][0-9]* where\n"
             "    the signed/unsigned and bits are put together, e.g. s32\n"
             "    for 32-bit signed, or u16 for 16-bit unsigned\n"
             // clang-format on
@@ -459,10 +649,7 @@ struct int_type : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // two args are provided by num_args
         stack_entry y = calc.stack.front();
         calc.stack.pop_front();
         stack_entry x = calc.stack.front();
@@ -473,9 +660,12 @@ struct int_type : public CalcFunction
         {
             bool mode = (*su == 1);
             auto ibits = static_cast<unsigned int>(*bits);
-            return calc.signed_mode(mode) && calc.fixed_bits(ibits);
+            calc.signed_mode(mode);
+            calc.fixed_bits(ibits);
+            return false;
         }
-        return false;
+        throw std::invalid_argument(
+            "requires two integers: [0|1] and non-negative");
     }
     virtual bool reop(Calculator& calc,
                       const std::vector<std::string>& match) const final
@@ -486,14 +676,28 @@ struct int_type : public CalcFunction
         if (std::from_chars(x.data(), x.data() + x.size(), bits).ec !=
             std::errc{})
         {
-            return false;
+            throw std::invalid_argument("failed to parse integer from string");
         }
-        return calc.signed_mode(mode) && calc.fixed_bits(bits);
+        calc.signed_mode(mode);
+        calc.fixed_bits(bits);
+        return false;
     }
     virtual const std::string_view regex() const final
     {
-        static const auto _regex = "([us])([0-9]+)";
+        static const auto _regex = "([us])([1-9][0-9]*)";
         return _regex;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -518,7 +722,20 @@ struct radians : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.angle_mode(Calculator::e_angle_mode::radians);
+        calc.angle_mode(Calculator::e_angle_mode::radians);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -543,7 +760,20 @@ struct degrees : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.angle_mode(Calculator::e_angle_mode::degrees);
+        calc.angle_mode(Calculator::e_angle_mode::degrees);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -568,7 +798,20 @@ struct gradiens : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return calc.angle_mode(Calculator::e_angle_mode::gradians);
+        calc.angle_mode(Calculator::e_angle_mode::gradians);
+        return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -606,6 +849,18 @@ struct Help : public CalcFunction
     {
         static constexpr auto _regex{"help\\s+([^\\s]+)"};
         return _regex;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 

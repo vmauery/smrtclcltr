@@ -111,21 +111,18 @@ struct combination : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            throw std::invalid_argument("Requires 2 argument");
-        }
+        // two args provided by num_args
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
         if (e0.unit() != units::unit() || e1.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* x = std::get_if<mpz>(&e1.value());
         const mpz* y = std::get_if<mpz>(&e0.value());
         if (!x || !y || (*y > *x))
         {
-            return false;
+            throw std::invalid_argument("requires integers such that x < y");
         }
         calc.stack.pop_front();
         calc.stack.pop_front();
@@ -134,6 +131,18 @@ struct combination : public CalcFunction
                                  calc.config.precision, calc.config.is_signed,
                                  calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -167,21 +176,18 @@ struct permutation : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            throw std::invalid_argument("Requires 2 argument");
-        }
+        // two args provided by num_args
         stack_entry e1 = calc.stack[1];
         stack_entry e0 = calc.stack[0];
         if (e0.unit() != units::unit() || e1.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* x = std::get_if<mpz>(&e1.value());
         const mpz* y = std::get_if<mpz>(&e0.value());
         if (!x || !y || (*y > *x))
         {
-            return false;
+            throw std::invalid_argument("requires integers such that x < y");
         }
         calc.stack.pop_front();
         calc.stack.pop_front();
@@ -190,6 +196,18 @@ struct permutation : public CalcFunction
                                  calc.config.precision, calc.config.is_signed,
                                  calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -214,38 +232,46 @@ struct mean : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            throw std::invalid_argument("Requires more than 1 argument");
-        }
+        // first two args provided by num_args
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e.value());
-        if (!v || (*v > 1000000000) ||
+        if (!v || (*v > 1000000000) || (*v <= mpz{0}) ||
             (*v >= static_cast<mpz>(calc.stack.size())))
         {
-            return false;
+            throw std::invalid_argument(
+                "n must be an integer greater than 0 and less the stack depth");
         }
         size_t count = static_cast<size_t>(*v);
         if (calc.stack.size() < (count + 1))
         {
-            throw std::invalid_argument("Insufficient arguments");
+            throw insufficient_args();
         }
         calc.stack.pop_front();
         // only go from count to 1 because each op takes two items
         for (; count > 1; count--)
         {
-            if (!util::add_from_stack(calc))
-            {
-                return false;
-            }
+            // add from stack always returns true or throws
+            util::add_from_stack(calc);
         }
         calc.stack.push_front(e);
 
         return util::divide_from_stack(calc);
+    }
+    int num_args() const final
+    {
+        return -2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -270,20 +296,18 @@ struct median : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            throw std::invalid_argument("Requires more than 1 argument");
-        }
+        // first two arguments provided by num_args
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e.value());
-        if (!v || (*v > 1000000000) ||
+        if (!v || (*v > 1000000000) || (*v <= mpz{0}) ||
             (*v >= static_cast<mpz>(calc.stack.size())))
         {
-            return false;
+            throw std::invalid_argument(
+                "n must be an integer greater than 0 and less the stack depth");
         }
         units::unit first_unit = calc.stack.front().unit();
         size_t count = static_cast<size_t>(*v);
@@ -346,6 +370,18 @@ struct median : public CalcFunction
             return mean_fn.op(calc);
         }
     }
+    int num_args() const final
+    {
+        return -2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
 };
 
 struct rand : public CalcFunction
@@ -369,11 +405,25 @@ struct rand : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        mpq r = util::rand(calc.config.precision);
+        constexpr double log2_10 = 3.325;
+        mpq r = util::rand(
+            static_cast<long long>(std::ceil(calc.config.precision * log2_10)));
         calc.stack.emplace_front(r, calc.config.base, calc.config.fixed_bits,
                                  calc.config.precision, calc.config.is_signed,
                                  calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -425,6 +475,18 @@ struct rand_dist : public CalcFunction
                                  calc.config.precision, calc.config.is_signed,
                                  calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 } // namespace function

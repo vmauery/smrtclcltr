@@ -56,6 +56,18 @@ struct logarithm : public CalcFunction
                    }
                });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct natural_logarithm : public CalcFunction
@@ -101,6 +113,18 @@ struct natural_logarithm : public CalcFunction
                        }
                    }
                });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -149,6 +173,18 @@ struct log_base_two : public CalcFunction
                        }
                    }
                });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 

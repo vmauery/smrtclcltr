@@ -45,6 +45,18 @@ struct adjoint : public CalcFunction
                 return {inv, ua};
             });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct determinant : public CalcFunction
@@ -80,6 +92,18 @@ struct determinant : public CalcFunction
                 return {det, ua};
             });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct eye : public CalcFunction
@@ -113,6 +137,18 @@ struct eye : public CalcFunction
                 }
                 return {matrix::I(static_cast<size_t>(a)), ua};
             });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 

@@ -55,6 +55,18 @@ struct square_root : public CalcFunction
                    }
                });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 } // namespace function

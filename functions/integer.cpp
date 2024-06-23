@@ -96,12 +96,12 @@ struct factor : public CalcFunction
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e.value());
         if (!v)
         {
-            return false;
+            throw std::invalid_argument("Requires an integer");
         }
         calc.stack.pop_front();
         std::vector<mpz> facts = util::factor_mpz(*v);
@@ -112,6 +112,18 @@ struct factor : public CalcFunction
                 calc.config.precision, calc.config.is_signed, calc.flags);
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return -1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -139,12 +151,12 @@ struct prime_factor : public CalcFunction
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e.value());
         if (!v)
         {
-            return false;
+            throw std::invalid_argument("Requires an integer");
         }
         calc.stack.pop_front();
         std::vector<mpz> facts = util::prime_factor(*v);
@@ -155,6 +167,18 @@ struct prime_factor : public CalcFunction
                 calc.config.precision, calc.config.is_signed, calc.flags);
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return -1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -184,13 +208,13 @@ struct gcd : public CalcFunction
         stack_entry e0 = calc.stack[0];
         if (e0.unit() != units::unit() || e1.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e1.value());
         const mpz* u = std::get_if<mpz>(&e0.value());
         if (!v || !u)
         {
-            return false;
+            throw std::invalid_argument("Requires an integer");
         }
         calc.stack.pop_front();
         calc.stack.pop_front();
@@ -199,6 +223,18 @@ struct gcd : public CalcFunction
                                  calc.config.precision, calc.config.is_signed,
                                  calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -228,13 +264,13 @@ struct lcm : public CalcFunction
         stack_entry e0 = calc.stack[0];
         if (e0.unit() != units::unit() || e1.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e1.value());
         const mpz* u = std::get_if<mpz>(&e0.value());
         if (!v || !u)
         {
-            return false;
+            throw std::invalid_argument("Requires an integer");
         }
         calc.stack.pop_front();
         calc.stack.pop_front();
@@ -243,6 +279,18 @@ struct lcm : public CalcFunction
                                  calc.config.precision, calc.config.is_signed,
                                  calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 

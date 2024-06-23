@@ -58,12 +58,12 @@ bool divide_from_stack(Calculator& calc)
 
 struct add : public CalcFunction
 {
-    const std::string& name() const
+    const std::string& name() const final
     {
         static const std::string _name{"+"};
         return _name;
     }
-    const std::string& help() const
+    const std::string& help() const final
     {
         static const std::string _help{
             // clang-format off
@@ -76,20 +76,32 @@ struct add : public CalcFunction
         };
         return _help;
     }
-    bool op(Calculator& calc) const
+    bool op(Calculator& calc) const final
     {
         return util::add_from_stack(calc);
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
     }
 }; // struct add
 
 struct subtract : public CalcFunction
 {
-    const std::string& name() const
+    const std::string& name() const final
     {
         static const std::string _name{"-"};
         return _name;
     }
-    const std::string& help() const
+    const std::string& help() const final
     {
         static const std::string _help{
             // clang-format off
@@ -102,7 +114,7 @@ struct subtract : public CalcFunction
         };
         return _help;
     }
-    bool op(Calculator& calc) const
+    bool op(Calculator& calc) const final
     {
         return two_arg_uconv_op(
             calc,
@@ -115,16 +127,28 @@ struct subtract : public CalcFunction
                 return {a - b, ua};
             });
     }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
+    }
 };
 
 struct multiply : public CalcFunction
 {
-    const std::string& name() const
+    const std::string& name() const final
     {
         static const std::string _name{"*"};
         return _name;
     }
-    const std::string& help() const
+    const std::string& help() const final
     {
         static const std::string _help{
             // clang-format off
@@ -137,20 +161,32 @@ struct multiply : public CalcFunction
         };
         return _help;
     }
-    bool op(Calculator& calc) const
+    bool op(Calculator& calc) const final
     {
         return util::multiply_from_stack(calc);
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
     }
 };
 
 struct divide : public CalcFunction
 {
-    const std::string& name() const
+    const std::string& name() const final
     {
         static const std::string _name{"/"};
         return _name;
     }
-    const std::string& help() const
+    const std::string& help() const final
     {
         static const std::string _help{
             // clang-format off
@@ -163,9 +199,21 @@ struct divide : public CalcFunction
         };
         return _help;
     }
-    bool op(Calculator& calc) const
+    bool op(Calculator& calc) const final
     {
         return util::divide_from_stack(calc);
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
     }
 };
 
@@ -202,6 +250,18 @@ struct percent_change : public CalcFunction
                    return {(b - a) / a, units::unit{}};
                });
     }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct inverse : public CalcFunction
@@ -233,6 +293,18 @@ struct inverse : public CalcFunction
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {
                    return {mpq(1, 1) / a, units::unit() / ua};
                });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -268,6 +340,18 @@ struct divmod : public CalcFunction
                 }
                 return {a % b, ua};
             });
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
     }
 };
 
@@ -346,6 +430,18 @@ struct power : public CalcFunction
                                units::pow(ua, static_cast<mpf>(b))};
                    }
                });
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::infix;
     }
 };
 

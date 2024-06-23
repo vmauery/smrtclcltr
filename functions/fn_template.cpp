@@ -32,7 +32,20 @@ struct TEMPLATE : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         (void)calc.stack.front();
+        // return false to inhibit stack printing upon return
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 

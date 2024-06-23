@@ -37,6 +37,18 @@ struct _e : public CalcFunction
         calc.stack.push_front(std::move(e));
         return true;
     }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::prefix;
+    }
 };
 
 struct _pi : public CalcFunction
@@ -67,6 +79,18 @@ struct _pi : public CalcFunction
         calc.stack.push_front(std::move(pi));
         return true;
     }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::prefix;
+    }
 };
 
 struct _i : public CalcFunction
@@ -96,6 +120,18 @@ struct _i : public CalcFunction
         calc.stack.push_front(std::move(i));
         return true;
     }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::prefix;
+    }
 };
 
 struct _j : public CalcFunction
@@ -124,6 +160,18 @@ struct _j : public CalcFunction
                       calc.config.precision, calc.config.is_signed, calc.flags);
         calc.stack.push_front(std::move(i));
         return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::prefix;
     }
 };
 

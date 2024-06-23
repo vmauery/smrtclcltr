@@ -32,16 +32,16 @@ struct range : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        stack_entry xe = calc.stack.front();
-        calc.stack.pop_front();
-        stack_entry ye = calc.stack.front();
+        // two args using num_args
+        stack_entry xe = calc.stack[0];
+        stack_entry ye = calc.stack[1];
         const mpz* x = std::get_if<mpz>(&xe.value());
         const mpz* y = std::get_if<mpz>(&ye.value());
         if (!x || !y)
         {
-            calc.stack.push_front(xe);
-            return false;
+            throw std::runtime_error("range requires two integers");
         }
+        calc.stack.pop_front();
         calc.stack.pop_front();
         mpz step, count;
         if (*x > *y)
@@ -65,6 +65,18 @@ struct range : public CalcFunction
             v += step;
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return -1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 

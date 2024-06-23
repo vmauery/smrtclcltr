@@ -57,6 +57,18 @@ struct ceil : public CalcFunction
                    }
                });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct floor : public CalcFunction
@@ -104,6 +116,18 @@ struct floor : public CalcFunction
                    }
                });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct round : public CalcFunction
@@ -150,6 +174,18 @@ struct round : public CalcFunction
                        return {round_fn(a), ua};
                    }
                });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 } // namespace function

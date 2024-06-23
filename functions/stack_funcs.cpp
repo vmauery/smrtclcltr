@@ -31,13 +31,21 @@ struct drop : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
-        // stack_entry a = calc.stack.front();
+        // single arg using num_args
         calc.stack.pop_front();
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -62,13 +70,22 @@ struct drop2 : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // two args using num_args
         calc.stack.pop_front();
         calc.stack.pop_front();
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -93,27 +110,20 @@ struct dropn : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // single are using num_args
         stack_entry& n = calc.stack.front();
         if (n.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         size_t count = 0;
         if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
         {
             count = static_cast<size_t>(*np);
         }
-        else if (count == 0)
+        else if ((count == 0) || (calc.stack.size() < (count + 1)))
         {
-            return false;
-        }
-        if (calc.stack.size() < (count + 1))
-        {
-            return false;
+            throw insufficient_args();
         }
         calc.stack.pop_front();
         for (size_t i = 0; i < count; i++)
@@ -121,6 +131,18 @@ struct dropn : public CalcFunction
             calc.stack.pop_front();
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return -1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -145,13 +167,22 @@ struct dup : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // single arg using num_args
         stack_entry a = calc.stack.front();
         calc.stack.push_front(a);
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -176,15 +207,24 @@ struct dup2 : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // two args using num_args
         stack_entry x = calc.stack[1];
         stack_entry y = calc.stack[0];
         calc.stack.push_front(x);
         calc.stack.push_front(y);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 2;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -209,23 +249,16 @@ struct dupn : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // two args using num_args
         stack_entry& n = calc.stack.front();
         size_t count = 0;
         if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
         {
             count = static_cast<size_t>(*np);
         }
-        else if (count == 0)
+        else if ((count == 0) || (calc.stack.size() < (count + 1)))
         {
-            return false;
-        }
-        if (calc.stack.size() < (count + 1))
-        {
-            return false;
+            throw insufficient_args();
         }
         // remove N
         calc.stack.pop_front();
@@ -234,6 +267,18 @@ struct dupn : public CalcFunction
             calc.stack.push_front(calc.stack[count - 1]);
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return -2;
+    }
+    int num_resp() const final
+    {
+        return -1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -258,13 +303,22 @@ struct over : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // two args using num_args
         stack_entry a = calc.stack[1];
         calc.stack.push_front(a);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -289,10 +343,7 @@ struct swap : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // two args using num_args
         stack_entry a = calc.stack.front();
         calc.stack.pop_front();
         stack_entry b = calc.stack.front();
@@ -300,6 +351,18 @@ struct swap : public CalcFunction
         calc.stack.push_front(std::move(a));
         calc.stack.push_front(std::move(b));
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -326,6 +389,18 @@ struct clear : public CalcFunction
     {
         calc.stack.clear();
         return true;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -356,6 +431,18 @@ struct depth : public CalcFunction
         calc.stack.push_front(std::move(e));
         return true;
     }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
 };
 
 struct roll : public CalcFunction
@@ -379,14 +466,23 @@ struct roll : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // two args using num_args
         stack_entry a = calc.stack.back();
         calc.stack.pop_back();
         calc.stack.push_front(a);
         return true;
+    }
+    int num_args() const final
+    {
+        return 2;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -411,27 +507,20 @@ struct rolln : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // three args using num_args
         stack_entry& n = calc.stack.front();
         if (n.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         size_t count = 0;
         if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
         {
             count = static_cast<size_t>(*np);
         }
-        else if (count == 0)
+        else if ((count == 0) || (calc.stack.size() < (count + 1)))
         {
-            return false;
-        }
-        if (calc.stack.size() < (count + 1))
-        {
-            return false;
+            throw insufficient_args();
         }
         // remove N
         calc.stack.pop_front();
@@ -442,6 +531,18 @@ struct rolln : public CalcFunction
             calc.stack.push_front(a);
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return 3;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -466,14 +567,23 @@ struct rolld : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // two args using num_args
         stack_entry a = calc.stack.front();
         calc.stack.pop_front();
         calc.stack.push_back(a);
         return true;
+    }
+    int num_args() const final
+    {
+        return -2;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -498,23 +608,16 @@ struct rolldn : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // three args using num_args
         stack_entry& n = calc.stack.front();
         size_t count = 0;
         if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
         {
             count = static_cast<size_t>(*np);
         }
-        else if (count == 0)
+        else if ((count == 0) || (calc.stack.size() < (count + 1)))
         {
-            return false;
-        }
-        if (calc.stack.size() < (count + 1))
-        {
-            return false;
+            throw insufficient_args();
         }
         // remove N
         calc.stack.pop_front();
@@ -525,6 +628,18 @@ struct rolldn : public CalcFunction
             calc.stack.push_back(a);
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return -3;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -549,28 +664,33 @@ struct pick : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // two args using num_args
         stack_entry& n = calc.stack.front();
         size_t count = 0;
         if (auto np = std::get_if<mpz>(&n.value()); np != nullptr)
         {
             count = static_cast<size_t>(*np);
         }
-        else if (count == 0)
+        else if ((count == 0) || (calc.stack.size() < (count + 1)))
         {
-            return false;
-        }
-        if (calc.stack.size() < (count + 1))
-        {
-            return false;
+            throw insufficient_args();
         }
         // remove N
         calc.stack.pop_front();
         calc.stack.push_front(calc.stack[count - 1]);
         return true;
+    }
+    int num_args() const final
+    {
+        return -2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 

@@ -38,10 +38,7 @@ struct product : public CalcFunction
         calc.stack.pop_front();
         for (; count > 0; count--)
         {
-            if (!util::multiply_from_stack(calc))
-            {
-                return false;
-            }
+            util::multiply_from_stack(calc);
         }
         return true;
     }
@@ -64,14 +61,11 @@ struct product : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // one arg using num_args
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e.value());
         if (v && (*v < static_cast<mpz>(calc.stack.size())))
@@ -82,7 +76,19 @@ struct product : public CalcFunction
         {
             return product_from_list(calc, *lp);
         }
-        return false;
+        throw std::invalid_argument("requires list or stack of numbers");
+    }
+    int num_args() const final
+    {
+        return -1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 } // namespace function

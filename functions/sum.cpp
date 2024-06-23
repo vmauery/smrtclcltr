@@ -40,11 +40,9 @@ struct sum : public CalcFunction
         calc.stack.pop_front();
         for (; count > 0; count--)
         {
-            if (!util::add_from_stack(calc))
-            {
-                lg::debug("add_from_stack failed\n");
-                return false;
-            }
+            // no need to check the return;
+            // it is either true or it throws an exception
+            util::add_from_stack(calc);
         }
         return true;
     }
@@ -67,14 +65,11 @@ struct sum : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // required entry provided by num_args
         stack_entry& e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e.value());
         if (v && (*v < static_cast<mpz>(calc.stack.size())))
@@ -85,7 +80,19 @@ struct sum : public CalcFunction
         {
             return sum_from_list(calc, *lp);
         }
-        return false;
+        throw std::invalid_argument("Invalid aruments for sum");
+    }
+    int num_args() const final
+    {
+        return -3;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 } // namespace function

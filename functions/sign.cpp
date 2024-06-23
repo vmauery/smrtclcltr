@@ -40,6 +40,18 @@ struct absval : public CalcFunction
                 return {abs_fn(a), ua};
             });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct negate : public CalcFunction
@@ -68,6 +80,18 @@ struct negate : public CalcFunction
                               -> std::tuple<numeric, units::unit> {
                               return {mpz{-1} * a, ua};
                           });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 

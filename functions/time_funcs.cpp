@@ -41,6 +41,18 @@ struct date_time : public CalcFunction
                                  calc.flags);
         return true;
     }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct unix_ts : public CalcFunction
@@ -75,6 +87,18 @@ struct unix_ts : public CalcFunction
                                  calc.flags);
         return true;
     }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct to_date_time : public CalcFunction
@@ -98,14 +122,11 @@ struct to_date_time : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // required arg guaranteed by num_args
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         mpq ts;
         if (const mpq* v = std::get_if<mpq>(&e.value()); v)
@@ -116,9 +137,13 @@ struct to_date_time : public CalcFunction
         {
             ts = static_cast<mpq>(*v);
         }
+        else if (const mpf* v = std::get_if<mpf>(&e.value()); v)
+        {
+            ts = make_quotient(*v);
+        }
         else
         {
-            return false;
+            throw std::invalid_argument("Requires a real number");
         }
         calc.stack.pop_front();
 
@@ -127,6 +152,18 @@ struct to_date_time : public CalcFunction
                                  calc.config.fixed_bits, calc.config.precision,
                                  calc.config.is_signed, calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -142,7 +179,7 @@ struct to_unix_ts : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: 2unix\n"
+            "    Usage: x 2unix\n"
             "\n"
             "    return a unix timestamp based on the date-time x"
             // clang-format on
@@ -151,19 +188,16 @@ struct to_unix_ts : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 1)
-        {
-            return false;
-        }
+        // single required arg provided by num_args
         stack_entry e = calc.stack.front();
         if (e.unit() != units::unit())
         {
-            return false;
+            throw units_prohibited();
         }
         const time_* v = std::get_if<time_>(&e.value());
         if (!v)
         {
-            return false;
+            throw std::invalid_argument("requires a time type");
         }
         calc.stack.pop_front();
 
@@ -172,6 +206,18 @@ struct to_unix_ts : public CalcFunction
                                  calc.config.precision, calc.config.is_signed,
                                  calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -293,6 +339,18 @@ struct calendar : public CalcFunction
             ui->out("{}\n", days);
         }
         return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 

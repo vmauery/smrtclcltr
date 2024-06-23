@@ -48,6 +48,18 @@ struct sine : public CalcFunction
                                           });
                                   });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct cosine : public CalcFunction
@@ -87,6 +99,18 @@ struct cosine : public CalcFunction
                                           });
                                   });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct tangent : public CalcFunction
@@ -125,6 +149,18 @@ struct tangent : public CalcFunction
                                               return tan_fn(a);
                                           });
                                   });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -166,6 +202,18 @@ struct arcsine : public CalcFunction
                                           });
                                   });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct arccosine : public CalcFunction
@@ -205,6 +253,18 @@ struct arccosine : public CalcFunction
                                               return acos_fn(a);
                                           });
                                   });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -246,6 +306,18 @@ struct arctangent : public CalcFunction
                                           });
                                   });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct hyperbolic_sine : public CalcFunction
@@ -285,6 +357,18 @@ struct hyperbolic_sine : public CalcFunction
                                               return sinh_fn(a);
                                           });
                                   });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -326,6 +410,18 @@ struct hyperbolic_cosine : public CalcFunction
                                           });
                                   });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct hyperbolic_tangent : public CalcFunction
@@ -365,6 +461,18 @@ struct hyperbolic_tangent : public CalcFunction
                                               return tanh_fn(a);
                                           });
                                   });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 
@@ -406,6 +514,18 @@ struct hyperbolic_arcsine : public CalcFunction
                                           });
                                   });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct hyperbolic_arccosine : public CalcFunction
@@ -446,6 +566,18 @@ struct hyperbolic_arccosine : public CalcFunction
                                           });
                                   });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
+    }
 };
 
 struct hyperbolic_arctangent : public CalcFunction
@@ -485,6 +617,18 @@ struct hyperbolic_arctangent : public CalcFunction
                                               return atanh_fn(a);
                                           });
                                   });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::paren;
     }
 };
 

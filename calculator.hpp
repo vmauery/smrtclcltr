@@ -37,6 +37,11 @@ struct CalcFunction
         static std::string_view _regex{};
         return _regex;
     }
+    // if number of args is known, each function should set that
+    // if number of args is < 0, it is variable, with |n| as the min
+    virtual int num_args() const = 0;
+    virtual int num_resp() const = 0;
+    virtual symbolic_op symbolic_usage() const = 0;
 };
 
 // All functions will register by adding an object to the __functions__ section

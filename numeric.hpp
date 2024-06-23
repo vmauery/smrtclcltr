@@ -72,6 +72,28 @@ struct is_exact
 template <class T>
 inline constexpr bool is_exact_v = is_exact<T>::value;
 
+#ifdef USE_BASIC_TYPES
+static inline mpq reduce_mpq(const mpq& q)
+{
+    return q;
+}
+#else
+static inline mpq reduce_mpq(const mpq& q)
+{
+    mpz c = gcd_fn(helper::numerator(q), helper::denominator(q));
+    if (c > 1)
+    {
+        if (c == helper::denominator(q))
+        {
+            return mpq(helper::numerator(q) / c, 1);
+        }
+        return mpq(helper::numerator(q) / c, helper::denominator(q) / c);
+    }
+    lg::debug("reduce: no change\n");
+    return q;
+}
+#endif
+
 template <typename... T>
 std::variant<T...> reduce_numeric(const std::variant<T...>& n,
                                   int precision = 2)
@@ -94,24 +116,12 @@ std::variant<T...> reduce_numeric(const std::variant<T...>& n,
      */
     if (auto q = std::get_if<mpq>(&n); q)
     {
-        if (helper::denominator(*q) == one)
+        mpq rq = reduce_mpq(*q);
+        if (helper::denominator(rq) == one)
         {
             lg::debug("reduce: denominator is one\n");
             return helper::numerator(*q);
         }
-#ifndef USE_BASIC_TYPES
-        // multiprecision mpq does not reduce internally
-        mpz c = gcd_fn(helper::numerator(*q), helper::denominator(*q));
-        if (c > 1)
-        {
-            if (c == helper::denominator(*q))
-            {
-                return helper::numerator(*q) / c;
-            }
-            return mpq(helper::numerator(*q) / c, helper::denominator(*q) / c);
-        }
-#endif // !USE_BASIC_TYPES
-        lg::debug("reduce: no change\n");
         return n;
     }
     else if (auto f = std::get_if<mpf>(&n); f)
@@ -211,6 +221,10 @@ TypeOut coerce_variant(const TypeIn& in)
     else if constexpr (same_type_v<TypeOut, mpc>)
     {
         return static_cast<mpc>(in);
+    }
+    else if constexpr (same_type_v<TypeIn, mpf> && same_type_v<TypeOut, mpq>)
+    {
+        return make_quotient(in);
     }
     else if constexpr (same_type_v<TypeOut, mpq>)
     {

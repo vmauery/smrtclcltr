@@ -94,6 +94,18 @@ struct split : public CalcFunction
                 return util::split(calc, a, ua);
             });
     }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return -1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
 };
 
 struct Matrix : public CalcFunction
@@ -118,23 +130,21 @@ struct Matrix : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 3)
-        {
-            return false;
-        }
+        // already guaranteed 3 items from num_args()
         stack_entry& nl = calc.stack[2];
         stack_entry& nx = calc.stack[1];
         stack_entry& ny = calc.stack[0];
         if ((nx.unit() != units::unit()) || (ny.unit() != units::unit()))
         {
-            return false;
+            throw std::invalid_argument("matrix dimensions cannot have units");
         }
         auto pl = const_cast<list*>(std::get_if<list>(&nl.value()));
         auto px = std::get_if<mpz>(&nx.value());
         auto py = std::get_if<mpz>(&ny.value());
-        if (!pl || !px || !py)
+        if ((!pl || !px || !py) || (*px <= zero) || (*py <= zero))
         {
-            return false;
+            throw std::invalid_argument(
+                "matrix dimensions must be positive integers");
         }
         size_t cols = static_cast<size_t>(*px);
         size_t rows = static_cast<size_t>(*py);
@@ -147,6 +157,18 @@ struct Matrix : public CalcFunction
                                  calc.config.fixed_bits, calc.config.precision,
                                  calc.config.is_signed, calc.flags);
         return true;
+    }
+    int num_args() const final
+    {
+        return -3;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
     }
 };
 
@@ -171,28 +193,22 @@ struct List : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            return false;
-        }
+        // num_args provides one stack item for free
         stack_entry& nc = calc.stack[0];
         if (nc.unit() != units::unit())
         {
-            return false;
+            throw std::invalid_argument("list dimensions cannot have units");
         }
         auto pc = std::get_if<mpz>(&nc.value());
-        if (!pc)
+        if (!pc || (*pc <= zero))
         {
-            return false;
+            throw std::invalid_argument(
+                "list dimensions must be a positive integer");
         }
         size_t count = static_cast<size_t>(*pc);
-        if (count == 0)
-        {
-            return false;
-        }
         if (calc.stack.size() < (count + 1))
         {
-            return false;
+            throw insufficient_args();
         }
         std::vector<mpx> items{};
         items.reserve(count);
@@ -239,6 +255,18 @@ struct List : public CalcFunction
                                  calc.flags);
         return true;
     }
+    int num_args() const final
+    {
+        return -1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
 };
 
 } // namespace function
@@ -246,3 +274,4 @@ struct List : public CalcFunction
 
 register_calc_fn(split);
 register_calc_fn(Matrix);
+register_calc_fn(List);

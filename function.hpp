@@ -21,6 +21,20 @@ SPDX-License-Identifier: BSD-3-Clause
 namespace smrty
 {
 
+struct insufficient_args : public std::runtime_error
+{
+    insufficient_args() : std::runtime_error("Insufficient arguments")
+    {
+    }
+};
+
+struct units_prohibited : public std::invalid_argument
+{
+    units_prohibited() : std::invalid_argument("Units not allowed")
+    {
+    }
+};
+
 template <typename... I>
 struct conversion
 {
