@@ -16,6 +16,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #define round_fn boost::multiprecision::round
 #define lcm_fn boost::math::lcm
 #define gcd_fn boost::math::gcd
+#define exp_fn boost::multiprecision::exp
 #define pow_fn boost::multiprecision::pow
 #define powul_fn boost::multiprecision::pow
 #define gamma_fn boost::math::tgamma

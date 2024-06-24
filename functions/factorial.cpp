@@ -13,18 +13,6 @@ namespace function
 
 namespace util
 {
-mpf factorial(const mpf& x)
-{
-    // non-int types get gamma treatment
-    return gamma_fn(x + mpf{1.0l});
-}
-
-mpf factorial(const mpq& x)
-{
-    mpf xp = static_cast<mpf>(x + one);
-    // non-int types get gamma treatment
-    return gamma_fn(xp);
-}
 
 mpz bin_split_factorial(const mpz& a, const mpz& b)
 {
@@ -61,6 +49,59 @@ mpz factorial(const mpz& x)
     }
     return bin_split_factorial(x, zero);
 }
+
+mpf factorial(const mpf& x)
+{
+    // non-int types get gamma treatment
+    return gamma_fn(x + mpf{1.0l});
+}
+
+mpf factorial(const mpq& x)
+{
+    mpf xp = static_cast<mpf>(x + one);
+    // non-int types get gamma treatment
+    return gamma_fn(xp);
+}
+
+mpc gamma_mpc(const mpc& zp)
+{
+    // using Spouge's approximation
+    // gamma(z+1) = (z+a)^(z+1/2)*e^(-z-a)*(c0 + sum(1,a-1,cn/(z+n)))
+    // need to boost precision by 25% to result in full precision
+    auto prec = default_precision;
+    set_default_precision(prec * 5 / 4);
+
+    // it would be possible to pre-calculate cn for any given precision
+    // but this is already incredibly fast
+
+    const mpf half{0.5l};
+    const mpz one{1};
+    const mpf two{2.0l};
+    const mpf pi{boost::math::constants::pi<mpf>()};
+    const mpz a{default_precision};
+    const mpc z{zp - mpc{1}};
+    mpc g{pow_fn(z + a, z + half) * exp_fn(-z - a)};
+    mpc cn{sqrt_fn(two * pi)};
+    mpc sum{cn};
+    mpf sign{-1};
+    for (mpz n = mpz{1}; n < a; n++)
+    {
+        sign = -sign;
+        cn = (sign / mpf{factorial(n - one)}) * pow_fn(mpf{-n + a}, n - half) *
+             exp_fn(mpf{-n + a});
+        sum += cn / (z + n);
+    }
+    g *= sum;
+    set_default_precision(prec);
+    return g;
+}
+
+mpc factorial(const mpc& x)
+{
+    // non-int types get gamma treatment
+    return gamma_mpc(x + mpc{1.0l});
+}
+
 } //  namespace util
 
 struct factorial : public CalcFunction
@@ -84,7 +125,7 @@ struct factorial : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_limited_op<mpz, mpf, mpq>(
+        return one_arg_limited_op<mpz, mpf, mpq, mpc>(
             calc,
             [](const auto& a,
                const units::unit& ua) -> std::tuple<numeric, units::unit> {

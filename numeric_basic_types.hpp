@@ -19,6 +19,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #define lcm_fn smrty::lcm
 #define gcd_fn smrty::gcd
 #define pow_fn smrty::pow
+#define exp_fn smrty::exp
 #define powul_fn smrty::powul
 #define gamma_fn smrty::tgamma
 #define abs_fn smrty::abs
@@ -80,6 +81,8 @@ namespace smrty
 {
 mpz powul(const mpz& base, int exponent);
 std::tuple<mpz, mpz> powl(const mpz& base, int exponent);
+constexpr mpf exp(const mpf& base, const mpf& exponent);
+constexpr mpc exp(const mpc& base, const mpc& exponent);
 constexpr mpf pow(const mpf& base, const mpf& exponent);
 constexpr mpc pow(const mpc& base, const mpc& exponent);
 constexpr mpf tgamma(const mpf& v);
@@ -138,6 +141,14 @@ constexpr mpz one_billion{1'000'000'000};
 
 namespace smrty
 {
+constexpr mpf exp(const mpf& exponent)
+{
+    return mpf{std::exp(exponent.value)};
+}
+constexpr mpc exp(const mpc& exponent)
+{
+    return std::exp(exponent);
+}
 constexpr mpf pow(const mpf& base, const mpf& exponent)
 {
     return mpf{std::pow(base.value, exponent.value)};
