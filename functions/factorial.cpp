@@ -102,6 +102,26 @@ mpc factorial(const mpc& x)
     return gamma_mpc(x + mpc{1.0l});
 }
 
+mpz gamma(const mpz& x)
+{
+    return factorial(x - mpz{1});
+}
+
+mpf gamma(const mpq& x)
+{
+    return gamma_fn(mpf{x});
+}
+
+mpf gamma(const mpf& x)
+{
+    return gamma_fn(x);
+}
+
+mpc gamma(const mpc& x)
+{
+    return gamma_mpc(x);
+}
+
 } //  namespace util
 
 struct factorial : public CalcFunction
@@ -150,7 +170,54 @@ struct factorial : public CalcFunction
     }
 };
 
+struct gamma : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"gamma"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x gamma\n"
+            "\n"
+            "    Returns gamma(x) of the bottom item on the stack x\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_limited_op<mpz, mpf, mpq, mpc>(
+            calc,
+            [](const auto& a,
+               const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                if (ua != units::unit())
+                {
+                    throw std::invalid_argument("units not permitted");
+                }
+                return {util::gamma(a), ua};
+            });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::postfix;
+    }
+};
+
 } // namespace function
 } // namespace smrty
 
 register_calc_fn(factorial);
+register_calc_fn(gamma);

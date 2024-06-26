@@ -24,7 +24,7 @@ Ideas for future development
    * db bd (ratio/decibel support)
    * modulo(modular math mode) down(toggle downcasting)
    * clreg store recall regs
-   * gamma zeta ncdf(normal prob cdf) invn(inverse of ncdf)
+   * zeta ncdf(normal prob cdf) invn(inverse of ncdf)
    * comma mixed brief
    * < <= == != >= >
  * N-d vector support [ x y z ]
