@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/seed_seq.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 #include <function.hpp>
 #include <functions/common.hpp>
 #include <random>
@@ -45,33 +46,41 @@ boost::random::mt19937& gen(void)
 #ifdef USE_BASIC_TYPES
 mpz rand_dist(const mpz& low, const mpz& high)
 {
-    auto l = static_cast<long long>(low);
-    auto h = static_cast<long long>(high);
-    boost::random::uniform_int_distribution<long long> dist(l, h);
+    using sub_type = mpz::value_type;
+    boost::random::uniform_int_distribution<sub_type> dist(low.value,
+                                                           high.value);
     return mpz{dist(gen())};
 }
 
-mpq rand(unsigned long bits)
+mpf rand_dist(const mpf& low, const mpf& high)
 {
-    long long high{1};
-    high <<= bits;
-    return mpq(rand_dist(zero, mpz{high}), mpz{high});
+    using sub_type = mpf::value_type;
+    boost::random::uniform_real_distribution<sub_type> dist(low.value,
+                                                            high.value);
+    return mpf{dist(gen())};
 }
-#else  // USE_BASIC_TYPES
+
+#else // USE_BASIC_TYPES
 mpz rand_dist(const mpz& low, const mpz& high)
 {
     boost::random::uniform_int_distribution<mpz> dist(low, high);
     return dist(gen());
 }
 
+mpf rand_dist(const mpf& low, const mpf& high)
+{
+    boost::random::uniform_real_distribution<mpf> dist(low, high);
+    return dist(gen());
+}
+
+#endif // USE_BASIC_TYPES
+
 mpq rand(unsigned long bits)
 {
     mpz high{1};
     high <<= bits;
-    boost::random::uniform_int_distribution<mpz> dist(0, high - one);
-    return mpq(dist(gen()), high);
+    return mpq(rand_dist(zero, high), high);
 }
-#endif // USE_BASIC_TYPES
 
 } // namespace util
 
@@ -441,40 +450,41 @@ struct rand_dist : public CalcFunction
             "\n"
             "    Usage: x y rand_dist\n"
             "\n"
-            "    Returns a uniformly distributed random integer in the range of [x, y]\n"
+            "    Returns a uniformly distributed random number in the range of [x, y]\n"
             // clang-format on
         };
         return _help;
     }
     virtual bool op(Calculator& calc) const final
     {
-        if (calc.stack.size() < 2)
-        {
-            throw std::invalid_argument("Requires 2 arguments");
-        }
-        stack_entry e1 = calc.stack[1];
-        stack_entry e0 = calc.stack[0];
-        if (e0.unit() != units::unit() || e1.unit() != units::unit())
-        {
-            return false;
-        }
-        const mpz* x = std::get_if<mpz>(&e1.value());
-        const mpz* y = std::get_if<mpz>(&e0.value());
-        if (!x || !y)
-        {
-            return false;
-        }
-        if (*y <= *x)
-        {
-            throw std::invalid_argument("y must be >= x");
-        }
-        calc.stack.pop_front();
-        calc.stack.pop_front();
-        mpz r = util::rand_dist(*x, *y);
-        calc.stack.emplace_front(r, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed,
-                                 calc.flags);
-        return true;
+        return two_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf>>::op(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != units::unit{} || ua != ub)
+                {
+                    throw units_prohibited();
+                }
+                if (b <= a)
+                {
+                    throw std::invalid_argument("y must be > x");
+                }
+                if constexpr (!same_type_v<decltype(a), decltype(b)>)
+                {
+                    if constexpr (same_type_v<decltype(a), mpf>)
+                    {
+                        return {util::rand_dist(a, mpf{b}), ua};
+                    }
+                    else
+                    {
+                        return {util::rand_dist(mpf{a}, b), ua};
+                    }
+                }
+                else
+                {
+                    return {util::rand_dist(a, b), ua};
+                }
+            });
     }
     int num_args() const final
     {
