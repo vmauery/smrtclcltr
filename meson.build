@@ -124,6 +124,7 @@ smrty_functions = [
   'functions/compound.cpp',
   'functions/factorial.cpp',
   'functions/float.cpp',
+  'functions/hyp_trig_funcs.cpp',
   'functions/integer.cpp',
   'functions/log.cpp',
   'functions/matrix.cpp',

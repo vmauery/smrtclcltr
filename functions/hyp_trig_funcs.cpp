@@ -11,11 +11,11 @@ namespace smrty
 namespace function
 {
 
-struct sine : public CalcFunction
+struct hyperbolic_sine : public CalcFunction
 {
     virtual const std::string& name() const final
     {
-        static const std::string _name{"sin"};
+        static const std::string _name{"sinh"};
         return _name;
     }
     virtual const std::string& help() const final
@@ -23,9 +23,10 @@ struct sine : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: x sin\n"
+            "    Usage: x sinh\n"
             "\n"
-            "    Returns the sine of the bottom item on the stack: sin(x)\n"
+            "    Returns the hyperbolic sine of the bottom item on "
+            "the stack: sinh(x)\n"
             // clang-format on
         };
         return _help;
@@ -44,7 +45,7 @@ struct sine : public CalcFunction
                                       }
                                       return scaled_trig_op(
                                           calc, a, [](const auto& a) {
-                                              return sin_fn(a);
+                                              return sinh_fn(a);
                                           });
                                   });
     }
@@ -62,11 +63,11 @@ struct sine : public CalcFunction
     }
 };
 
-struct cosine : public CalcFunction
+struct hyperbolic_cosine : public CalcFunction
 {
     virtual const std::string& name() const final
     {
-        static const std::string _name{"cos"};
+        static const std::string _name{"cosh"};
         return _name;
     }
     virtual const std::string& help() const final
@@ -74,9 +75,10 @@ struct cosine : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: x cos\n"
+            "    Usage: x cosh\n"
             "\n"
-            "    Returns the cosine of the bottom item on the stack: cos(x)\n"
+            "    Returns the hyperbolic cosine of the bottom item on "
+            "the stack: cosh(x)\n"
             // clang-format on
         };
         return _help;
@@ -95,7 +97,7 @@ struct cosine : public CalcFunction
                                       }
                                       return scaled_trig_op(
                                           calc, a, [](const auto& a) {
-                                              return cos_fn(a);
+                                              return cosh_fn(a);
                                           });
                                   });
     }
@@ -113,11 +115,11 @@ struct cosine : public CalcFunction
     }
 };
 
-struct tangent : public CalcFunction
+struct hyperbolic_tangent : public CalcFunction
 {
     virtual const std::string& name() const final
     {
-        static const std::string _name{"tan"};
+        static const std::string _name{"tanh"};
         return _name;
     }
     virtual const std::string& help() const final
@@ -125,9 +127,10 @@ struct tangent : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: x tan\n"
+            "    Usage: x tanh\n"
             "\n"
-            "    Returns the tangent of the bottom item on the stack: tan(x)\n"
+            "    Returns the hyperbolic tangent of the bottom item "
+            "on the stack: tanh(x)\n"
             // clang-format on
         };
         return _help;
@@ -146,7 +149,7 @@ struct tangent : public CalcFunction
                                       }
                                       return scaled_trig_op(
                                           calc, a, [](const auto& a) {
-                                              return tan_fn(a);
+                                              return tanh_fn(a);
                                           });
                                   });
     }
@@ -164,11 +167,11 @@ struct tangent : public CalcFunction
     }
 };
 
-struct arcsine : public CalcFunction
+struct hyperbolic_arcsine : public CalcFunction
 {
     virtual const std::string& name() const final
     {
-        static const std::string _name{"asin"};
+        static const std::string _name{"asinh"};
         return _name;
     }
     virtual const std::string& help() const final
@@ -176,10 +179,10 @@ struct arcsine : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: x asin\n"
+            "    Usage: x asinh\n"
             "\n"
-            "    Returns the arcsine of the bottom item "
-            "on the stack: asin(x)\n"
+            "    Returns the hyperbolic arcsine of the bottom item "
+            "on the stack: asinh(x)\n"
             // clang-format on
         };
         return _help;
@@ -198,7 +201,7 @@ struct arcsine : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return asin_fn(a);
+                                              return asinh_fn(a);
                                           });
                                   });
     }
@@ -216,11 +219,11 @@ struct arcsine : public CalcFunction
     }
 };
 
-struct arccosine : public CalcFunction
+struct hyperbolic_arccosine : public CalcFunction
 {
     virtual const std::string& name() const final
     {
-        static const std::string _name{"acos"};
+        static const std::string _name{"acosh"};
         return _name;
     }
     virtual const std::string& help() const final
@@ -228,10 +231,10 @@ struct arccosine : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: x acos\n"
+            "    Usage: x acosh\n"
             "\n"
-            "    Returns the arccosine of the bottom item "
-            "on the stack: acos(x)\n"
+            "    Returns the hyperbolic arccosine of the bottom item "
+            "on the stack: acosh(x)\n"
             // clang-format on
         };
         return _help;
@@ -250,7 +253,7 @@ struct arccosine : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return acos_fn(a);
+                                              return acosh_fn(a);
                                           });
                                   });
     }
@@ -268,11 +271,11 @@ struct arccosine : public CalcFunction
     }
 };
 
-struct arctangent : public CalcFunction
+struct hyperbolic_arctangent : public CalcFunction
 {
     virtual const std::string& name() const final
     {
-        static const std::string _name{"atan"};
+        static const std::string _name{"atanh"};
         return _name;
     }
     virtual const std::string& help() const final
@@ -280,10 +283,10 @@ struct arctangent : public CalcFunction
         static const std::string _help{
             // clang-format off
             "\n"
-            "    Usage: x atan\n"
+            "    Usage: x atanh\n"
             "\n"
-            "    Returns the arctangent of the bottom item "
-            "on the stack: atan(x)\n"
+            "    Returns the hyperbolic arctangent of the bottom "
+            "item on the stack: atanh(x)\n"
             // clang-format on
         };
         return _help;
@@ -302,7 +305,7 @@ struct arctangent : public CalcFunction
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
-                                              return atan_fn(a);
+                                              return atanh_fn(a);
                                           });
                                   });
     }
@@ -323,9 +326,9 @@ struct arctangent : public CalcFunction
 } // namespace function
 } // namespace smrty
 
-register_calc_fn(sine);
-register_calc_fn(cosine);
-register_calc_fn(tangent);
-register_calc_fn(arcsine);
-register_calc_fn(arccosine);
-register_calc_fn(arctangent);
+register_calc_fn(hyperbolic_sine);
+register_calc_fn(hyperbolic_cosine);
+register_calc_fn(hyperbolic_tangent);
+register_calc_fn(hyperbolic_arcsine);
+register_calc_fn(hyperbolic_arccosine);
+register_calc_fn(hyperbolic_arctangent);
