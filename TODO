@@ -11,11 +11,10 @@ Ideas for future development
  * Constants library (interactive lookup for lesser-known constants)
    * phi c
  * More functions (long list)
-   * cot coth csc csch asec asech atan2 acot acoth acsc acsch sec sech
    * hex bin oct
    * eng sci engsi
    * htonl ntohl be le
-   * abs pow hypot gcf lcm fib root roots div(integer division)
+   * pow hypot fib root roots div(integer division)
    * stddev max min mode
    * sort
    * conj real imag
@@ -24,8 +23,7 @@ Ideas for future development
    * db bd (ratio/decibel support)
    * modulo(modular math mode) down(toggle downcasting)
    * clreg store recall regs
-   * zeta ncdf(normal prob cdf) invn(inverse of ncdf)
-   * comma mixed brief
+   * ncdf(normal prob cdf) invn(inverse of ncdf)
    * < <= == != >= >
  * N-d vector support [ x y z ]
    * parse / cross / dot / add / subtract / scaler
@@ -33,7 +31,6 @@ Ideas for future development
  * Variable store/recall support
  * Modes
    * Modular arithmetic mode
-   * Polar/rect mode
    * Fixed bit math (for debugging C math issues, show over/under-flow bit)
  * Graphing? WTF? That's fancy.
  * Eval of formula ('x^2+2*x+3' 3 $x store eval)?
