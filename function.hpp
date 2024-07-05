@@ -456,4 +456,21 @@ std::tuple<numeric, units::unit> scaled_trig_op_inv(Calculator& calc,
     }
     return {b, units::unit()};
 }
+
+template <typename Fn>
+std::tuple<numeric, units::unit>
+    scaled_trig_two_arg_op_inv(Calculator& calc, const auto& a, const auto& b,
+                               const Fn& fn)
+{
+    auto c = fn(a, b);
+    if (calc.config.angle_mode == Calculator::e_angle_mode::degrees)
+    {
+        c *= one_eighty_f / boost::math::constants::pi<mpf>();
+    }
+    else if (calc.config.angle_mode == Calculator::e_angle_mode::gradians)
+    {
+        c *= two_hundred_f / boost::math::constants::pi<mpf>();
+    }
+    return {c, units::unit()};
+}
 } // namespace smrty
