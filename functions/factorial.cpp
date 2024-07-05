@@ -151,7 +151,7 @@ struct factorial : public CalcFunction
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
                 if (ua != units::unit())
                 {
-                    throw std::invalid_argument("units not permitted");
+                    throw units_prohibited();
                 }
                 return {util::factorial(a), ua};
             });
@@ -197,7 +197,7 @@ struct gamma : public CalcFunction
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
                 if (ua != units::unit())
                 {
-                    throw std::invalid_argument("units not permitted");
+                    throw units_prohibited();
                 }
                 return {util::gamma(a), ua};
             });

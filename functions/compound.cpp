@@ -136,7 +136,7 @@ struct Matrix : public CalcFunction
         stack_entry& ny = calc.stack[0];
         if ((nx.unit() != units::unit()) || (ny.unit() != units::unit()))
         {
-            throw std::invalid_argument("matrix dimensions cannot have units");
+            throw units_prohibited();
         }
         auto pl = const_cast<list*>(std::get_if<list>(&nl.value()));
         auto px = std::get_if<mpz>(&nx.value());
@@ -197,7 +197,7 @@ struct List : public CalcFunction
         stack_entry& nc = calc.stack[0];
         if (nc.unit() != units::unit())
         {
-            throw std::invalid_argument("list dimensions cannot have units");
+            throw units_prohibited();
         }
         auto pc = std::get_if<mpz>(&nc.value());
         if (!pc || (*pc <= zero))

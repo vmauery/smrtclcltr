@@ -39,8 +39,7 @@ struct sine : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op(
                                           calc, a, [](const auto& a) {
@@ -90,8 +89,7 @@ struct cosine : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op(
                                           calc, a, [](const auto& a) {
@@ -141,8 +139,7 @@ struct tangent : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op(
                                           calc, a, [](const auto& a) {
@@ -193,8 +190,7 @@ struct arcsine : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -245,8 +241,7 @@ struct arccosine : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -297,8 +292,7 @@ struct arctangent : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -354,8 +348,7 @@ struct arctangent2 : public CalcFunction
                    const units::unit& ub) -> std::tuple<numeric, units::unit> {
                    if (ua != units::unit() || ub != units::unit())
                    {
-                       throw std::invalid_argument(
-                           "values with units not allowed");
+                       throw units_prohibited();
                    }
                    return scaled_trig_two_arg_op_inv(
                        calc, a, b, [](const auto& a, const auto& b) {
@@ -425,8 +418,7 @@ struct secant : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -477,8 +469,7 @@ struct cosecant : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -529,8 +520,7 @@ struct cotangent : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -581,8 +571,7 @@ struct arcsecant : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -633,8 +622,7 @@ struct arccosecant : public CalcFunction
                                       -> std::tuple<numeric, units::unit> {
                                       if (ua != units::unit())
                                       {
-                                          throw std::invalid_argument(
-                                              "values with units not allowed");
+                                          throw units_prohibited();
                                       }
                                       return scaled_trig_op_inv(
                                           calc, a, [](const auto& a) {
@@ -686,8 +674,7 @@ struct arccotangent : public CalcFunction
                    -> std::tuple<numeric, units::unit> {
                    if (ua != units::unit())
                    {
-                       throw std::invalid_argument(
-                           "values with units not allowed");
+                       throw units_prohibited();
                    }
                    return scaled_trig_op_inv(calc, a, [](const auto& a) {
                        if constexpr (same_type_v<decltype(a), mpf>)

@@ -39,7 +39,7 @@ struct adjoint : public CalcFunction
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
                 if (ua != units::unit())
                 {
-                    throw std::invalid_argument("units not permitted");
+                    throw units_prohibited();
                 }
                 numeric inv{a.adjoint()};
                 return {inv, ua};
@@ -86,7 +86,7 @@ struct determinant : public CalcFunction
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
                 if (ua != units::unit())
                 {
-                    throw std::invalid_argument("units not permitted");
+                    throw units_prohibited();
                 }
                 numeric det = variant_cast(a.det());
                 return {det, ua};
@@ -133,7 +133,7 @@ struct eye : public CalcFunction
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
                 if (ua != units::unit())
                 {
-                    throw std::invalid_argument("units not permitted");
+                    throw units_prohibited();
                 }
                 return {matrix::I(static_cast<size_t>(a)), ua};
             });

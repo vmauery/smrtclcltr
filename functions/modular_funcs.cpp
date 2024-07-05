@@ -58,7 +58,7 @@ struct modexp : public CalcFunction
                const units::unit& uc) -> std::tuple<numeric, units::unit> {
                 if (ua != ub || ua != uc || ua != units::unit())
                 {
-                    throw std::invalid_argument("units not permitted");
+                    throw units_prohibited();
                 }
                 return {pow(a, b, c), ua};
             },
