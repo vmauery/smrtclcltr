@@ -105,7 +105,7 @@ struct modinv : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 mpz t(0);
                 mpz newt(1);

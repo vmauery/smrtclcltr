@@ -23,7 +23,7 @@ bool add_from_stack(Calculator& calc)
            const units::unit& ub) -> std::tuple<numeric, units::unit> {
             if (ua != ub)
             {
-                throw std::invalid_argument("units do not match");
+                throw units_mismatch();
             }
             return {a + b, ua};
         });
@@ -122,7 +122,7 @@ struct subtract : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 return {a - b, ua};
             });
@@ -245,7 +245,7 @@ struct percent_change : public CalcFunction
                   const units::unit& ub) -> std::tuple<numeric, units::unit> {
                    if (ua != ub)
                    {
-                       throw std::invalid_argument("units do not match");
+                       throw units_mismatch();
                    }
                    return {(b - a) / a, units::unit{}};
                });
@@ -336,7 +336,7 @@ struct divmod : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 return {a % b, ua};
             });

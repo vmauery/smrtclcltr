@@ -16,8 +16,6 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace smrty
 {
-namespace units
-{
 
 class bad_conversion : public std::runtime_error
 {
@@ -27,6 +25,7 @@ class bad_conversion : public std::runtime_error
     }
     ~bad_conversion() = default;
 };
+
 class unit_parse_error : public std::runtime_error
 {
   public:
@@ -35,6 +34,23 @@ class unit_parse_error : public std::runtime_error
     }
     ~unit_parse_error() = default;
 };
+
+struct units_prohibited : public std::invalid_argument
+{
+    units_prohibited() : std::invalid_argument("Units not allowed")
+    {
+    }
+};
+
+struct units_mismatch : public std::invalid_argument
+{
+    units_mismatch() : std::invalid_argument("Units do not match")
+    {
+    }
+};
+
+namespace units
+{
 
 template <typename L, typename R>
 boost::bimap<L, R> make_bimap(
@@ -129,7 +145,7 @@ struct unit
     {
         if (!compat(o))
         {
-            throw std::invalid_argument("units do not match");
+            throw units_mismatch();
         }
         // what about scale and exp?
         return *this;
@@ -138,7 +154,7 @@ struct unit
     {
         if (!compat(o))
         {
-            throw std::invalid_argument("units do not match");
+            throw units_mismatch();
         }
         // what about scale and exp?
         return *this;
@@ -244,14 +260,14 @@ static auto require_unitless = [](const auto... various_units) {
 static auto require_match_2 = [](const unit& a, const unit& b) {
     if (a != b)
     {
-        throw std::invalid_argument("units do not match");
+        throw units_mismatch();
     }
     return a;
 };
 static auto require_match_3 = [](const unit& a, const unit& b, const unit& c) {
     if (a != b || a != c)
     {
-        throw std::invalid_argument("units do not match");
+        throw units_mismatch();
     }
     return a;
 };

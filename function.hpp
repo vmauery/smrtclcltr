@@ -28,13 +28,6 @@ struct insufficient_args : public std::runtime_error
     }
 };
 
-struct units_prohibited : public std::invalid_argument
-{
-    units_prohibited() : std::invalid_argument("Units not allowed")
-    {
-    }
-};
-
 template <typename... I>
 struct conversion
 {

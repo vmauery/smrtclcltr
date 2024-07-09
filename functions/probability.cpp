@@ -331,7 +331,7 @@ struct median : public CalcFunction
             stack_entry e = calc.stack.front();
             if (e.unit() != first_unit)
             {
-                throw std::invalid_argument("units do not match");
+                throw units_mismatch();
             }
             auto& v = e.value();
             if (auto zp = std::get_if<mpz>(&v); zp)

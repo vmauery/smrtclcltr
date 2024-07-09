@@ -38,7 +38,7 @@ struct bitwise_and : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 return {a & b, ua};
             });
@@ -85,7 +85,7 @@ struct bitwise_or : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 return {a | b, ua};
             });
@@ -132,7 +132,7 @@ struct bitwise_xor : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 return {a ^ b, ua};
             });
@@ -221,7 +221,7 @@ struct lshift : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 return {a << static_cast<unsigned long long>(b), ua};
             });
@@ -269,7 +269,7 @@ struct rshift : public CalcFunction
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
                 if (ua != ub)
                 {
-                    throw std::invalid_argument("units do not match");
+                    throw units_mismatch();
                 }
                 return {a >> static_cast<unsigned long long>(b), ua};
             });
