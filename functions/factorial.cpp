@@ -122,6 +122,60 @@ mpc gamma(const mpc& x)
     return gamma_mpc(x);
 }
 
+mpf zeta(const mpf& x)
+{
+    return zeta_fn(x);
+}
+
+mpc d_kn(const mpz& k, const mpz& n)
+{
+    mpz sum{0};
+    mpz one{1};
+    mpz two{2};
+    for (mpz i = 0; i < (k + one); i++)
+    {
+        mpz four_pow_i = one << (2 * static_cast<long long>(i));
+        sum += (factorial(n + i - one) * four_pow_i) /
+               (factorial(n - i) * factorial(two * i));
+    }
+    return mpc{mpf{n * sum}};
+}
+
+mpc zeta(const mpc& x)
+{
+    // implemented from "An Efficient Algorithm for the Riemann Zeta Function"
+    // by Peter Borwein (algorithm 2):
+    // http://www.cecm.sfu.ca/personal/pborwein/PAPERS/P155.pdf
+
+    // provide a little extra precision to meet needs
+    auto prec = default_precision;
+    set_default_precision(prec * 1.1);
+
+    // n = ceil(log[base(3+sqrt(8))](1.36*10^prec/abs((1-2^(1-x))*gamma(x))))
+    auto n = static_cast<mpz>(
+        ceil_fn(
+            log_fn(mpf{1.36} * pow_fn(mpf{10}, prec) /
+                   abs_fn((mpc{1} - pow_fn(mpc{2}, mpc{1} - x)) * gamma(x)))) /
+        log_fn(mpf{3} + sqrt_fn(mpf{8})));
+    lg::debug("zeta using {} iterations\n", n);
+
+    mpc sum{0};
+    mpz one{1};
+    mpc sign{1};
+    mpc dn = d_kn(n, n);
+    for (mpz k = 0; k < n; k++)
+    {
+        sum += sign * (d_kn(k, n) - dn) / pow_fn(mpc{k + one}, x);
+        sign = -sign;
+    }
+    // final product
+    mpc prefix = -dn * (mpc{1} - pow_fn(mpc{2}, (mpc{1} - x)));
+    mpc z = sum / prefix;
+
+    set_default_precision(prec);
+    return z;
+}
+
 } //  namespace util
 
 struct factorial : public CalcFunction
@@ -216,8 +270,56 @@ struct gamma : public CalcFunction
     }
 };
 
+struct zeta : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"zeta"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x zeta\n"
+            "\n"
+            "    Returns Riemann-zeta(x) of the bottom item on the stack x\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_conv<
+            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+            LTypes<mpf, mpc>>::op(calc,
+                                  [](const auto& a, const units::unit& ua)
+                                      -> std::tuple<numeric, units::unit> {
+                                      if (ua != units::unit())
+                                      {
+                                          throw units_prohibited();
+                                      }
+                                      return {util::zeta(a), ua};
+                                  });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::postfix;
+    }
+};
+
 } // namespace function
 } // namespace smrty
 
 register_calc_fn(factorial);
 register_calc_fn(gamma);
+register_calc_fn(zeta);

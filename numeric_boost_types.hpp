@@ -20,6 +20,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #define pow_fn boost::multiprecision::pow
 #define powul_fn boost::multiprecision::pow
 #define gamma_fn boost::math::tgamma
+#define zeta_fn boost::math::zeta
 #define abs_fn abs
 #define log_fn log
 #define sqrt_fn sqrt

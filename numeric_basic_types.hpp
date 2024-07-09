@@ -22,6 +22,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #define exp_fn smrty::exp
 #define powul_fn smrty::powul
 #define gamma_fn smrty::tgamma
+#define zeta_fn smrty::zeta
 #define abs_fn smrty::abs
 #define log_fn smrty::log
 #define sqrt_fn smrty::sqrt
@@ -86,6 +87,7 @@ constexpr mpc exp(const mpc& base, const mpc& exponent);
 constexpr mpf pow(const mpf& base, const mpf& exponent);
 constexpr mpc pow(const mpc& base, const mpc& exponent);
 constexpr mpf tgamma(const mpf& v);
+constexpr mpf zeta(const mpf& v);
 constexpr mpz gcd(const mpz& l, const mpz& r);
 constexpr mpz lcm(const mpz& l, const mpz& r);
 constexpr mpf abs(const mpf& v);
@@ -160,6 +162,10 @@ constexpr mpc pow(const mpc& base, const mpc& exponent)
 constexpr mpf tgamma(const mpf& v)
 {
     return mpf{std::tgamma(v.value)};
+}
+constexpr mpf zeta(const mpf& v)
+{
+    return mpf{std::riemann_zeta(v.value)};
 }
 constexpr mpz gcd(const mpz& l, const mpz& r)
 {
