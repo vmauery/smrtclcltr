@@ -68,6 +68,12 @@ class Input
 
     std::optional<std::string> readline();
 
+    // late-binding of interactivity
+    void set_interactive(bool i)
+    {
+        interactive = i;
+    }
+
   protected:
     bool interactive;
     std::function<std::optional<std::string_view>(std::string_view, int)>

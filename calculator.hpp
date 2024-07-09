@@ -108,7 +108,7 @@ class Calculator
         }
         return *_this;
     }
-    bool run();
+    bool run(std::string_view);
     bool run_help(std::string_view fn = {});
 
     // used by functions

@@ -11,17 +11,22 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <string>
 #include <vector>
 
-int usage(const std::vector<std::string_view>& args)
+int usage(std::span<std::string_view> args)
 {
     std::print(stderr, "Usage: {} [-v [n]]\n", args[0]);
     return 1;
 }
 
-int cpp_main(const std::vector<std::string_view>& args)
+int cpp_main(std::span<std::string_view> args)
 {
-    for (size_t i = 1; i < args.size(); i++)
+    size_t i = 1;
+    for (; i < args.size(); i++)
     {
         std::string_view arg = args[i];
+        if (arg[0] != '-')
+        {
+            break;
+        }
         if (arg == "-v")
         {
             if ((i + 1) < args.size())
@@ -38,10 +43,15 @@ int cpp_main(const std::vector<std::string_view>& args)
             }
         }
     }
+    std::span<std::string_view> pargs{};
+    if (i < args.size())
+    {
+        pargs = args.subspan(i);
+    }
     smrty::Calculator& calc = smrty::Calculator::get();
     try
     {
-        calc.run();
+        calc.run(std::format("{: }", pargs));
     }
     catch (const std::exception& e)
     {

@@ -6,8 +6,8 @@
 #include <string_view>
 #include <vector>
 
-// int cpp_main(const std::span<std::string_view>& args);
-int cpp_main(const std::vector<std::string_view>& args);
+int cpp_main(std::span<std::string_view> args);
+// int cpp_main(const std::vector<std::string_view>& args);
 
 int main(int argc, char** argv)
 {

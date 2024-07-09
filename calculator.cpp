@@ -261,15 +261,35 @@ bool Calculator::run_one(const simple_instruction& itm)
     return true;
 }
 
-bool Calculator::run()
+bool Calculator::run(std::string_view command_line)
 {
+    // command line presence removes interactivity
+    if (command_line.size() > 0)
+    {
+        if (config.interactive)
+        {
+            config.interactive = false;
+            // force end-of-file so input->readline() returns without a keypress
+            std::cin.setstate(std::ios_base::eofbit);
+        }
+        input->set_interactive(false);
+    }
     auto ui = ui::get();
     while (_running)
     {
         std::optional<std::string> nextline = input->readline();
         if (!nextline)
         {
-            break;
+            // squish the command line in as the last bit of stdin
+            if (command_line.size())
+            {
+                nextline = std::string{command_line};
+                command_line = "";
+            }
+            else
+            {
+                break;
+            }
         }
         bool exe_ok = true;
         if (nextline->size())
