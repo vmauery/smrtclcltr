@@ -20,37 +20,6 @@ SPDX-License-Identifier: BSD-3-Clause
 namespace smrty
 {
 
-class Calculator;
-
-struct CalcFunction
-{
-    virtual ~CalcFunction() = default;
-    virtual const std::string& name() const = 0;
-    virtual const std::string& help() const = 0;
-    virtual bool op(Calculator&) const = 0;
-    virtual bool reop(Calculator&, const std::vector<std::string>&) const
-    {
-        return false;
-    };
-    virtual const std::string_view regex() const
-    {
-        static std::string_view _regex{};
-        return _regex;
-    }
-    // if number of args is known, each function should set that
-    // if number of args is < 0, it is variable, with |n| as the min
-    virtual int num_args() const = 0;
-    virtual int num_resp() const = 0;
-    virtual symbolic_op symbolic_usage() const = 0;
-};
-
-// All functions will register by adding an object to the __functions__ section
-#define register_calc_fn(__cls)                                                \
-    const static smrty::function::__cls __calc_fn_impl__##__cls;               \
-    const static smrty::CalcFunction* __calc_fn_##__cls                        \
-        __attribute((__section__("calc_functions"))) __attribute((__used__)) = \
-            &__calc_fn_impl__##__cls;
-
 class Calculator
 {
   public:
@@ -137,10 +106,6 @@ class Calculator
 
     bool _running = true;
 
-    std::map<std::string_view, const CalcFunction*> _operations;
-    std::vector<std::string_view> _op_names;
-    std::map<size_t, std::string_view> _reops;
-    size_t _op_names_max_strlen;
     std::shared_ptr<Input> input;
 };
 

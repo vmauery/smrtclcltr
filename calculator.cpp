@@ -20,9 +20,6 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <string>
 #include <ui.hpp>
 
-extern const struct smrty::CalcFunction* __start_calc_functions;
-extern const struct smrty::CalcFunction* __stop_calc_functions;
-
 namespace smrty
 {
 
@@ -36,8 +33,7 @@ struct column_layout
     bool valid;
 };
 
-column_layout find_best_layout(const std::vector<std::string_view>& words,
-                               size_t width)
+column_layout find_best_layout(std::span<std::string_view> words, size_t width)
 {
     constexpr size_t PADDING_SIZE = 2; // 2 spaces
     // max columns should be less than the ideal if there is minimal padding
@@ -100,7 +96,7 @@ Calculator::Calculator()
     set_default_precision(builtin_default_precision);
 
     // add all the functions
-    make_functions();
+    setup_catalog();
 }
 
 std::string binary_to_hex(std::string_view v)
@@ -150,30 +146,30 @@ bool Calculator::run_help(std::string_view fn)
     lg::debug("help item is: {}\n", fn);
     if (fn.size())
     {
-        auto help_op = _operations.find(fn);
-        if (help_op != _operations.end())
+        auto help_op = fn_get_fn_ptr_by_name(fn);
+        if (help_op)
         {
-            ui->out("{}\n\t{}\n", help_op->second->name(),
-                    help_op->second->help());
+            ui->out("{}\n\t{}\n", help_op->name(), help_op->help());
             return false;
         }
     }
     auto size = ui->size();
     auto& tcols = std::get<1>(size);
-    column_layout l = find_best_layout(_op_names, tcols);
+    auto op_names = fn_get_all_names();
+    column_layout l = find_best_layout(op_names, tcols);
     size_t col_count = l.cols.size();
     size_t row_count =
-        std::ceil(static_cast<double>(_op_names.size()) / col_count);
+        std::ceil(static_cast<double>(op_names.size()) / col_count);
     for (size_t i = 0; i < row_count; i++)
     {
         for (size_t j = 0; j < col_count; j++)
         {
             size_t idx = row_count * j + i;
-            if (idx >= _op_names.size())
+            if (idx >= op_names.size())
             {
                 break;
             }
-            ui->out("{0: <{1}}", _op_names[idx], l.cols[j]);
+            ui->out("{0: <{1}}", op_names[idx], l.cols[j]);
         }
         ui->out("\n");
     }
@@ -199,9 +195,8 @@ bool Calculator::run_one(const simple_instruction& itm)
     if (auto n = std::get_if<function_parts>(&itm); n)
     {
         // operation should always be present,
-        // but find is the same speed as []
-        auto& fn_name = _op_names[n->index];
-        auto& fn = _operations[fn_name];
+        const auto& fn_name = fn_name_by_id(n->index);
+        auto fn = fn_get_fn_ptr_by_name(fn_name);
         if (n->args.size())
         {
             lg::debug("executing function '{}({})'\n", fn_name, n->args);
@@ -579,60 +574,16 @@ void Calculator::show_stack()
     }
 }
 
-void Calculator::make_functions()
-{
-
-    // add the functions in the __functions__ section
-    for (auto iter = &__start_calc_functions; iter < &__stop_calc_functions;
-         iter++)
-    {
-        _operations[(*iter)->name()] = *iter;
-    }
-    _op_names_max_strlen = 1;
-    std::transform(_operations.begin(), _operations.end(),
-                   std::back_inserter(_op_names), [this](const auto& kv) {
-                       size_t sz = kv.first.size();
-                       if (sz > _op_names_max_strlen)
-                       {
-                           _op_names_max_strlen = sz;
-                       }
-                       return kv.first;
-                   });
-    std::sort(_op_names.begin(), _op_names.end());
-
-    std::vector<std::tuple<size_t, std::string_view>> reop_list{};
-    for (const auto& [k, v] : _operations)
-    {
-        auto re = v->regex();
-        if (re.size())
-        {
-            auto first = _op_names.begin();
-            auto iter = std::find(first, _op_names.end(), k);
-            _reops.emplace(std::distance(first, iter), re);
-            reop_list.emplace_back(
-                std::make_tuple(std::distance(first, iter), re));
-        }
-    }
-    parser::set_function_lists(_op_names, reop_list);
-}
-
 std::optional<std::string_view> Calculator::auto_complete(std::string_view in,
                                                           int state)
 {
     static size_t last_idx = 0;
-    static std::vector<std::string_view> matches;
+    static std::span<std::string_view> matches;
     if (state == 0)
     {
         last_idx = 0;
-        matches.clear();
         // find all the new matches
-        for (auto kv : _operations)
-        {
-            if (kv.first.starts_with(in))
-            {
-                matches.emplace_back(kv.first);
-            }
-        }
+        matches = fn_list_all_starts_with(in);
     }
     if (last_idx < matches.size())
     {

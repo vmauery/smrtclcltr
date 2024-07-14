@@ -118,6 +118,7 @@ add_project_arguments(
   language : 'cpp')
 
 smrty_functions = [
+  'function_library.cpp',
   'constants.cpp',
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',

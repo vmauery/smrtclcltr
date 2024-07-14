@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <cmath>
 #include <debug.hpp>
 #include <deque>
+#include <function_library.hpp>
 #include <functional>
 #include <map>
 #include <numeric.hpp>
