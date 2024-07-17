@@ -240,32 +240,6 @@ TypeOut coerce_variant(const TypeIn& in)
  *
  ********************************************************************/
 
-// As the number of types are held within numeric grows, the
-// number of operators between them that *might* be needed
-// grows as a factorial of N. Since this quickly gets out of
-// hand for writing each pair, we start with a catch-all
-// operator of each kind that throws a runtime error saying
-// that this kind of operation is not supported between these
-// two types. Then, we go ahead and implement all the pairs
-// that actually make sense.
-
-numeric operator+(const auto& l, const auto& r)
-{
-    throw std::invalid_argument("Invalid operands for addition");
-}
-numeric operator-(const auto& l, const auto& r)
-{
-    throw std::invalid_argument("Invalid operands for subtraction");
-}
-numeric operator*(const auto& l, const auto& r)
-{
-    throw std::invalid_argument("Invalid operands for multiplication");
-}
-numeric operator/(const auto& l, const auto& r)
-{
-    throw std::invalid_argument("Invalid operands for division");
-}
-
 /* scaler ops with time_ */
 template <typename S, std::enable_if_t<is_real_v<S>, bool> = true>
 static inline time_ operator+(const S& s, const time_& t)
@@ -663,6 +637,51 @@ static inline mpf operator%(const mpq& q, const mpf& f)
 static inline mpf operator%(const mpf& f, const mpq& q)
 {
     return f % static_cast<mpf>(q);
+}
+
+// As the number of types are held within numeric grows, the
+// number of operators between them that *might* be needed
+// grows as a factorial of N. Since this quickly gets out of
+// hand for writing each pair, we start with a catch-all
+// operator of each kind that throws a runtime error saying
+// that this kind of operation is not supported between these
+// two types. Then, we go ahead and implement all the pairs
+// that actually make sense.
+
+template <typename T>
+concept require_numeric_types = variant_has_member<T, numeric>::value;
+
+template <typename L, typename R>
+struct combined_type
+{
+    using type = L;
+};
+template <typename L, typename R>
+using combined_type_t = combined_type<L, R>::type;
+
+auto operator+(const require_numeric_types auto& l,
+               const require_numeric_types auto& r)
+    -> combined_type_t<decltype(l), decltype(r)>
+{
+    throw std::invalid_argument("Invalid operands for addition");
+}
+auto operator-(const require_numeric_types auto& l,
+               const require_numeric_types auto& r)
+    -> combined_type_t<decltype(l), decltype(r)>
+{
+    throw std::invalid_argument("Invalid operands for subtraction");
+}
+auto operator*(const require_numeric_types auto& l,
+               const require_numeric_types auto& r)
+    -> combined_type_t<decltype(l), decltype(r)>
+{
+    throw std::invalid_argument("Invalid operands for multiplication");
+}
+auto operator/(const require_numeric_types auto& l,
+               const require_numeric_types auto& r)
+    -> combined_type_t<decltype(l), decltype(r)>
+{
+    throw std::invalid_argument("Invalid operands for division");
 }
 
 std::string mpz_to_bin_string(const mpz& v, std::streamsize width);
