@@ -9,45 +9,13 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/bimap.hpp>
-#include <exception>
+#include <exception.hpp>
 #include <functions/common.hpp>
 #include <numeric.hpp>
 #include <ostream>
 
 namespace smrty
 {
-
-class bad_conversion : public std::runtime_error
-{
-  public:
-    bad_conversion() : std::runtime_error("bad conversion")
-    {
-    }
-    ~bad_conversion() = default;
-};
-
-class unit_parse_error : public std::runtime_error
-{
-  public:
-    unit_parse_error() : std::runtime_error("unit parse error")
-    {
-    }
-    ~unit_parse_error() = default;
-};
-
-struct units_prohibited : public std::invalid_argument
-{
-    units_prohibited() : std::invalid_argument("Units not allowed")
-    {
-    }
-};
-
-struct units_mismatch : public std::invalid_argument
-{
-    units_mismatch() : std::invalid_argument("Units do not match")
-    {
-    }
-};
 
 namespace units
 {

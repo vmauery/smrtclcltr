@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <chrono>
 #include <concepts>
 #include <debug.hpp>
+#include <exception.hpp>
 #include <format>
 #include <program.hpp>
 #include <symbolic.hpp>
@@ -278,7 +279,7 @@ static inline smrty::symbolic operator+(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("symbolic+bob"));
+        throw smrty::not_yet_implemented("symbolic addition");
     }
     else
     {
@@ -289,7 +290,7 @@ static inline smrty::symbolic operator-(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("symbolic-bob"));
+        throw smrty::not_yet_implemented("symbolic subtraction");
     }
     else
     {
@@ -300,7 +301,7 @@ static inline smrty::symbolic operator*(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("symbolic*bob"));
+        throw smrty::not_yet_implemented("symbolic multiplication");
     }
     else
     {
@@ -311,7 +312,7 @@ static inline smrty::symbolic operator/(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("symbolic/bob"));
+        throw smrty::not_yet_implemented("symbolic division");
     }
     else
     {
@@ -322,7 +323,7 @@ static inline smrty::symbolic operator+(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("bob+symbolic"));
+        throw smrty::not_yet_implemented("symbolic addition");
     }
     else
     {
@@ -333,7 +334,7 @@ static inline smrty::symbolic operator-(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("bob-symbolic"));
+        throw smrty::not_yet_implemented("symbolic subtraction");
     }
     else
     {
@@ -344,7 +345,7 @@ static inline smrty::symbolic operator*(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("bob*symbolic"));
+        throw smrty::not_yet_implemented("symbolic multiplication");
     }
     else
     {
@@ -355,7 +356,7 @@ static inline smrty::symbolic operator/(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        return smrty::symbolic(std::string("bob/symbolic"));
+        throw smrty::not_yet_implemented("symbolic division");
     }
     else
     {

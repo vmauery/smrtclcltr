@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <cmath>
 #include <debug.hpp>
 #include <deque>
+#include <exception.hpp>
 #include <function_library.hpp>
 #include <functional>
 #include <map>
@@ -21,13 +22,6 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace smrty
 {
-
-struct insufficient_args : public std::runtime_error
-{
-    insufficient_args() : std::runtime_error("Insufficient arguments")
-    {
-    }
-};
 
 template <typename... I>
 struct conversion
