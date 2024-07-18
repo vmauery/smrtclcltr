@@ -62,6 +62,27 @@ program::program(const program& o) :
 {
 }
 
+program::program(program&& o) :
+    body(std::move(o.body)), next(body.begin()), standalone(o.standalone)
+{
+}
+
+program& program::operator=(const program& o)
+{
+    body = o.body;
+    next = body.begin();
+    standalone = o.standalone;
+    return *this;
+}
+
+program& program::operator=(program&& o)
+{
+    body = std::move(o.body);
+    next = body.begin();
+    standalone = o.standalone;
+    return *this;
+}
+
 program::~program()
 {
 }

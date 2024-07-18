@@ -42,7 +42,7 @@ struct execute : public CalcFunction
         {
             throw std::invalid_argument("argument is not a program");
         }
-        program prog = std::move(*p);
+        program prog{*p};
         calc.stack.pop_front();
 
         return prog.execute(

@@ -69,13 +69,6 @@ struct log
     log() = delete;
 };
 
-// deduction guides
-template <level L = level::debug, typename... Args>
-explicit log(const char*, Args&&...) -> log<L, Args...>;
-
-template <level L = level::debug, typename... Args>
-explicit log(const source_location&, const char*, Args&&...) -> log<L, Args...>;
-
 // Easy access for lg::level(...) -> lg::log<level>(...)
 #define MK_LOG_LVL(lvl)                                                        \
     template <typename... Ts>                                                  \

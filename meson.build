@@ -26,6 +26,8 @@ add_project_arguments(['-Wno-unused-parameter'], language: 'cpp')
 
 if (cxx.get_id() == 'gcc')
   add_project_arguments(['-fpermissive'], language: 'cpp')
+  # boost has as return std::move(...) that causes an error with -Wall
+  add_project_arguments(['-Wno-pessimizing-move'], language: 'cpp')
 endif
 build = get_option('buildtype')
 

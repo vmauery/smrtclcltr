@@ -50,6 +50,9 @@ struct program : public statement
     program();
     program(const program&);
     program(const instructions&);
+    program(program&&);
+    program& operator=(const program&);
+    program& operator=(program&&);
     virtual ~program();
 
     virtual const simple_instruction& next_item(execution_flags&) final;
