@@ -7,6 +7,9 @@ project('smrtclcltr', 'cpp',
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
     'cpp_std=c++23',
+    'b_lto_mode=default',
+    'b_lto_threads=0',
+    'b_lto=true',
     ]
   )
 
