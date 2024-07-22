@@ -11,7 +11,6 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <functions/common.hpp>
 #include <iostream>
 #include <numeric.hpp>
-#include <program.hpp>
 #include <regex>
 #include <type_helpers.hpp>
 #include <variant>
@@ -573,6 +572,17 @@ std::string mpz_to_bin_string(const mpz& v, std::streamsize width)
         out.push_back('0');
     }
     return out;
+}
+
+mpx make_mpx(const smrty::number_parts& num)
+{
+    numeric nval = make_numeric(itm);
+    mpx val;
+    if (!reduce(nval, val)())
+    {
+        return {};
+    }
+    return val;
 }
 
 numeric make_numeric(const smrty::number_parts& num)

@@ -27,8 +27,9 @@ struct execution_flags
 struct if_elif_statement;
 struct program;
 
-using simple_instruction = std::variant<bool, number_parts, compound_parts,
-                                        time_parts, function_parts, program>;
+using simple_instruction =
+    std::variant<bool, number_parts, compound_parts, time_parts, function_parts,
+                 symbolic_parts_ptr, program>;
 using simple_instructions = std::vector<simple_instruction>;
 
 // TODO: add control statement types to instruction variant
@@ -92,6 +93,20 @@ struct if_elif_statement : public statement
     // if_elif_statement(condition)
     // set_statement
     // add_else
+
+    using condition = std::tuple<bool, simple_program, program>;
+    std::vector<condition> branches;
+    std::vector<condition>::iterator current_branch;
+};
+
+struct for_statement : public statement
+{
+    for_statement();
+    for_statement(const if_elif_statement& o);
+    virtual ~for_statement();
+
+    const simple_instruction& branch_next_item(execution_flags&);
+    virtual const simple_instruction& next_item(execution_flags&) final;
 
     using condition = std::tuple<bool, simple_program, program>;
     std::vector<condition> branches;

@@ -12,8 +12,6 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <debug.hpp>
 #include <exception.hpp>
 #include <format>
-#include <program.hpp>
-#include <symbolic.hpp>
 #include <type_helpers.hpp>
 #include <variant>
 
@@ -174,6 +172,12 @@ using time_ = basic_time<mpq>;
 using matrix = basic_matrix<mpx>;
 using list = basic_list<mpx>;
 
+// clang-format off
+// symbolic uses mpx
+#include <symbolic.hpp>
+#include <program.hpp>
+// clang-format on
+
 using numeric = std::variant<mpz, mpq, mpf, mpc, list, matrix, time_,
                              smrty::program, smrty::symbolic>;
 
@@ -202,6 +206,7 @@ time_ parse_time(std::string_view s);
 matrix parse_matrix(std::string_view s);
 list parse_list(std::string_view s);
 
+mpx make_mpx(const smrty::number_parts&);
 numeric make_numeric(const smrty::number_parts&);
 numeric make_numeric(const smrty::single_number_parts&);
 numeric make_numeric(const smrty::two_number_parts&);

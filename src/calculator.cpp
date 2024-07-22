@@ -197,10 +197,10 @@ bool Calculator::run_one(const simple_instruction& itm)
         // operation should always be present,
         const auto& fn_name = fn_name_by_id(n->index);
         auto fn = fn_get_fn_ptr_by_name(fn_name);
-        if (n->args.size())
+        if (n->re_args.size())
         {
-            lg::debug("executing function '{}({})'\n", fn_name, n->args);
-            return fn->reop(*this, n->args);
+            lg::debug("executing function '{}({})'\n", fn_name, n->re_args);
+            return fn->reop(*this, n->re_args);
         }
         else
         {

@@ -11,7 +11,6 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <map>
 #include <numeric.hpp>
 #include <optional>
-#include <program.hpp>
 #include <regex>
 #include <stack_entry.hpp>
 #include <string>

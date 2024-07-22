@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
 #include <format>
+#include <function_library.hpp>
 #include <parser.hpp>
 #include <regex>
 #include <std_container_format.hpp>
@@ -15,10 +16,16 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace smrty
 {
-struct function_parts
+
+constexpr size_t invalid_function = static_cast<size_t>(-1);
+
+enum class symbolic_op
 {
-    size_t index;
-    std::vector<std::string> args;
+    none,
+    paren,
+    prefix,
+    infix,
+    postfix,
 };
 
 struct single_number_parts
@@ -28,6 +35,12 @@ struct single_number_parts
         full()
     {
     }
+    single_number_parts(int sign, const std::string& value) :
+        base(10), mantissa_sign(sign), mantissa(value), exponent_sign(1),
+        exponent(), full(std::format("{}{}", (sign < 0 ? "-" : ""), value))
+    {
+    }
+
     int base;
     int mantissa_sign;
     std::string mantissa;
@@ -54,6 +67,62 @@ struct two_number_parts
 };
 
 using number_parts = std::variant<single_number_parts, two_number_parts>;
+
+struct symbolic_parts;
+struct symbolic_parts_ptr
+{
+    symbolic_parts_ptr() : ptr(std::make_shared<symbolic_parts>())
+    {
+    }
+    symbolic_parts& operator()()
+    {
+        return *ptr;
+    }
+    const symbolic_parts& operator()() const
+    {
+        return *ptr;
+    }
+    std::shared_ptr<symbolic_parts> ptr;
+};
+
+struct symbolic_parts
+{
+    using operand = std::variant<std::monostate, std::string, number_parts,
+                                 symbolic_parts_ptr>;
+
+    symbolic_parts() :
+        count(counter++), fn_index(invalid_function),
+        fn_style(symbolic_op::none), left(std::monostate()),
+        right(std::monostate())
+    {
+    }
+    size_t fn_index;
+    symbolic_op fn_style;
+
+    // operand is a number, or a variable, or other symbolic
+    operand left;
+    operand right;
+
+    size_t count;
+    static size_t counter;
+};
+
+struct function_parts
+{
+    function_parts() :
+        fn_index(invalid_function), fn_style(symbolic_op::none), re_args()
+    {
+    }
+    explicit function_parts(size_t id) :
+        fn_index(id), fn_style(symbolic_op::none), re_args()
+    {
+    }
+    size_t fn_index;
+    symbolic_op fn_style;
+
+    // re_args is used directly to execute re_op functions
+    std::vector<std::string> re_args;
+};
 
 struct time_parts
 {
@@ -89,6 +158,19 @@ struct compound_parts
 
 } // namespace smrty
 
+/*
+template <>
+struct std::formatter<smrty::symbolic_parts>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin());
+
+    template <typename FormatContext>
+    auto format(const smrty::function_parts& fn,
+                FormatContext& ctx) const -> decltype(ctx.out());
+};
+*/
+
 template <>
 struct std::formatter<smrty::function_parts>
 {
@@ -105,10 +187,10 @@ struct std::formatter<smrty::function_parts>
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto out = ctx.out();
-        out = std::format_to(out, "{}", smrty::parser::fn_name_by_id(fn.index));
-        if (fn.args.size())
+        out = std::format_to(out, "{}", smrty::fn_name_by_id(fn.fn_index));
+        if (fn.re_args.size())
         {
-            out = std::format_to(out, "({:, })", fn.args);
+            out = std::format_to(out, "({:, })", fn.re_args);
         }
         return out;
     }
@@ -254,6 +336,69 @@ struct std::formatter<smrty::time_parts>
         {
             out = std::format_to(out, "{}{}", t.duration, t.suffix);
         }
+        return out;
+    }
+};
+
+template <>
+struct std::formatter<smrty::symbolic_parts>
+{
+    // Parses format like the standard int parser
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // TODO: at some point, a pretty vs oneline option might be nice
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const smrty::symbolic_parts& sym,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        out =
+            std::format_to(out, "[#{}: id:{}, style:{}, left:{}, right:{}]",
+                           sym.count, smrty::fn_name_by_id(sym.fn_index),
+                           static_cast<int>(sym.fn_style), sym.left, sym.right);
+        return out;
+        // number_parts or symbolic_parts single operand
+        if (sym.fn_index == smrty::invalid_function)
+        {
+            out = std::format_to(out, "[#{}: {}]", sym.count, sym.left);
+            return out;
+        }
+        // multi-part op
+        if (sym.fn_style == smrty::symbolic_op::infix)
+        {
+            out = std::format_to(out, "[#{}: {} {} {}]", sym.count, sym.left,
+                                 smrty::fn_name_by_id(sym.fn_index), sym.right);
+        }
+        else
+        {
+            out = std::format_to(out, "[#{}: {}({})]", sym.count,
+                                 smrty::fn_name_by_id(sym.fn_index), sym.left);
+        }
+        return out;
+    }
+};
+
+template <>
+struct std::formatter<smrty::symbolic_parts_ptr>
+{
+    // Parses format like the standard int parser
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // TODO: at some point, a pretty vs oneline option might be nice
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const smrty::symbolic_parts_ptr& ptr,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        out = std::format_to(out, "{}", *(ptr.ptr));
         return out;
     }
 };

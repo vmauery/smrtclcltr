@@ -65,6 +65,31 @@ std::optional<std::string_view> auto_complete(std::string_view in, int state)
     return std::nullopt;
 }
 
+namespace smrty
+{
+// this is normally defined in function_library.cpp, but we don't
+// actually have any functions defined; only stubs. So define a fake here.
+std::string_view fn_name_by_id(size_t id)
+{
+    if (id < operations.size())
+    {
+        return operations[id];
+    }
+    static constexpr std::string_view invalid_function{"<invalid-fn>"};
+    return invalid_function;
+}
+size_t fn_id_by_name(std::string_view name)
+{
+    const auto& fn = std::find(operations.begin(), operations.end(), name);
+    if (fn == operations.end())
+    {
+        throw std::invalid_argument(
+            std::format("Function '{}' does not exist", name));
+    }
+    return std::distance(operations.begin(), fn);
+}
+} // namespace smrty
+
 int main(int argc, char* argv[])
 {
     lg::debug_level = lg::level::debug;

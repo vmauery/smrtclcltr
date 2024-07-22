@@ -145,6 +145,27 @@ struct std::formatter<Cntnr>
     }
 };
 
+template <>
+struct std::formatter<std::monostate>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // literally nothing to parse here
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const std::monostate&,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        constexpr std::string_view name{"monostate"};
+        out = std::copy(name.begin(), name.end(), out);
+        return out;
+    }
+};
+
 template <typename... Types>
 struct std::formatter<std::variant<Types...>>
 {
@@ -180,7 +201,7 @@ struct std::formatter<std::variant<Types...>>
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
         const auto& fmtstr = sub_formats[t.index()];
-        lg::debug("fmtstr[{}] = {}\n", t.index(), fmtstr);
+        // lg::debug("fmtstr[{}] = {}\n", t.index(), fmtstr);
         return std::visit(
             [&fmtstr, &ctx](const auto& v) {
                 return std::vformat_to(ctx.out(), fmtstr,

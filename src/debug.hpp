@@ -43,10 +43,20 @@ enum class level
 };
 extern level debug_level;
 
+static inline size_t get_file_offset()
+{
+    auto here = std::source_location::current();
+    std::string_view debug_header = here.file_name();
+    constexpr size_t debug_hpp_len = std::string_view{"debug.hpp"}.size();
+    return debug_header.size() - debug_hpp_len;
+}
+
 static inline void _log(const source_location& sl, std::string_view message)
 {
-    std::string msg =
-        std::format("{:s}:{:d}: {:s}", sl.file_name(), sl.line(), message);
+    static const size_t file_offset = get_file_offset();
+    std::string_view file{sl.file_name()};
+    std::string msg = std::format("{:s}:{:d}: {:s}", file.substr(file_offset),
+                                  sl.line(), message);
     ui::get()->err(msg);
 }
 

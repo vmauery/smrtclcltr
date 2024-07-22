@@ -4,7 +4,7 @@ project('smrtclcltr', 'cpp',
   default_options : [
     'werror=true',
     'warning_level=3',
-    'buildtype=debugoptimized',
+    'buildtype=debug',
     'b_ndebug=if-release',
     'cpp_std=c++23',
     'b_lto_mode=default',

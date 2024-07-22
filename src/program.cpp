@@ -4,8 +4,8 @@ Copyright © 2024 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <numeric.hpp>
 #include <parser.hpp>
-#include <program.hpp>
 
 namespace smrty
 {
