@@ -761,8 +761,7 @@ auto const parse_variable = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_variable);
     lg::debug("parse_variable: val={}, attr={}\n", val, attr);
-    std::string v{&attr, 1};
-    val().left = v;
+    val().left = attr;
     lg::debug("                val={}, attr={}\n", val, attr);
 };
 
@@ -941,7 +940,7 @@ auto const store_expr_fn = [](auto& ctx) {
 // 2   3
 
 // all symbolic instruction types make symbolic_parts
-auto const variable_def = bp::char_('a', 'z')[parse_variable];
+auto const variable_def = (+bp::char_('a', 'z'))[parse_variable];
 auto const paren_expr_def = "("_l > addsub[parse_expr_passthru_1] > ")"_l;
 auto const paren_fn_def = paren_op[parse_function];
 auto const paren_fn_call_def =

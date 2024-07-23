@@ -52,6 +52,7 @@ clcltr_src = [
   'calculator.cpp',
   'numeric.cpp',
   'stack_entry.cpp',
+  'symbolic.cpp',
   'units.cpp',
   version_src,
   ]

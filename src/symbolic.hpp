@@ -37,95 +37,40 @@ namespace smrty
 //                         var(y)  num(2)
 //
 
-// defined in numeric.cpp; declared here for ease
-mpx make_mpx(const smrty::number_parts&);
-
-struct symbolic_base
+struct symbolic_actual;
+class symbolic
 {
-    symbolic_base()
-    {
-    }
-    virtual ~symbolic_base()
-    {
-    }
-    virtual void make_me_polymorphic()
-    {
-    }
+  public:
+    symbolic();
+    symbolic(const symbolic_parts_ptr& o);
+    symbolic(const symbolic& o);
+    symbolic& operator=(const symbolic& o);
+    symbolic_actual& operator*() const;
+
+    symbolic operator+(const symbolic& o) const;
+    symbolic operator-(const symbolic& o) const;
+    symbolic operator*(const symbolic& o) const;
+    symbolic operator/(const symbolic& o) const;
+
+  protected:
+    std::shared_ptr<symbolic_actual> ptr;
 };
+
 using symbolic_operand =
-    std::variant<std::monostate, std::string, mpx, symbolic_base>;
+    std::variant<std::monostate, std::string, mpx, symbolic>;
 
-struct symbolic : public symbolic_base
+struct symbolic_actual
 {
-    symbolic() : fn_index(invalid_function), fn_style(symbolic_op::none)
-    {
-    }
+    explicit symbolic_actual(symbolic& creator);
+    symbolic_actual(symbolic& creator, const symbolic_actual& o);
+    symbolic_actual(symbolic& creator, const symbolic_parts& parts);
 
-    symbolic(const symbolic_parts& parts) :
-        fn_index(parts.fn_index), fn_style(parts.fn_style)
-    {
-        auto get_arg = [](const auto& a) -> symbolic_operand {
-            if constexpr (same_type_v<decltype(a), std::string>)
-            {
-                return a;
-            }
-            else if constexpr (same_type_v<decltype(a), number_parts>)
-            {
-                return make_mpx(a);
-            }
-            else if constexpr (same_type_v<decltype(a), symbolic_parts>)
-            {
-                return symbolic(a);
-            }
-            else
-            {
-                return std::monostate();
-            }
-        };
-        left = get_arg(parts.left);
-        right = get_arg(parts.right);
-    }
+    symbolic operator+(const symbolic_actual& o) const;
+    symbolic operator-(const symbolic_actual& o) const;
+    symbolic operator*(const symbolic_actual& o) const;
+    symbolic operator/(const symbolic_actual& o) const;
 
-    symbolic operator+(const symbolic& o) const
-    {
-        symbolic sum{};
-        sum.fn_index = fn_id_by_name("+");
-        sum.fn_style = symbolic_op::infix;
-        sum.left = *this;
-        sum.right = o;
-        return sum;
-    }
-
-    symbolic operator-(const symbolic& o) const
-    {
-        symbolic diff{};
-        diff.fn_index = fn_id_by_name("-");
-        diff.fn_style = symbolic_op::infix;
-        diff.left = *this;
-        diff.right = o;
-        return diff;
-    }
-
-    symbolic operator*(const symbolic& o) const
-    {
-        symbolic prod{};
-        prod.fn_index = fn_id_by_name("*");
-        prod.fn_style = symbolic_op::infix;
-        prod.left = *this;
-        prod.right = o;
-        return prod;
-    }
-
-    symbolic operator/(const symbolic& o) const
-    {
-        symbolic div{};
-        div.fn_index = fn_id_by_name("/");
-        div.fn_style = symbolic_op::infix;
-        div.left = *this;
-        div.right = o;
-        return div;
-    }
-
+    std::reference_wrapper<symbolic> box;
     size_t fn_index;
     symbolic_op fn_style;
     symbolic_operand left;
@@ -135,7 +80,7 @@ struct symbolic : public symbolic_base
 } // namespace smrty
 
 template <>
-struct std::formatter<smrty::symbolic>
+struct std::formatter<smrty::symbolic_actual>
 {
     // Parses format like the standard int parser
     template <typename ParseContext>
@@ -146,7 +91,7 @@ struct std::formatter<smrty::symbolic>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::symbolic& sym,
+    auto format(const smrty::symbolic_actual& sym,
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto out = ctx.out();
@@ -170,15 +115,33 @@ struct std::formatter<smrty::symbolic>
             return out;
         }
         // multi-part op
-
-        out = std::format_to(out, "{}",
-                             smrty::parser::fn_name_by_id(sym.fn_index));
+        if (sym.fn_style == smrty::symbolic_op::infix)
+        {
+            out = std::format_to(out, "{}{}{}", sym.left,
+                                 smrty::fn_name_by_id(sym.fn_index), sym.right);
+        }
+        else if (sym.fn_style == smrty::symbolic_op::prefix)
+        {
+            out = std::format_to(out, "{}{}",
+                                 smrty::fn_name_by_id(sym.fn_index), sym.left);
+        }
+        else if (sym.fn_style == smrty::symbolic_op::postfix)
+        {
+            out = std::format_to(out, "{}{}", sym.left,
+                                 smrty::fn_name_by_id(sym.fn_index));
+        }
+        else
+        {
+            out = std::format_to(out, "({}: {}, {})",
+                                 smrty::fn_name_by_id(sym.fn_index), sym.left,
+                                 sym.right);
+        }
         return out;
     }
 };
 
 template <>
-struct std::formatter<smrty::symbolic_base>
+struct std::formatter<smrty::symbolic>
 {
     // Parses format like the standard int parser
     template <typename ParseContext>
@@ -189,21 +152,11 @@ struct std::formatter<smrty::symbolic_base>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::symbolic_base& b,
+    auto format(const smrty::symbolic& b,
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto out = ctx.out();
-        // assume it's actually a symbolic
-        try
-        {
-            auto sym = dynamic_cast<const smrty::symbolic&>(b);
-            out = std::format_to(out, "{}", sym);
-        }
-        catch (const std::bad_cast&)
-        {
-            static constexpr std::string_view empty{"{}"};
-            return std::copy(empty.begin(), empty.end(), out);
-        }
+        out = std::format_to(out, "{}", *b);
         return out;
     }
 };

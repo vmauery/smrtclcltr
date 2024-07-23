@@ -189,6 +189,8 @@ static constexpr auto numeric_types = std::to_array<const char*>({
     "list",
     "matrix",
     "time",
+    "program",
+    "symbolic",
 });
 
 mpz make_fixed(const mpz& v, int bits, bool is_signed);

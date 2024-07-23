@@ -576,7 +576,7 @@ std::string mpz_to_bin_string(const mpz& v, std::streamsize width)
 
 mpx make_mpx(const smrty::number_parts& num)
 {
-    numeric nval = make_numeric(itm);
+    numeric nval = make_numeric(num);
     mpx val;
     if (!reduce(nval, val)())
     {

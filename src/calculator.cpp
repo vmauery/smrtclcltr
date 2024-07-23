@@ -195,7 +195,7 @@ bool Calculator::run_one(const simple_instruction& itm)
     if (auto n = std::get_if<function_parts>(&itm); n)
     {
         // operation should always be present,
-        const auto& fn_name = fn_name_by_id(n->index);
+        const auto& fn_name = fn_name_by_id(n->fn_index);
         auto fn = fn_get_fn_ptr_by_name(fn_name);
         if (n->re_args.size())
         {
@@ -243,6 +243,10 @@ bool Calculator::run_one(const simple_instruction& itm)
         {
             // put it on the stack
             e.value(*n, flags);
+        }
+        else if (auto n = std::get_if<symbolic_parts_ptr>(&itm); n)
+        {
+            e.value(symbolic(*n), flags);
         }
         stack.push_front(std::move(e));
     }
