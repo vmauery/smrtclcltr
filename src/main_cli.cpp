@@ -48,6 +48,10 @@ int cpp_main(std::span<std::string_view> args)
     {
         pargs = args.subspan(i);
     }
+    // need to hold a reference to UI so we don't crash on shutdown
+    // if messages print
+    auto out = ui::get();
+
     smrty::Calculator& calc = smrty::Calculator::get();
     try
     {
@@ -60,5 +64,6 @@ int cpp_main(std::span<std::string_view> args)
         std::string nextline;
         std::getline(std::cin, nextline);
     }
+    out.reset();
     return 0;
 }
