@@ -14,6 +14,56 @@ namespace smrty
 // internal calculator functions
 namespace function
 {
+struct Exit : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"exit"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: exit\n"
+            "    Alias: quit\n"
+            "\n"
+            "    Stops execution of smrtclcltr and exits\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        calc.stop();
+        return false;
+    }
+    virtual const std::string_view regex() const final
+    {
+        static const auto _regex = "quit";
+        return _regex;
+    }
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
+    {
+        calc.stop();
+        return false;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
 struct version : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -867,6 +917,7 @@ struct Help : public CalcFunction
 } // namespace function
 } // namespace smrty
 
+register_calc_fn(Exit);
 register_calc_fn(version);
 register_calc_fn(debug);
 register_calc_fn(verbose);

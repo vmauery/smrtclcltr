@@ -79,6 +79,10 @@ class Calculator
     }
     bool run(std::string_view);
     bool run_help(std::string_view fn = {});
+    void stop()
+    {
+        _running = false;
+    }
 
     // used by functions
     bool undo();
