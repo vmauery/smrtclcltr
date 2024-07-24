@@ -64,7 +64,7 @@ bool one_arg_op(Calculator& calc, const Fn& fn)
     {
         throw std::invalid_argument("Requires 1 argument");
     }
-    stack_entry a = calc.stack.front();
+    stack_entry& a = calc.stack.front();
 
     auto [cv, nu] = std::visit(
         [&fn, ua{a.unit()}](const auto& a) { return fn(a, ua); }, a.value());
@@ -94,7 +94,7 @@ struct one_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
         {
             throw std::invalid_argument("Requires 1 argument");
         }
-        stack_entry a = calc.stack.front();
+        stack_entry& a = calc.stack.front();
         numeric ca = a.value();
         conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
         std::variant<Ltypes...> lca;
@@ -122,7 +122,7 @@ bool one_arg_limited_op(Calculator& calc, const Fn& fn)
     {
         throw std::invalid_argument("Requires 1 argument");
     }
-    stack_entry a = calc.stack.front();
+    stack_entry& a = calc.stack.front();
     std::variant<AllowedTypes...> la;
     if (!variant_holds_type<AllowedTypes...>(a.value()))
     {
@@ -150,7 +150,7 @@ bool one_arg_limited_multi_return_op(Calculator& calc, const Fn& fn)
     {
         throw std::invalid_argument("Requires 1 argument");
     }
-    stack_entry a = calc.stack.front();
+    stack_entry& a = calc.stack.front();
     std::variant<AllowedTypes...> la;
     if (!variant_holds_type<AllowedTypes...>(a.value()))
     {
@@ -181,8 +181,8 @@ bool two_arg_op(Calculator& calc, const Fn& fn)
     {
         throw std::invalid_argument("Requires 2 arguments");
     }
-    stack_entry a = calc.stack[1];
-    stack_entry b = calc.stack[0];
+    stack_entry& a = calc.stack[1];
+    stack_entry& b = calc.stack[0];
 
     if (a.unit().compat(b.unit()))
     {
@@ -268,8 +268,8 @@ struct two_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
         {
             throw std::invalid_argument("Requires 2 arguments");
         }
-        stack_entry a = calc.stack[1];
-        stack_entry b = calc.stack[0];
+        stack_entry& a = calc.stack[1];
+        stack_entry& b = calc.stack[0];
 
         lg::debug("a: ({} (type {}))\n", a.value(), DEBUG_TYPE(a.value()));
         lg::debug("b: ({} (type {}))\n", b.value(), DEBUG_TYPE(b.value()));
@@ -320,8 +320,8 @@ bool two_arg_limited_op(Calculator& calc, const Fn& fn)
         throw std::invalid_argument("Requires 2 arguments");
     }
 
-    stack_entry a = calc.stack[1];
-    stack_entry b = calc.stack[0];
+    stack_entry& a = calc.stack[1];
+    stack_entry& b = calc.stack[0];
 
     if (!variant_holds_type<AllowedTypes...>(a.value()) ||
         !variant_holds_type<AllowedTypes...>(b.value()))
@@ -364,9 +364,9 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
         throw std::invalid_argument("Requires 3 arguments");
     }
 
-    stack_entry a = calc.stack[2];
-    stack_entry b = calc.stack[1];
-    stack_entry c = calc.stack[0];
+    stack_entry& a = calc.stack[2];
+    stack_entry& b = calc.stack[1];
+    stack_entry& c = calc.stack[0];
 
     if (a.unit().compat(b.unit()))
     {
