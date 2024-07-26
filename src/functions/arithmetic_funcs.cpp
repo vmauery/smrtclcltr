@@ -42,7 +42,7 @@ bool multiply_from_stack(Calculator& calc)
 bool divide_from_stack(Calculator& calc)
 {
     return two_arg_conv<ITypes<mpz>, OTypes<mpq>,
-                        LTypes<mpq, mpf, mpc, time_, matrix, list>>::
+                        LTypes<mpq, mpf, mpc, time_, matrix, list, symbolic>>::
         op(calc,
            [](const auto& a, const auto& b, const units::unit& ua,
               const units::unit& ub) -> std::tuple<numeric, units::unit> {
