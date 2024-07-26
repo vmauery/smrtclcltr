@@ -33,12 +33,13 @@ struct logarithm : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-                            LTypes<mpf, mpc>>::
+                            LTypes<mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit&) -> std::tuple<numeric, units::unit> {
                    mpf log10 = log_fn(mpf{10.0l});
-                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   if constexpr (same_type_v<decltype(a), mpc> ||
+                                 same_type_v<decltype(a), symbolic>)
                    {
                        return {log_fn(a) / log10, units::unit()};
                    }
@@ -93,11 +94,12 @@ struct natural_logarithm : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-                            LTypes<mpf, mpc>>::
+                            LTypes<mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit&) -> std::tuple<numeric, units::unit> {
-                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   if constexpr (same_type_v<decltype(a), mpc> ||
+                                 same_type_v<decltype(a), symbolic>)
                    {
                        return {log_fn(a), units::unit()};
                    }
@@ -151,12 +153,13 @@ struct log_base_two : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-                            LTypes<mpf, mpc>>::
+                            LTypes<mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit&) -> std::tuple<numeric, units::unit> {
                    mpf log2 = log_fn(mpf{2.0l});
-                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   if constexpr (same_type_v<decltype(a), mpc> ||
+                                 same_type_v<decltype(a), symbolic>)
                    {
                        return {log_fn(a) / log2, units::unit()};
                    }

@@ -204,25 +204,16 @@ struct gcd : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        stack_entry e1 = calc.stack[1];
-        stack_entry e0 = calc.stack[0];
-        if (e0.unit() != units::unit() || e1.unit() != units::unit())
-        {
-            throw units_prohibited();
-        }
-        const mpz* v = std::get_if<mpz>(&e1.value());
-        const mpz* u = std::get_if<mpz>(&e0.value());
-        if (!v || !u)
-        {
-            throw std::invalid_argument("Requires an integer");
-        }
-        calc.stack.pop_front();
-        calc.stack.pop_front();
-        mpz f = gcd_fn(*v, *u);
-        calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed,
-                                 calc.flags);
-        return true;
+        return two_arg_limited_op<mpz, symbolic>(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw units_mismatch();
+                }
+                return {gcd_fn(a, b), ua};
+            });
     }
     int num_args() const final
     {
@@ -260,25 +251,16 @@ struct lcm : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        stack_entry e1 = calc.stack[1];
-        stack_entry e0 = calc.stack[0];
-        if (e0.unit() != units::unit() || e1.unit() != units::unit())
-        {
-            throw units_prohibited();
-        }
-        const mpz* v = std::get_if<mpz>(&e1.value());
-        const mpz* u = std::get_if<mpz>(&e0.value());
-        if (!v || !u)
-        {
-            throw std::invalid_argument("Requires an integer");
-        }
-        calc.stack.pop_front();
-        calc.stack.pop_front();
-        mpz f = lcm_fn(*v, *u);
-        calc.stack.emplace_front(f, calc.config.base, calc.config.fixed_bits,
-                                 calc.config.precision, calc.config.is_signed,
-                                 calc.flags);
-        return true;
+        return two_arg_limited_op<mpz, symbolic>(
+            calc,
+            [](const auto& a, const auto& b, const units::unit& ua,
+               const units::unit& ub) -> std::tuple<numeric, units::unit> {
+                if (ua != ub)
+                {
+                    throw units_mismatch();
+                }
+                return {lcm_fn(a, b), ua};
+            });
     }
     int num_args() const final
     {

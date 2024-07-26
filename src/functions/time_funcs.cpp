@@ -304,7 +304,7 @@ struct calendar : public CalcFunction
         auto ui = ui::get();
         auto last_day =
             unsigned((ymd.year() / ymd.month() / std::chrono::last).day());
-        unsigned num_weeks = ceil((1 + first_dom + last_day) / 7.0);
+        unsigned num_weeks = std::ceil((1 + first_dom + last_day) / 7.0);
         /*
         Make it loook like this:
         ------------------------

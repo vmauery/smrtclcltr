@@ -561,6 +561,10 @@ void Calculator::show_stack()
                 ui->out("{}{:{:d}{:.5f}{:.5f}{:.5i}}{}\n", row_idx, *lst,
                         it->unit());
             }
+            else if (auto sym = std::get_if<symbolic>(&v); sym)
+            {
+                ui->out("{}'{}'{}\n", row_idx, *sym, it->unit());
+            }
             else
             {
                 std::visit(

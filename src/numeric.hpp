@@ -286,7 +286,8 @@ static inline smrty::symbolic operator+(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic addition");
+        // make the mpx into a symbolic and try with that
+        return s + smrty::symbolic(o);
     }
     else
     {
@@ -297,7 +298,7 @@ static inline smrty::symbolic operator-(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic subtraction");
+        return s - smrty::symbolic(o);
     }
     else
     {
@@ -308,7 +309,7 @@ static inline smrty::symbolic operator*(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic multiplication");
+        return s * smrty::symbolic(o);
     }
     else
     {
@@ -319,7 +320,18 @@ static inline smrty::symbolic operator/(const smrty::symbolic& s, const auto& o)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic division");
+        return s / smrty::symbolic(o);
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
+}
+static inline smrty::symbolic operator%(const smrty::symbolic& s, const auto& o)
+{
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return s % smrty::symbolic(o);
     }
     else
     {
@@ -330,7 +342,7 @@ static inline smrty::symbolic operator+(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic addition");
+        return smrty::symbolic(o) + s;
     }
     else
     {
@@ -341,7 +353,7 @@ static inline smrty::symbolic operator-(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic subtraction");
+        return smrty::symbolic(o) - s;
     }
     else
     {
@@ -352,7 +364,7 @@ static inline smrty::symbolic operator*(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic multiplication");
+        return smrty::symbolic(o) * s;
     }
     else
     {
@@ -363,7 +375,18 @@ static inline smrty::symbolic operator/(const auto& o, const smrty::symbolic& s)
 {
     if constexpr (is_one_of_v<decltype(o), mpx>)
     {
-        throw smrty::not_yet_implemented("symbolic division");
+        return smrty::symbolic(o) / s;
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid argument for symbolic operations");
+    }
+}
+static inline smrty::symbolic operator%(const auto& o, const smrty::symbolic& s)
+{
+    if constexpr (is_one_of_v<decltype(o), mpx>)
+    {
+        return smrty::symbolic(o) % s;
     }
     else
     {

@@ -418,15 +418,22 @@ template <typename Fn>
 std::tuple<numeric, units::unit> scaled_trig_op(Calculator& calc, auto a,
                                                 const Fn& fn)
 {
-    if (calc.config.angle_mode == Calculator::e_angle_mode::degrees)
+    if constexpr (same_type_v<decltype(a), symbolic>)
     {
-        a *= boost::math::constants::pi<mpf>() / one_eighty_f;
+        return {fn(a), units::unit()};
     }
-    else if (calc.config.angle_mode == Calculator::e_angle_mode::gradians)
+    else
     {
-        a *= boost::math::constants::pi<mpf>() / two_hundred_f;
+        if (calc.config.angle_mode == Calculator::e_angle_mode::degrees)
+        {
+            a *= boost::math::constants::pi<mpf>() / one_eighty_f;
+        }
+        else if (calc.config.angle_mode == Calculator::e_angle_mode::gradians)
+        {
+            a *= boost::math::constants::pi<mpf>() / two_hundred_f;
+        }
+        return {fn(a), units::unit()};
     }
-    return {fn(a), units::unit()};
 }
 
 template <typename Fn>
@@ -434,15 +441,22 @@ std::tuple<numeric, units::unit> scaled_trig_op_inv(Calculator& calc,
                                                     const auto& a, const Fn& fn)
 {
     auto b = fn(a);
-    if (calc.config.angle_mode == Calculator::e_angle_mode::degrees)
+    if constexpr (same_type_v<decltype(a), symbolic>)
     {
-        b *= one_eighty_f / boost::math::constants::pi<mpf>();
+        return {b, units::unit()};
     }
-    else if (calc.config.angle_mode == Calculator::e_angle_mode::gradians)
+    else
     {
-        b *= two_hundred_f / boost::math::constants::pi<mpf>();
+        if (calc.config.angle_mode == Calculator::e_angle_mode::degrees)
+        {
+            b *= one_eighty_f / boost::math::constants::pi<mpf>();
+        }
+        else if (calc.config.angle_mode == Calculator::e_angle_mode::gradians)
+        {
+            b *= two_hundred_f / boost::math::constants::pi<mpf>();
+        }
+        return {b, units::unit()};
     }
-    return {b, units::unit()};
 }
 
 template <typename Fn>

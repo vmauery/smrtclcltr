@@ -241,6 +241,7 @@ bp::rule<class paren_fn_call, symbolic_parts_ptr> const paren_fn_call =
     "Function call";
 bp::rule<class expr_atomic, symbolic_parts_ptr> const expr_atomic =
     "Atomic expression";
+bp::rule<class factorial, symbolic_parts_ptr> const factorial = "Factorial";
 bp::rule<class expon, symbolic_parts_ptr> const expon = "Exponentiation";
 bp::rule<class negation, symbolic_parts_ptr> const negation = "Negation";
 bp::rule<class multdiv, symbolic_parts_ptr> const multdiv =
@@ -765,6 +766,16 @@ auto const parse_variable = [](auto& ctx) {
     lg::debug("                val={}, attr={}\n", val, attr);
 };
 
+[[maybe_unused]] auto const parse_factorial = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    print_ctx_types(parse_factorial);
+    lg::debug("parse_factorial: val={}, attr={}\n", val, attr);
+    val().fn_index = smrty::fn_id_by_name("!");
+    val().fn_style = symbolic_op::postfix;
+    lg::debug("                 val={}, attr={}\n", val, attr);
+};
+
 auto const parse_expr_passthru_n = [](auto& ctx, int n) {
     const auto& attr = _attr(ctx);
     auto& val = _val(ctx);
@@ -805,6 +816,34 @@ auto const parse_expr_left_n = [](auto& ctx, int n) {
         val().left = attr;
     }
     lg::debug("                    val={} left <<- attr={}\n", val, attr);
+};
+
+auto const parse_negation_left = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    // print_ctx_types(parse_negation_left);
+    lg::debug("parse_negation_left: val={} left <<- attr={}\n", val, attr);
+    // attr should always have the value on the left
+    // if attr.left is a number_parts, negate and turn val into an atomic
+    val().left = attr().left;
+    if (attr().fn_index == smrty::invalid_function)
+    {
+        if (auto l = std::get_if<number_parts>(&(val().left)); l)
+        {
+            // negate the value and set val function to invalid
+            if (auto s = std::get_if<single_number_parts>(l))
+            {
+                s->mantissa_sign *= -1;
+            }
+            else if (auto t = std::get_if<two_number_parts>(l))
+            {
+                t->first.mantissa_sign *= -1;
+            }
+            val().fn_index = smrty::invalid_function;
+            val().fn_style = smrty::symbolic_op::none;
+        }
+    }
+    lg::debug("                     val={} left <<- attr={}\n", val, attr);
 };
 
 auto const parse_expr_right_n = [](auto& ctx, int n) {
@@ -857,9 +896,8 @@ auto const parse_negation = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_negation);
     lg::debug("parse_negation: val={}, attr={}\n", val, attr);
-    val().fn_index = smrty::fn_id_by_name("*");
+    val().fn_index = smrty::fn_id_by_name("-");
     val().fn_style = symbolic_op::prefix;
-    val().left = number_parts{single_number_parts(-1, "1")};
     lg::debug("                val={}, attr={}\n", val, attr);
 };
 
@@ -907,6 +945,12 @@ auto const store_expr_fn = [](auto& ctx) {
 [[maybe_unused]] auto const parse_expr_passthru_8 = [](const auto& ctx) {
     return parse_expr_passthru_n(ctx, 8);
 };
+[[maybe_unused]] auto const parse_expr_passthru_9 = [](const auto& ctx) {
+    return parse_expr_passthru_n(ctx, 9);
+};
+[[maybe_unused]] auto const parse_expr_passthru_10 = [](const auto& ctx) {
+    return parse_expr_passthru_n(ctx, 10);
+};
 
 [[maybe_unused]] auto const parse_expr_left_1 = [](const auto& ctx) {
     return parse_expr_left_n(ctx, 1);
@@ -916,6 +960,9 @@ auto const store_expr_fn = [](auto& ctx) {
 };
 [[maybe_unused]] auto const parse_expr_left_3 = [](const auto& ctx) {
     return parse_expr_left_n(ctx, 3);
+};
+[[maybe_unused]] auto const parse_expr_left_4 = [](const auto& ctx) {
+    return parse_expr_left_n(ctx, 4);
 };
 [[maybe_unused]] auto const parse_expr_right_1 = [](const auto& ctx) {
     return parse_expr_right_n(ctx, 1);
@@ -929,15 +976,20 @@ auto const store_expr_fn = [](auto& ctx) {
 [[maybe_unused]] auto const parse_expr_right_4 = [](const auto& ctx) {
     return parse_expr_right_n(ctx, 4);
 };
-[[maybe_unused]] auto const parse_passthru_bump = [](const auto& ctx) {
+[[maybe_unused]] auto const parse_passthru_noop = [](const auto& ctx) {
     [[maybe_unused]] const auto& attr = _attr(ctx);
     auto& val = _val(ctx);
-    lg::debug("parse_passthru_bump: val={}\n", val);
+    lg::debug("parse_passthru_noop: val={}\n", val);
 };
 // 2+3+4
 //     +
 //   +   4
 // 2   3
+[[maybe_unused]] auto const parse_junk = [](const auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    print_ctx_types(parse_junk);
+};
 
 // all symbolic instruction types make symbolic_parts
 auto const variable_def = (+bp::char_('a', 'z'))[parse_variable];
@@ -948,26 +1000,29 @@ auto const paren_fn_call_def =
 auto const expr_atomic_def =
     number_r[parse_number_expr] |
     (paren_expr | paren_fn_call | variable)[parse_expr_passthru_3];
+auto const factorial_def =
+    (expr_atomic[parse_expr_passthru_4] >> bp::char_("!"))[parse_factorial] |
+    expr_atomic[parse_passthru_noop];
 auto const expon_def =
-    (expr_atomic[parse_expr_left_1] >> bp::char_("^")[parse_expr_op] >>
-     expr_atomic[parse_expr_right_1]) |
-    expr_atomic[parse_expr_passthru_4];
+    (factorial[parse_expr_left_1] >> bp::char_("^")[parse_expr_op] >>
+     factorial[parse_expr_right_1]) |
+    factorial[parse_expr_passthru_6];
 auto const negation_def =
-    (bp::string("-")[parse_negation] >> expon[parse_expr_right_2]) |
-    expon[parse_expr_passthru_8];
+    (bp::string("-")[parse_negation] >> expon[parse_negation_left]) |
+    expon[parse_expr_passthru_7];
 auto const multdiv_def = (negation[parse_expr_left_3] >>
                           bp::char_("*/%")[parse_expr_op] >>
                           negation[parse_expr_right_3]) >>
                              *(bp::char_("*/%")[parse_expr_op] >>
                                negation[parse_expr_right_4]) |
-                         negation[parse_expr_passthru_5];
+                         negation[parse_expr_passthru_8];
 auto const addsub_def = (multdiv[parse_expr_left_3] >>
                          bp::char_("+-")[parse_expr_op] >>
                          multdiv[parse_expr_right_3]) >>
                             *(bp::char_("+-")[parse_expr_op] >>
                               multdiv[parse_expr_right_4]) |
-                        multdiv[parse_expr_passthru_5];
-auto const symbolic_r_def = "'"_l > addsub[parse_expr_passthru_6] > "'"_l;
+                        multdiv[parse_expr_passthru_9];
+auto const symbolic_r_def = "'"_l > addsub[parse_expr_passthru_10] > "'"_l;
 
 BOOST_PARSER_DEFINE_RULES(uinteger, integer, ufloating, floating, rati0nal,
                           c0mplex, number_r, hex_int, oct_int, bin_int, matrix,
@@ -975,8 +1030,8 @@ BOOST_PARSER_DEFINE_RULES(uinteger, integer, ufloating, floating, rati0nal,
                           instruction_r, program_r, re_fn, function, operators,
                           user_input);
 BOOST_PARSER_DEFINE_RULES(variable, paren_expr, paren_fn, paren_fn_call,
-                          expr_atomic, expon, negation, multdiv, addsub,
-                          symbolic_r);
+                          expr_atomic, factorial, expon, negation, multdiv,
+                          addsub, symbolic_r);
 
 std::span<std::string_view> function_names;
 int current_base_actual = 10;
@@ -1015,7 +1070,12 @@ void set_function_lists(
         }
         else
         {
-            paren_op(f, i);
+            // only allow symbolic_op ok functions (ops are part of grammar)
+            if (auto p = smrty::fn_get_fn_ptr_by_name(f);
+                p && p->symbolic_usage() != symbolic_op::none)
+            {
+                paren_op(f, i);
+            }
             functions(f, i++);
         }
     }

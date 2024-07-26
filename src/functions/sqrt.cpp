@@ -34,11 +34,12 @@ struct square_root : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-                            LTypes<mpf, mpc>>::
+                            LTypes<mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   if constexpr (same_type_v<decltype(a), symbolic> ||
+                                 same_type_v<decltype(a), mpc>)
                    {
                        return {sqrt_fn(a), units::pow(ua, mpf{0.5l})};
                    }

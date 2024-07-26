@@ -34,19 +34,19 @@ struct ceil : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+        return one_arg_conv<ITypes<mpq>, OTypes<mpf>,
+                            LTypes<mpz, mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   if constexpr (same_type_v<decltype(a), mpc>)
                    {
                        // complex adapter doesn't work with ceil
                        mpf rp{ceil_fn(a.real())};
                        mpf ip{ceil_fn(a.imag())};
                        return {mpc(rp, ip), ua};
                    }
-                   else if constexpr (std::is_same<decltype(a),
-                                                   const mpz&>::value)
+                   else if constexpr (same_type_v<decltype(a), mpz>)
                    {
                        // integers are already there
                        return {a, ua};
@@ -93,19 +93,19 @@ struct floor : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+        return one_arg_conv<ITypes<mpq>, OTypes<mpf>,
+                            LTypes<mpz, mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   if constexpr (same_type_v<decltype(a), mpc>)
                    {
                        // complex adapter doesn't work with floor
                        mpf rp{floor_fn(a.real())};
                        mpf ip{floor_fn(a.imag())};
                        return {mpc(rp, ip), ua};
                    }
-                   else if constexpr (std::is_same<decltype(a),
-                                                   const mpz&>::value)
+                   else if constexpr (same_type_v<decltype(a), mpz>)
                    {
                        // integers are already there
                        return {a, ua};
@@ -152,19 +152,19 @@ struct round : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+        return one_arg_conv<ITypes<mpq>, OTypes<mpf>,
+                            LTypes<mpz, mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                   if constexpr (std::is_same<decltype(a), const mpc&>::value)
+                   if constexpr (same_type_v<decltype(a), mpc>)
                    {
                        // complex adapter doesn't work with round
                        mpf rp{round_fn(a.real())};
                        mpf ip{round_fn(a.imag())};
                        return {mpc(rp, ip), ua};
                    }
-                   else if constexpr (std::is_same<decltype(a),
-                                                   const mpz&>::value)
+                   else if constexpr (same_type_v<decltype(a), mpz>)
                    {
                        // integers are already there
                        return {a, ua};

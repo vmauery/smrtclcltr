@@ -32,20 +32,18 @@ struct sine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op(
-                                          calc, a, [](const auto& a) {
-                                              return sin_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op(
+                       calc, a, [](const auto& a) { return sin_fn(a); });
+               });
     }
     int num_args() const final
     {
@@ -82,20 +80,18 @@ struct cosine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op(
-                                          calc, a, [](const auto& a) {
-                                              return cos_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op(
+                       calc, a, [](const auto& a) { return cos_fn(a); });
+               });
     }
     int num_args() const final
     {
@@ -132,20 +128,18 @@ struct tangent : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op(
-                                          calc, a, [](const auto& a) {
-                                              return tan_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op(
+                       calc, a, [](const auto& a) { return tan_fn(a); });
+               });
     }
     int num_args() const final
     {
@@ -183,20 +177,18 @@ struct arcsine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return asin_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(
+                       calc, a, [](const auto& a) { return asin_fn(a); });
+               });
     }
     int num_args() const final
     {
@@ -234,20 +226,18 @@ struct arccosine : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return acos_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(
+                       calc, a, [](const auto& a) { return acos_fn(a); });
+               });
     }
     int num_args() const final
     {
@@ -285,20 +275,18 @@ struct arctangent : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return atan_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(
+                       calc, a, [](const auto& a) { return atan_fn(a); });
+               });
     }
     int num_args() const final
     {
@@ -411,20 +399,19 @@ struct secant : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return mpf{1} / cos_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(calc, a, [](const auto& a) {
+                       return mpf{1} / cos_fn(a);
+                   });
+               });
     }
     int num_args() const final
     {
@@ -462,20 +449,19 @@ struct cosecant : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return mpf{1} / sin_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(calc, a, [](const auto& a) {
+                       return mpf{1} / sin_fn(a);
+                   });
+               });
     }
     int num_args() const final
     {
@@ -513,20 +499,19 @@ struct cotangent : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return cos_fn(a) / sin_fn(a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(calc, a, [](const auto& a) {
+                       return cos_fn(a) / sin_fn(a);
+                   });
+               });
     }
     int num_args() const final
     {
@@ -564,20 +549,19 @@ struct arcsecant : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return acos_fn(mpf{1} / a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(calc, a, [](const auto& a) {
+                       return acos_fn(mpf{1} / a);
+                   });
+               });
     }
     int num_args() const final
     {
@@ -615,20 +599,19 @@ struct arccosecant : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [&calc](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return scaled_trig_op_inv(
-                                          calc, a, [](const auto& a) {
-                                              return asin_fn(mpf{1} / a);
-                                          });
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [&calc](const auto& a, const units::unit& ua)
+                   -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return scaled_trig_op_inv(calc, a, [](const auto& a) {
+                       return asin_fn(mpf{1} / a);
+                   });
+               });
     }
     int num_args() const final
     {
@@ -668,7 +651,7 @@ struct arccotangent : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-                            LTypes<mpf, mpc>>::
+                            LTypes<mpf, mpc, symbolic>>::
             op(calc,
                [&calc](const auto& a, const units::unit& ua)
                    -> std::tuple<numeric, units::unit> {

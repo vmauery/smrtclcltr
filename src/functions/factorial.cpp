@@ -63,6 +63,11 @@ mpf factorial(const mpq& x)
     return gamma_fn(xp);
 }
 
+symbolic factorial(const symbolic& x)
+{
+    return smrty::factorial(x);
+}
+
 mpc gamma_mpc(const mpc& zp)
 {
     // using Spouge's approximation
@@ -122,7 +127,17 @@ mpc gamma(const mpc& x)
     return gamma_mpc(x);
 }
 
+symbolic gamma(const symbolic& x)
+{
+    return gamma_fn(x);
+}
+
 mpf zeta(const mpf& x)
+{
+    return zeta_fn(x);
+}
+
+symbolic zeta(const symbolic& x)
 {
     return zeta_fn(x);
 }
@@ -199,7 +214,7 @@ struct factorial : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_limited_op<mpz, mpf, mpq, mpc>(
+        return one_arg_limited_op<mpz, mpf, mpq, mpc, symbolic>(
             calc,
             [](const auto& a,
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
@@ -245,7 +260,7 @@ struct gamma : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_limited_op<mpz, mpf, mpq, mpc>(
+        return one_arg_limited_op<mpz, mpf, mpq, mpc, symbolic>(
             calc,
             [](const auto& a,
                const units::unit& ua) -> std::tuple<numeric, units::unit> {
@@ -266,7 +281,7 @@ struct gamma : public CalcFunction
     }
     symbolic_op symbolic_usage() const final
     {
-        return symbolic_op::postfix;
+        return symbolic_op::paren;
     }
 };
 
@@ -291,17 +306,17 @@ struct zeta : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<
-            ITypes<mpz, mpq>, OTypes<mpf, mpf>,
-            LTypes<mpf, mpc>>::op(calc,
-                                  [](const auto& a, const units::unit& ua)
-                                      -> std::tuple<numeric, units::unit> {
-                                      if (ua != units::unit())
-                                      {
-                                          throw units_prohibited();
-                                      }
-                                      return {util::zeta(a), ua};
-                                  });
+        return one_arg_conv<ITypes<mpz, mpq>, OTypes<mpf, mpf>,
+                            LTypes<mpf, mpc, symbolic>>::
+            op(calc,
+               [](const auto& a,
+                  const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                   if (ua != units::unit())
+                   {
+                       throw units_prohibited();
+                   }
+                   return {util::zeta(a), ua};
+               });
     }
     int num_args() const final
     {
@@ -313,7 +328,7 @@ struct zeta : public CalcFunction
     }
     symbolic_op symbolic_usage() const final
     {
-        return symbolic_op::postfix;
+        return symbolic_op::paren;
     }
 };
 

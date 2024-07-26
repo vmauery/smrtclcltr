@@ -82,8 +82,8 @@ namespace smrty
 {
 mpz powul(const mpz& base, int exponent);
 std::tuple<mpz, mpz> powl(const mpz& base, int exponent);
-constexpr mpf exp(const mpf& base, const mpf& exponent);
-constexpr mpc exp(const mpc& base, const mpc& exponent);
+constexpr mpf exp(const mpf& exponent);
+constexpr mpc exp(const mpc& exponent);
 constexpr mpf pow(const mpf& base, const mpf& exponent);
 constexpr mpc pow(const mpc& base, const mpc& exponent);
 constexpr mpf tgamma(const mpf& v);

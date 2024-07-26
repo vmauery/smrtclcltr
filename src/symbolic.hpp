@@ -44,13 +44,24 @@ class symbolic
     symbolic();
     symbolic(const symbolic_parts_ptr& o);
     symbolic(const symbolic& o);
+    symbolic(symbolic&& o);
+    symbolic(const mpx& o);
+    template <typename T>
+        requires is_one_of_v<T, mpx>
+    symbolic(const T& o) : symbolic(mpx{o})
+    {
+    }
+    ~symbolic();
+
     symbolic& operator=(const symbolic& o);
+    symbolic& operator=(symbolic&& o);
     symbolic_actual& operator*() const;
 
     symbolic operator+(const symbolic& o) const;
     symbolic operator-(const symbolic& o) const;
     symbolic operator*(const symbolic& o) const;
     symbolic operator/(const symbolic& o) const;
+    symbolic operator%(const symbolic& o) const;
 
   protected:
     std::shared_ptr<symbolic_actual> ptr;
@@ -59,16 +70,31 @@ class symbolic
 using symbolic_operand =
     std::variant<std::monostate, std::string, mpx, symbolic>;
 
+enum class fn_prio
+{
+    addsub,
+    multdiv,
+    negate,
+    exponent,
+    factorial,
+    atomic
+};
+
 struct symbolic_actual
 {
     explicit symbolic_actual(symbolic& creator);
     symbolic_actual(symbolic& creator, const symbolic_actual& o);
     symbolic_actual(symbolic& creator, const symbolic_parts& parts);
+    symbolic_actual(symbolic& creator, const mpx& o);
+    ~symbolic_actual();
 
     symbolic operator+(const symbolic_actual& o) const;
     symbolic operator-(const symbolic_actual& o) const;
     symbolic operator*(const symbolic_actual& o) const;
     symbolic operator/(const symbolic_actual& o) const;
+    symbolic operator%(const symbolic_actual& o) const;
+
+    fn_prio prio() const;
 
     std::reference_wrapper<symbolic> box;
     size_t fn_index;
@@ -77,7 +103,71 @@ struct symbolic_actual
     symbolic_operand right;
 };
 
+symbolic floor(const symbolic& v);
+symbolic ceil(const symbolic& v);
+symbolic round(const symbolic& v);
+symbolic lcm(const symbolic& a, const symbolic& b);
+symbolic gcd(const symbolic& a, const symbolic& b);
+symbolic pow(const symbolic& a, const symbolic& b);
+symbolic exp(const symbolic& v);
+symbolic factorial(const symbolic& v);
+symbolic tgamma(const symbolic& v);
+symbolic zeta(const symbolic& v);
+symbolic abs(const symbolic& v);
+symbolic log(const symbolic& v);
+symbolic ln(const symbolic& v);
+symbolic sqrt(const symbolic& v);
+symbolic sin(const symbolic& v);
+symbolic cos(const symbolic& v);
+symbolic tan(const symbolic& v);
+symbolic asin(const symbolic& v);
+symbolic acos(const symbolic& v);
+symbolic atan(const symbolic& v);
+symbolic sinh(const symbolic& v);
+symbolic cosh(const symbolic& v);
+symbolic tanh(const symbolic& v);
+symbolic asinh(const symbolic& v);
+symbolic acosh(const symbolic& v);
+symbolic atanh(const symbolic& v);
+
 } // namespace smrty
+
+#if (USE_BOOST_CPP_BACKEND || USE_GMP_BACKEND || USE_MPFR_BACKEND)
+namespace boost
+{
+namespace multiprecision
+{
+using ::smrty::ceil;
+using ::smrty::exp;
+using ::smrty::floor;
+using ::smrty::pow;
+using ::smrty::round;
+} // namespace multiprecision
+namespace math
+{
+using ::smrty::gcd;
+using ::smrty::lcm;
+using ::smrty::tgamma;
+using ::smrty::zeta;
+} // namespace math
+} // namespace boost
+
+using ::smrty::abs;
+using ::smrty::acos;
+using ::smrty::acosh;
+using ::smrty::asin;
+using ::smrty::asinh;
+using ::smrty::atan;
+using ::smrty::atanh;
+using ::smrty::cos;
+using ::smrty::cosh;
+using ::smrty::log;
+using ::smrty::sin;
+using ::smrty::sinh;
+using ::smrty::sqrt;
+using ::smrty::tan;
+using ::smrty::tanh;
+#endif
 
 template <>
 struct std::formatter<smrty::symbolic_actual>
@@ -117,8 +207,31 @@ struct std::formatter<smrty::symbolic_actual>
         // multi-part op
         if (sym.fn_style == smrty::symbolic_op::infix)
         {
-            out = std::format_to(out, "{}{}{}", sym.left,
-                                 smrty::fn_name_by_id(sym.fn_index), sym.right);
+            // check for adding explicit parenthesis
+            // left side
+            if (auto l = std::get_if<smrty::symbolic>(&(sym.left));
+                l && (*(*l)).fn_index != smrty::invalid_function &&
+                (*(*l)).prio() < sym.prio())
+            {
+                out = std::format_to(out, "({})", *l);
+            }
+            else
+            {
+                out = std::format_to(out, "{}", sym.left);
+            }
+            // op
+            out = std::format_to(out, "{}", smrty::fn_name_by_id(sym.fn_index));
+            // right side
+            if (auto r = std::get_if<smrty::symbolic>(&(sym.right));
+                r && (*(*r)).fn_index != smrty::invalid_function &&
+                (*(*r)).prio() < sym.prio())
+            {
+                out = std::format_to(out, "({})", *r);
+            }
+            else
+            {
+                out = std::format_to(out, "{}", sym.right);
+            }
         }
         else if (sym.fn_style == smrty::symbolic_op::prefix)
         {
@@ -130,12 +243,29 @@ struct std::formatter<smrty::symbolic_actual>
             out = std::format_to(out, "{}{}", sym.left,
                                  smrty::fn_name_by_id(sym.fn_index));
         }
-        else
+        else if (sym.fn_style == smrty::symbolic_op::paren)
+        {
+            out = std::format_to(out, "{}({}",
+                                 smrty::fn_name_by_id(sym.fn_index), sym.left);
+            if (!std::get_if<std::monostate>(&sym.right))
+            {
+                out = std::format_to(out, ", {}", sym.right);
+            }
+            *out++ = ')';
+        }
+        else /* none */
         {
             out = std::format_to(out, "({}: {}, {})",
                                  smrty::fn_name_by_id(sym.fn_index), sym.left,
                                  sym.right);
         }
+        /*
+    none,
+    paren,
+    prefix,
+    infix,
+    postfix,
+    */
         return out;
     }
 };

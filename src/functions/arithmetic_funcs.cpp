@@ -239,7 +239,7 @@ struct percent_change : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return two_arg_conv<ITypes<mpz>, OTypes<mpq>,
-                            LTypes<mpq, mpf, mpc, time_>>::
+                            LTypes<mpq, mpf, mpc, time_, symbolic>>::
             op(calc,
                [](const auto& a, const auto& b, const units::unit& ua,
                   const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -287,7 +287,7 @@ struct inverse : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return one_arg_conv<ITypes<mpz>, OTypes<mpq>,
-                            LTypes<mpq, mpf, mpc, matrix>>::
+                            LTypes<mpq, mpf, mpc, matrix, symbolic>>::
             op(calc,
                [](const auto& a,
                   const units::unit& ua) -> std::tuple<numeric, units::unit> {
@@ -330,7 +330,7 @@ struct divmod : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return two_arg_limited_op<mpz, mpq, mpf>(
+        return two_arg_limited_op<mpz, mpq, mpf, symbolic>(
             calc,
             [](const auto& a, const auto& b, const units::unit& ua,
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -377,7 +377,8 @@ struct power : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return two_arg_conv<ITypes<mpq>, OTypes<mpf>, LTypes<mpz, mpf, mpc>>::
+        return two_arg_conv<ITypes<mpq>, OTypes<mpf>,
+                            LTypes<mpz, mpf, mpc, symbolic>>::
             op(calc,
                [](const auto& a, const auto& b, const units::unit& ua,
                   const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -397,6 +398,11 @@ struct power : public CalcFunction
                        }
                        return {mpq{one, powul_fn(a, static_cast<int>(-b))},
                                units::pow(ua, static_cast<mpf>(b))};
+                   }
+                   else if constexpr (same_type_v<symbolic, decltype(a)> ||
+                                      same_type_v<symbolic, decltype(b)>)
+                   {
+                       return {pow_fn(symbolic{a}, symbolic{b}), ua};
                    }
                    else if constexpr (same_type_v<mpc, decltype(a)> ||
                                       same_type_v<mpc, decltype(b)>)

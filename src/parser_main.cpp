@@ -35,6 +35,12 @@ std::vector<std::string_view> operations = {
     "unsigned", "verbose",     "version", "xor",       "|",
     "~",
 };
+std::vector<std::string_view> sym_ok = {
+    "abs",   "acos", "acosh", "asin", "asinh", "atan", "atanh",
+    "ceil",  "comb", "cos",   "cosh", "floor", "gcd",  "inv",
+    "lcm",   "ln",   "log",   "log2", "neg",   "perm", "pi",
+    "round", "sin",  "sinh",  "sqr",  "sqrt",  "tan",  "tanh",
+};
 std::vector<std::tuple<size_t, std::string_view>> regex_operations = {
     {36, "drop([1-9][0-9]*)"},   {39, "dup([1-9][0-9]*)"},
     {44, "([su])([1-9][0-9]*)"}, {79, "roll([1-9][0-9]*)"},
@@ -87,6 +93,45 @@ size_t fn_id_by_name(std::string_view name)
             std::format("Function '{}' does not exist", name));
     }
     return std::distance(operations.begin(), fn);
+}
+const CalcFunction* fn_get_fn_ptr_by_name(std::string_view name)
+{
+    struct OK : public CalcFunction
+    {
+        virtual const std::string& name() const final
+        {
+            static const std::string _name{"OK"};
+            return _name;
+        }
+        virtual const std::string& help() const final
+        {
+            static const std::string _help{""};
+            return _help;
+        }
+        virtual bool op(Calculator&) const final
+        {
+            return false;
+        }
+        int num_args() const final
+        {
+            return 0;
+        }
+        int num_resp() const final
+        {
+            return 0;
+        }
+        symbolic_op symbolic_usage() const final
+        {
+            return symbolic_op::paren;
+        }
+    };
+    static OK ok;
+    const auto& fn = std::find(sym_ok.begin(), sym_ok.end(), name);
+    if (fn != operations.end())
+    {
+        return &ok;
+    }
+    return nullptr;
 }
 } // namespace smrty
 
