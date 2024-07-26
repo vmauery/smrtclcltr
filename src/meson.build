@@ -22,6 +22,7 @@ smrty_functions = [
   'functions/sqrt.cpp',
   'functions/stack_funcs.cpp',
   'functions/sum.cpp',
+  'functions/symbolic_funcs.cpp',
   'functions/time_funcs.cpp',
   'functions/trig_funcs.cpp',
   'functions/unit_funcs.cpp',

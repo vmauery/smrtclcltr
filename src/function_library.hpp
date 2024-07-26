@@ -52,6 +52,7 @@ size_t fn_id_by_name(std::string_view name);
 std::string_view fn_name_by_id(size_t id);
 
 const CalcFunction* fn_get_fn_ptr_by_name(std::string_view name);
+const CalcFunction* fn_get_fn_ptr_by_id(size_t id);
 
 std::span<std::string_view> fn_get_all_names();
 

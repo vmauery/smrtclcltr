@@ -4,6 +4,7 @@ Copyright © 2024 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <calculator.hpp>
 #include <numeric.hpp>
 #include <symbolic.hpp>
 
@@ -57,6 +58,11 @@ symbolic::symbolic(const mpx& o) :
 {
 }
 
+symbolic::symbolic(const std::string& o) :
+    ptr(std::make_shared<symbolic_actual>(*this, o))
+{
+}
+
 symbolic& symbolic::operator=(const symbolic& o)
 {
     ptr = std::make_shared<symbolic_actual>(*this, *o);
@@ -100,6 +106,11 @@ symbolic symbolic::operator%(const symbolic& o) const
 {
     lg::verbose("symbolic '{}' % '{}'\n", *this, o);
     return *ptr / *o;
+}
+
+void symbolic::eval(Calculator& calc) const
+{
+    ptr->eval(calc);
 }
 
 symbolic_actual::symbolic_actual(symbolic& creator) :
@@ -173,6 +184,69 @@ symbolic_actual::symbolic_actual(symbolic& creator, const mpx& o) :
     box(std::ref(creator)), fn_index(invalid_function),
     fn_style(symbolic_op::none), left(o)
 {
+}
+
+symbolic_actual::symbolic_actual(symbolic& creator, const std::string& o) :
+    box(std::ref(creator)), fn_index(invalid_function),
+    fn_style(symbolic_op::none), left(o)
+{
+}
+
+void symbolic_actual::eval(Calculator& calc) const
+{
+    auto push = [&calc](numeric&& v) {
+        stack_entry e;
+        e.base = calc.config.base;
+        e.precision = calc.config.precision;
+        e.fixed_bits = calc.config.fixed_bits;
+        e.is_signed = calc.config.is_signed;
+        e.value(std::move(v));
+        calc.stack.push_front(std::move(e));
+    };
+    // TODO: how this gonna work, dumbass?
+    //
+    // 1. turn the tree into a program and execute that
+    // 2. add a 'symbolic' mode to functions that can take operate on symbolics
+    // 3. push stuff onto the stack, perform the op, and pop an item back off
+    //
+    // depth first evaluation of symbolic tree
+    if (!std::get_if<std::monostate>(&left))
+    {
+        if (auto s = std::get_if<symbolic>(&left); s)
+        {
+            s->eval(calc);
+        }
+        else if (auto s = std::get_if<mpx>(&left); s)
+        {
+            std::visit(push, *s);
+        }
+        else if (auto s = std::get_if<std::string>(&left); s)
+        {
+            push(symbolic{*s});
+        }
+    }
+    if (!std::get_if<std::monostate>(&right))
+    {
+        if (auto s = std::get_if<symbolic>(&right); s)
+        {
+            s->eval(calc);
+        }
+        else if (auto s = std::get_if<mpx>(&right); s)
+        {
+            std::visit(push, *s);
+        }
+        else if (auto s = std::get_if<std::string>(&right); s)
+
+        {
+            push(symbolic{*s});
+        }
+    }
+    if (fn_index != invalid_function)
+    {
+        auto fn = fn_get_fn_ptr_by_id(fn_index);
+        fn->op(calc);
+        // the Eval function pops the final item back off the stack
+    }
 }
 
 fn_prio symbolic_actual::prio() const

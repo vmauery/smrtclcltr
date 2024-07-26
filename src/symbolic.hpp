@@ -37,6 +37,7 @@ namespace smrty
 //                         var(y)  num(2)
 //
 
+class Calculator;
 struct symbolic_actual;
 class symbolic
 {
@@ -45,6 +46,7 @@ class symbolic
     symbolic(const symbolic_parts_ptr& o);
     symbolic(const symbolic& o);
     symbolic(symbolic&& o);
+    symbolic(const std::string& o);
     symbolic(const mpx& o);
     template <typename T>
         requires is_one_of_v<T, mpx>
@@ -62,6 +64,8 @@ class symbolic
     symbolic operator*(const symbolic& o) const;
     symbolic operator/(const symbolic& o) const;
     symbolic operator%(const symbolic& o) const;
+
+    void eval(Calculator&) const;
 
   protected:
     std::shared_ptr<symbolic_actual> ptr;
@@ -86,6 +90,7 @@ struct symbolic_actual
     symbolic_actual(symbolic& creator, const symbolic_actual& o);
     symbolic_actual(symbolic& creator, const symbolic_parts& parts);
     symbolic_actual(symbolic& creator, const mpx& o);
+    symbolic_actual(symbolic& creator, const std::string& o);
     ~symbolic_actual();
 
     symbolic operator+(const symbolic_actual& o) const;
@@ -94,6 +99,7 @@ struct symbolic_actual
     symbolic operator/(const symbolic_actual& o) const;
     symbolic operator%(const symbolic_actual& o) const;
 
+    void eval(Calculator&) const;
     fn_prio prio() const;
 
     std::reference_wrapper<symbolic> box;

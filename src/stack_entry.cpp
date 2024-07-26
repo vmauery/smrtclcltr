@@ -9,6 +9,33 @@ SPDX-License-Identifier: BSD-3-Clause
 namespace smrty
 {
 
+void stack_entry::store_value(numeric&& v)
+{
+    _value = reduce_numeric(v, precision);
+    if (mpz* v = std::get_if<mpz>(&_value); fixed_bits && v != nullptr)
+    {
+        execution_flags dummy{};
+        emulate_int_types(*v, dummy);
+    }
+    else
+    {
+        std::visit(
+            [](const auto& v) -> std::tuple<bool, bool> {
+                using v_type = std::remove_cvref_t<decltype(v)>;
+                if constexpr (is_real_v<v_type>)
+                {
+                    return {v == decltype(v){0}, v < decltype(v){0}};
+                }
+                else
+                {
+                    lg::debug("v is not real; z, s = false\n");
+                    return {false, false};
+                }
+            },
+            _value);
+    }
+}
+
 void stack_entry::store_value(numeric&& v, execution_flags& flags)
 {
     _value = reduce_numeric(v, precision);

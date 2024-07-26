@@ -59,6 +59,15 @@ const CalcFunction* fn_get_fn_ptr_by_name(std::string_view name)
     return nullptr;
 }
 
+const CalcFunction* fn_get_fn_ptr_by_id(size_t id)
+{
+    if (id < function_names.size())
+    {
+        return fn_get_fn_ptr_by_name(function_names[id]);
+    }
+    return nullptr;
+}
+
 std::span<std::string_view> fn_get_all_names()
 {
     return {function_names.begin(), function_names.end()};

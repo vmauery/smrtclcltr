@@ -38,6 +38,11 @@ class stack_entry
         return _value;
     }
 
+    void value(const numeric& n)
+    {
+        store_value(numeric{n});
+    }
+
     void value(const numeric& n, execution_flags& flags)
     {
         store_value(numeric{n}, flags);
@@ -57,6 +62,7 @@ class stack_entry
     }
 
   protected:
+    void store_value(numeric&& v);
     void store_value(numeric&& v, execution_flags& flags);
 
     void emulate_int_types(mpz& v, execution_flags& flags);
