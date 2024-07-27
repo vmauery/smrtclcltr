@@ -4,6 +4,7 @@ smrty_functions = [
   'constants.cpp',
   'functions/arithmetic_funcs.cpp',
   'functions/bitwise_funcs.cpp',
+  'functions/boolean_funcs.cpp',
   'functions/compound.cpp',
   'functions/factorial.cpp',
   'functions/float.cpp',

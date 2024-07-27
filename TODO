@@ -24,7 +24,6 @@ Ideas for future development
    * modulo(modular math mode) down(toggle downcasting)
    * clreg store recall regs
    * ncdf(normal prob cdf) invn(inverse of ncdf)
-   * < <= == != >= >
  * N-d vector support [ x y z ]
    * parse / cross / dot / add / subtract / scaler
  * Interval support? x+-y / [x,y]
