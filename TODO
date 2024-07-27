@@ -28,7 +28,6 @@ Ideas for future development
  * N-d vector support [ x y z ]
    * parse / cross / dot / add / subtract / scaler
  * Interval support? x+-y / [x,y]
- * Variable store/recall support
  * Modes
    * Modular arithmetic mode
    * Fixed bit math (for debugging C math issues, show over/under-flow bit)

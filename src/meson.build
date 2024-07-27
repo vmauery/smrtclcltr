@@ -26,6 +26,7 @@ smrty_functions = [
   'functions/time_funcs.cpp',
   'functions/trig_funcs.cpp',
   'functions/unit_funcs.cpp',
+  'functions/variables.cpp',
   ]
 
 smrty_lib = static_library(

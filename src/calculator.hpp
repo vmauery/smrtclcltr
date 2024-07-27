@@ -55,6 +55,7 @@ class Calculator
 
     Config config;
     Stack stack;
+    std::map<std::string, numeric> variables;
     execution_flags flags;
 
     // enforce singleton

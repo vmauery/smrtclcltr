@@ -222,7 +222,15 @@ void symbolic_actual::eval(Calculator& calc) const
         }
         else if (auto s = std::get_if<std::string>(&left); s)
         {
-            push(symbolic{*s});
+            if (auto i = calc.variables.find(*s); i != calc.variables.end())
+            {
+                auto v = i->second;
+                push(std::move(v));
+            }
+            else
+            {
+                push(symbolic{*s});
+            }
         }
     }
     if (!std::get_if<std::monostate>(&right))
@@ -236,9 +244,16 @@ void symbolic_actual::eval(Calculator& calc) const
             std::visit(push, *s);
         }
         else if (auto s = std::get_if<std::string>(&right); s)
-
         {
-            push(symbolic{*s});
+            if (auto i = calc.variables.find(*s); i != calc.variables.end())
+            {
+                auto v = i->second;
+                push(std::move(v));
+            }
+            else
+            {
+                push(symbolic{*s});
+            }
         }
     }
     if (fn_index != invalid_function)
