@@ -28,8 +28,8 @@ struct if_elif_statement;
 struct program;
 
 using simple_instruction =
-    std::variant<bool, number_parts, compound_parts, time_parts, function_parts,
-                 symbolic_parts_ptr, program>;
+    std::variant<std::monostate, bool, number_parts, compound_parts, time_parts,
+                 function_parts, symbolic_parts_ptr, program>;
 using simple_instructions = std::vector<simple_instruction>;
 
 // TODO: add control statement types to instruction variant
@@ -113,15 +113,11 @@ struct for_statement : public statement
     std::vector<condition>::iterator current_branch;
 };
 
-static constexpr bool noop_value{false};
+static constexpr std::monostate noop_value{};
 static constexpr simple_instruction noop{noop_value};
 static inline bool is_noop(const simple_instruction& itm)
 {
-    if (auto v = std::get_if<bool>(&itm); v)
-    {
-        return *v == noop_value;
-    }
-    return false;
+    return (std::get_if<std::monostate>(&itm) != nullptr);
 }
 
 } // namespace smrty

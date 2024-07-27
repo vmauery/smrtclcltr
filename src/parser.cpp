@@ -198,6 +198,7 @@ global_state globals{};
 bp::symbols<int> op_functions{};
 bp::symbols<int> functions{};
 bp::symbols<int> paren_op{};
+bp::symbols<bool> boolean{{"false", false}, {"true", true}};
 bp::symbols<int> if_sub_words{{"elif", 1}, {"else", 2}, {"endif", 3}};
 //]
 //[ self_filling_symbol_table_parser
@@ -248,6 +249,7 @@ bp::rule<class multdiv, symbolic_parts_ptr> const multdiv =
     "Multiplication or division";
 bp::rule<class addsub, symbolic_parts_ptr> const addsub =
     "Addition or subtraction";
+bp::rule<class equation, symbolic_parts_ptr> const equation = "Equation";
 bp::rule<class symbolic_r, symbolic_parts_ptr> const symbolic_r =
     "Symbolic expression";
 /*
@@ -739,8 +741,8 @@ auto operators_def = op_functions[parse_function];
 auto re_fn_def = bp::regex()[parse_regulars];
 
 auto const simple_instruction_r_def =
-    (re_fn | function | time | duration | number_r | matrix | list | program_r |
-     operators)[parse_simple_instruction];
+    (boolean | re_fn | function | time | duration | number_r | matrix | list |
+     program_r | operators)[parse_simple_instruction];
 
 auto const instruction_r_def =
     (if_elif | simple_instruction_r | symbolic_r)[parse_instruction];
@@ -951,6 +953,9 @@ auto const store_expr_fn = [](auto& ctx) {
 [[maybe_unused]] auto const parse_expr_passthru_10 = [](const auto& ctx) {
     return parse_expr_passthru_n(ctx, 10);
 };
+[[maybe_unused]] auto const parse_expr_passthru_11 = [](const auto& ctx) {
+    return parse_expr_passthru_n(ctx, 11);
+};
 
 [[maybe_unused]] auto const parse_expr_left_1 = [](const auto& ctx) {
     return parse_expr_left_n(ctx, 1);
@@ -964,6 +969,9 @@ auto const store_expr_fn = [](auto& ctx) {
 [[maybe_unused]] auto const parse_expr_left_4 = [](const auto& ctx) {
     return parse_expr_left_n(ctx, 4);
 };
+[[maybe_unused]] auto const parse_expr_left_5 = [](const auto& ctx) {
+    return parse_expr_left_n(ctx, 5);
+};
 [[maybe_unused]] auto const parse_expr_right_1 = [](const auto& ctx) {
     return parse_expr_right_n(ctx, 1);
 };
@@ -975,6 +983,9 @@ auto const store_expr_fn = [](auto& ctx) {
 };
 [[maybe_unused]] auto const parse_expr_right_4 = [](const auto& ctx) {
     return parse_expr_right_n(ctx, 4);
+};
+[[maybe_unused]] auto const parse_expr_right_5 = [](const auto& ctx) {
+    return parse_expr_right_n(ctx, 5);
 };
 [[maybe_unused]] auto const parse_passthru_noop = [](const auto& ctx) {
     [[maybe_unused]] const auto& attr = _attr(ctx);
@@ -1022,7 +1033,13 @@ auto const addsub_def = (multdiv[parse_expr_left_3] >>
                             *(bp::char_("+-")[parse_expr_op] >>
                               multdiv[parse_expr_right_4]) |
                         multdiv[parse_expr_passthru_9];
-auto const symbolic_r_def = "'"_l > addsub[parse_expr_passthru_10] > "'"_l;
+auto const equation_def =
+    (addsub[parse_expr_left_5] >> bp::char_("=")[parse_expr_op] >>
+     addsub[parse_expr_right_5]) |
+    addsub[parse_expr_passthru_10];
+auto const symbolic_r_def = "'"_l[set_no_commas] >
+                            equation[parse_expr_passthru_11] >
+                            "'"_l[set_commas_ok];
 
 BOOST_PARSER_DEFINE_RULES(uinteger, integer, ufloating, floating, rati0nal,
                           c0mplex, number_r, hex_int, oct_int, bin_int, matrix,
@@ -1031,7 +1048,7 @@ BOOST_PARSER_DEFINE_RULES(uinteger, integer, ufloating, floating, rati0nal,
                           user_input);
 BOOST_PARSER_DEFINE_RULES(variable, paren_expr, paren_fn, paren_fn_call,
                           expr_atomic, factorial, expon, negation, multdiv,
-                          addsub, symbolic_r);
+                          addsub, equation, symbolic_r);
 
 std::span<std::string_view> function_names;
 int current_base_actual = 10;

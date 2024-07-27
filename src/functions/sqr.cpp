@@ -33,11 +33,12 @@ struct square : public CalcFunction
 
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_op(calc,
-                          [](const auto& a, const units::unit& ua)
-                              -> std::tuple<numeric, units::unit> {
-                              return {a * a, ua * ua};
-                          });
+        return one_arg_limited_op<mpz, mpq, mpf, mpc, matrix, list, symbolic>(
+            calc,
+            [](const auto& a,
+               const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                return {a * a, ua * ua};
+            });
     }
     int num_args() const final
     {

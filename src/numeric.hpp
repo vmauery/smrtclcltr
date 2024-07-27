@@ -178,10 +178,11 @@ using list = basic_list<mpx>;
 #include <program.hpp>
 // clang-format on
 
-using numeric = std::variant<mpz, mpq, mpf, mpc, list, matrix, time_,
+using numeric = std::variant<bool, mpz, mpq, mpf, mpc, list, matrix, time_,
                              smrty::program, smrty::symbolic>;
 
 static constexpr auto numeric_types = std::to_array<const char*>({
+    "bool",
     "mpz",
     "mpq",
     "mpf",
@@ -218,7 +219,11 @@ numeric make_numeric(const smrty::compound_parts&);
 template <typename TypeOut, typename TypeIn>
 TypeOut coerce_variant(const TypeIn& in)
 {
-    if constexpr (same_type_v<TypeOut, mpz>)
+    if constexpr (same_type_v<TypeOut, bool>)
+    {
+        return static_cast<bool>(in);
+    }
+    else if constexpr (same_type_v<TypeOut, mpz>)
     {
         return static_cast<mpz>(in);
     }

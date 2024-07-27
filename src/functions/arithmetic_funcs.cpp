@@ -17,7 +17,8 @@ namespace util
 
 bool add_from_stack(Calculator& calc)
 {
-    return two_arg_uconv_op(
+    return two_arg_limited_op<mpz, mpq, mpf, mpc, time_, matrix, list,
+                              symbolic>(
         calc,
         [](const auto& a, const auto& b, const units::unit& ua,
            const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -31,7 +32,8 @@ bool add_from_stack(Calculator& calc)
 
 bool multiply_from_stack(Calculator& calc)
 {
-    return two_arg_op(
+    return two_arg_limited_op<mpz, mpq, mpf, mpc, time_, matrix, list,
+                              symbolic>(
         calc,
         [](const auto& a, const auto& b, const units::unit& ua,
            const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -116,7 +118,8 @@ struct subtract : public CalcFunction
     }
     bool op(Calculator& calc) const final
     {
-        return two_arg_uconv_op(
+        return two_arg_limited_op<mpz, mpq, mpf, mpc, time_, matrix, list,
+                                  symbolic>(
             calc,
             [](const auto& a, const auto& b, const units::unit& ua,
                const units::unit& ub) -> std::tuple<numeric, units::unit> {

@@ -244,6 +244,10 @@ bool Calculator::run_one(const simple_instruction& itm)
             // put it on the stack
             e.value(*n, flags);
         }
+        else if (auto n = std::get_if<bool>(&itm); n)
+        {
+            e.value(*n, flags);
+        }
         else if (auto n = std::get_if<symbolic_parts_ptr>(&itm); n)
         {
             e.value(symbolic(*n), flags);
