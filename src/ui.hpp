@@ -10,7 +10,9 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <memory>
 #include <print.hpp>
+#include <span>
 #include <string_view>
+#include <vector>
 
 struct ui : public std::enable_shared_from_this<ui>
 {
@@ -74,3 +76,15 @@ struct ui : public std::enable_shared_from_this<ui>
         return out(msg);
     }
 };
+
+struct column_layout
+{
+    explicit column_layout(size_t n) : cols(n), len(0), valid(true)
+    {
+    }
+    std::vector<size_t> cols;
+    size_t len;
+    bool valid;
+};
+
+column_layout find_best_layout(std::span<std::string_view> words, size_t width);
