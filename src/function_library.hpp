@@ -61,6 +61,9 @@ std::span<std::string_view> fn_get_all_names();
 
 void setup_catalog();
 void register_user_function(const std::string& name, program&& function);
+void unregister_user_function(const std::string& name);
+bool is_user_function(const std::string& name);
+const std::vector<CalcFunction::ptr>& fn_get_all_user();
 
 std::span<std::string_view> fn_list_all_starts_with(std::string_view start);
 

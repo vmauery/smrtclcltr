@@ -58,6 +58,7 @@ clcltr_src = [
   'symbolic.cpp',
   'ui.cpp',
   'units.cpp',
+  'user_function.cpp',
   version_src,
   ]
 

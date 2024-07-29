@@ -11,6 +11,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <function_library.hpp>
 #include <map>
 #include <parser.hpp>
+#include <program.hpp>
+#include <user_function.hpp>
 
 extern const struct smrty::CalcFunction* __start_calc_functions;
 extern const struct smrty::CalcFunction* __stop_calc_functions;
@@ -28,7 +30,6 @@ std::map<CalcFunction::ptr, std::string_view> reops;
 std::vector<CalcFunction::ptr> user_functions;
 
 } // namespace
-
 
 CalcFunction::ptr fn_get_fn_ptr_by_name(std::string_view name)
 {
@@ -82,6 +83,11 @@ void setup_catalog()
     {
         operations[fn->name()] = fn;
     }
+    // add the user-defined functions
+    for (const auto& fn : user_functions)
+    {
+        operations[fn->name()] = fn;
+    }
     op_names_max_strlen = 1;
     function_names.clear();
     std::transform(operations.begin(), operations.end(),
@@ -107,6 +113,37 @@ void setup_catalog()
         }
     }
     parser::set_function_lists(function_names, reop_list);
+}
+
+void register_user_function_early(const std::string& name, program&& function)
+{
+    user_functions.push_back(UserFunction::create(name, std::move(function)));
+}
+
+void register_user_function(const std::string& name, program&& function)
+{
+    register_user_function_early(name, std::move(function));
+    setup_catalog();
+}
+
+void unregister_user_function(const std::string& name)
+{
+    std::erase_if(user_functions,
+                  [&name](CalcFunction::ptr& p) { return p->name() == name; });
+    setup_catalog();
+}
+
+bool is_user_function(const std::string& name)
+{
+    auto f = std::find_if(
+        user_functions.begin(), user_functions.end(),
+        [&name](CalcFunction::ptr& p) { return p->name() == name; });
+    return f != user_functions.end();
+}
+
+const std::vector<CalcFunction::ptr>& fn_get_all_user()
+{
+    return user_functions;
 }
 
 std::span<std::string_view> fn_list_all_starts_with(std::string_view start)
