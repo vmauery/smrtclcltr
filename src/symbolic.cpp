@@ -114,13 +114,13 @@ void symbolic::eval(Calculator& calc) const
 }
 
 symbolic_actual::symbolic_actual(symbolic& creator) :
-    box(std::ref(creator)), fn_index(invalid_function),
+    box(std::ref(creator)), fn_ptr(invalid_function),
     fn_style(symbolic_op::none)
 {
 }
 
 symbolic_actual::symbolic_actual(symbolic& creator, const symbolic_actual& o) :
-    box(std::ref(creator)), fn_index(o.fn_index), fn_style(o.fn_style)
+    box(std::ref(creator)), fn_ptr(o.fn_ptr), fn_style(o.fn_style)
 {
     auto get_arg = [](const auto& a) -> symbolic_operand {
         if constexpr (same_type_v<decltype(a), std::string> ||
@@ -146,7 +146,7 @@ symbolic_actual::symbolic_actual(symbolic& creator, const symbolic_actual& o) :
 
 symbolic_actual::symbolic_actual(symbolic& creator,
                                  const symbolic_parts& parts) :
-    box(std::ref(creator)), fn_index(parts.fn_index), fn_style(parts.fn_style)
+    box(std::ref(creator)), fn_ptr(parts.fn_ptr), fn_style(parts.fn_style)
 {
     lg::debug("incoming parts: {}\n", parts);
     // std::monostate, std::string, number_parts, symbolic_parts_ptr
@@ -181,13 +181,13 @@ symbolic_actual::~symbolic_actual()
 }
 
 symbolic_actual::symbolic_actual(symbolic& creator, const mpx& o) :
-    box(std::ref(creator)), fn_index(invalid_function),
+    box(std::ref(creator)), fn_ptr(invalid_function),
     fn_style(symbolic_op::none), left(o)
 {
 }
 
 symbolic_actual::symbolic_actual(symbolic& creator, const std::string& o) :
-    box(std::ref(creator)), fn_index(invalid_function),
+    box(std::ref(creator)), fn_ptr(invalid_function),
     fn_style(symbolic_op::none), left(o)
 {
 }
@@ -256,59 +256,58 @@ void symbolic_actual::eval(Calculator& calc) const
             }
         }
     }
-    if (fn_index != invalid_function)
+    if (fn_ptr != invalid_function)
     {
-        auto fn = fn_get_fn_ptr_by_id(fn_index);
-        fn->op(calc);
+        fn_ptr->op(calc);
         // the Eval function pops the final item back off the stack
     }
 }
 
 fn_prio symbolic_actual::prio() const
 {
-    static const size_t add_id = fn_id_by_name("+");
-    static const size_t sub_id = fn_id_by_name("-");
-    static const size_t mul_id = fn_id_by_name("*");
-    static const size_t div_id = fn_id_by_name("/");
-    static const size_t mod_id = fn_id_by_name("%");
-    static const size_t pow_id = fn_id_by_name("^");
-    static const size_t fct_id = fn_id_by_name("!");
+    static const CalcFunction::ptr add_id = fn_get_fn_ptr_by_name("+");
+    static const CalcFunction::ptr sub_id = fn_get_fn_ptr_by_name("-");
+    static const CalcFunction::ptr mul_id = fn_get_fn_ptr_by_name("*");
+    static const CalcFunction::ptr div_id = fn_get_fn_ptr_by_name("/");
+    static const CalcFunction::ptr mod_id = fn_get_fn_ptr_by_name("%");
+    static const CalcFunction::ptr pow_id = fn_get_fn_ptr_by_name("^");
+    static const CalcFunction::ptr fct_id = fn_get_fn_ptr_by_name("!");
     // paren functions are atomic, so high prio?
     // only need to do this for infix, prefix or postfix
     if (fn_style == symbolic_op::prefix)
     {
-        if (fn_index == sub_id)
+        if (fn_ptr == sub_id)
         {
             return fn_prio::negate;
         }
-        throw std::runtime_error(std::format("unexpected prefix operator '{}'",
-                                             fn_name_by_id(fn_index)));
+        throw std::runtime_error(
+            std::format("unexpected prefix operator '{}'", fn_get_name(fn_ptr)));
     }
     if (fn_style == symbolic_op::infix)
     {
-        if (fn_index == add_id || fn_index == sub_id)
+        if (fn_ptr == add_id || fn_ptr == sub_id)
         {
             return fn_prio::addsub;
         }
-        if (fn_index == mul_id || fn_index == div_id || fn_index == mod_id)
+        if (fn_ptr == mul_id || fn_ptr == div_id || fn_ptr == mod_id)
         {
             return fn_prio::multdiv;
         }
-        if (fn_index == pow_id)
+        if (fn_ptr == pow_id)
         {
             return fn_prio::exponent;
         }
-        throw std::runtime_error(std::format("unexpected infix operator '{}'",
-                                             fn_name_by_id(fn_index)));
+        throw std::runtime_error(
+            std::format("unexpected infix operator '{}'", fn_get_name(fn_ptr)));
     }
     if (fn_style == symbolic_op::postfix)
     {
-        if (fn_index == fct_id)
+        if (fn_ptr == fct_id)
         {
             return fn_prio::factorial;
         }
-        throw std::runtime_error(std::format("unexpected infix operator '{}'",
-                                             fn_name_by_id(fn_index)));
+        throw std::runtime_error(
+            std::format("unexpected infix operator '{}'", fn_get_name(fn_ptr)));
     }
     if (fn_style == symbolic_op::paren)
     {
@@ -316,13 +315,12 @@ fn_prio symbolic_actual::prio() const
     }
     if (fn_style == symbolic_op::none)
     {
-        if (fn_index == invalid_function)
+        if (fn_ptr == invalid_function)
         {
             return fn_prio::atomic;
         }
-        throw std::runtime_error(
-            std::format("unexpected symbolic_op::none function '{}'",
-                        fn_name_by_id(fn_index)));
+        throw std::runtime_error(std::format(
+            "unexpected symbolic_op::none function '{}'", fn_get_name(fn_ptr)));
     }
     throw std::runtime_error(
         "unable to classify function priority for symbolic");
@@ -332,7 +330,7 @@ symbolic symbolic_actual::operator+(const symbolic_actual& o) const
 {
     symbolic s{};
     symbolic_actual& sum = *s;
-    sum.fn_index = fn_id_by_name("+");
+    sum.fn_ptr = fn_get_fn_ptr_by_name("+");
     sum.fn_style = symbolic_op::infix;
     sum.left = box.get();
     sum.right = o.box.get();
@@ -344,7 +342,7 @@ symbolic symbolic_actual::operator-(const symbolic_actual& o) const
 {
     symbolic d{};
     symbolic_actual& diff = *d;
-    diff.fn_index = fn_id_by_name("-");
+    diff.fn_ptr = fn_get_fn_ptr_by_name("-");
     diff.fn_style = symbolic_op::infix;
     diff.left = box.get();
     diff.right = o.box.get();
@@ -356,7 +354,7 @@ symbolic symbolic_actual::operator*(const symbolic_actual& o) const
 {
     symbolic p{};
     symbolic_actual& prod = *p;
-    prod.fn_index = fn_id_by_name("*");
+    prod.fn_ptr = fn_get_fn_ptr_by_name("*");
     prod.fn_style = symbolic_op::infix;
     prod.left = box.get();
     prod.right = o.box.get();
@@ -368,7 +366,7 @@ symbolic symbolic_actual::operator/(const symbolic_actual& o) const
 {
     symbolic d{};
     symbolic_actual& div = *d;
-    div.fn_index = fn_id_by_name("/");
+    div.fn_ptr = fn_get_fn_ptr_by_name("/");
     div.fn_style = symbolic_op::infix;
     div.left = box.get();
     div.right = o.box.get();
@@ -380,7 +378,7 @@ symbolic symbolic_actual::operator%(const symbolic_actual& o) const
 {
     symbolic d{};
     symbolic_actual& div = *d;
-    div.fn_index = fn_id_by_name("%");
+    div.fn_ptr = fn_get_fn_ptr_by_name("%");
     div.fn_style = symbolic_op::infix;
     div.left = box.get();
     div.right = o.box.get();
@@ -393,7 +391,7 @@ symbolic floor(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("floor");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("floor");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic floor: {}\n", f);
@@ -404,7 +402,7 @@ symbolic ceil(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("ceil");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("ceil");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic ceil: {}\n", f);
@@ -415,7 +413,7 @@ symbolic round(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("round");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("round");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic round: {}\n", f);
@@ -426,7 +424,7 @@ symbolic lcm(const symbolic& a, const symbolic& b)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("lcm");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("lcm");
     fn.fn_style = symbolic_op::paren;
     fn.left = a;
     fn.right = b;
@@ -438,7 +436,7 @@ symbolic gcd(const symbolic& a, const symbolic& b)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("gcd");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("gcd");
     fn.fn_style = symbolic_op::paren;
     fn.left = a;
     fn.right = b;
@@ -450,7 +448,7 @@ symbolic pow(const symbolic& a, const symbolic& b)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("^");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("^");
     fn.fn_style = symbolic_op::infix;
     fn.left = a;
     fn.right = b;
@@ -462,7 +460,7 @@ symbolic exp(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("exp");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("exp");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic exp: {}\n", f);
@@ -478,7 +476,7 @@ symbolic factorial(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("!");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("!");
     fn.fn_style = symbolic_op::postfix;
     fn.left = v;
     lg::verbose("symbolic factorial: {}\n", f);
@@ -489,7 +487,7 @@ symbolic tgamma(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("gamma");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("gamma");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic gamma: {}\n", f);
@@ -500,7 +498,7 @@ symbolic zeta(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("zeta");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("zeta");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic zeta: {}\n", f);
@@ -511,7 +509,7 @@ symbolic abs(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("abs");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("abs");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic abs: {}\n", f);
@@ -522,7 +520,7 @@ symbolic log(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("log");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("log");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic log: {}\n", f);
@@ -533,7 +531,7 @@ symbolic ln(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("ln");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("ln");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic ln: {}\n", f);
@@ -544,7 +542,7 @@ symbolic sqrt(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("sqrt");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("sqrt");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic sqrt: {}\n", f);
@@ -555,7 +553,7 @@ symbolic sin(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("sin");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("sin");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic sin: {}\n", f);
@@ -566,7 +564,7 @@ symbolic cos(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("cos");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("cos");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic cos: {}\n", f);
@@ -577,7 +575,7 @@ symbolic tan(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("tan");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("tan");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic tan: {}\n", f);
@@ -588,7 +586,7 @@ symbolic asin(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("asin");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("asin");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic asin: {}\n", f);
@@ -599,7 +597,7 @@ symbolic acos(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("acos");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("acos");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic acos: {}\n", f);
@@ -610,7 +608,7 @@ symbolic atan(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("atan");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("atan");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic atan: {}\n", f);
@@ -621,7 +619,7 @@ symbolic sinh(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("sinh");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("sinh");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic sinh: {}\n", f);
@@ -632,7 +630,7 @@ symbolic cosh(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("cosh");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("cosh");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic cosh: {}\n", f);
@@ -643,7 +641,7 @@ symbolic tanh(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("tanh");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("tanh");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic tanh: {}\n", f);
@@ -654,7 +652,7 @@ symbolic asinh(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("asinh");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("asinh");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic asinh: {}\n", f);
@@ -665,7 +663,7 @@ symbolic acosh(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("acosh");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("acosh");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic acosh: {}\n", f);
@@ -676,7 +674,7 @@ symbolic atanh(const symbolic& v)
 {
     symbolic f{};
     symbolic_actual& fn = *f;
-    fn.fn_index = fn_id_by_name("atanh");
+    fn.fn_ptr = fn_get_fn_ptr_by_name("atanh");
     fn.fn_style = symbolic_op::paren;
     fn.left = v;
     lg::verbose("symbolic atanh: {}\n", f);

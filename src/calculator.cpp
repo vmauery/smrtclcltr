@@ -134,11 +134,11 @@ bool Calculator::run_one(const simple_instruction& itm)
     if (auto n = std::get_if<function_parts>(&itm); n)
     {
         // operation should always be present,
-        const auto& fn_name = fn_name_by_id(n->fn_index);
-        auto fn = fn_get_fn_ptr_by_name(fn_name);
+        auto fn = n->fn_ptr;
+        auto fname = fn_get_name(fn);
         if (n->re_args.size())
         {
-            lg::debug("executing function '{}({})'\n", fn_name, n->re_args);
+            lg::debug("executing function '{}({})'\n", fname, n->re_args);
             return fn->reop(*this, n->re_args);
         }
         else
@@ -148,10 +148,10 @@ bool Calculator::run_one(const simple_instruction& itm)
             {
                 lg::error("{} requires at least {} items on the stack; only {} "
                           "items are currently present\n",
-                          fn_name, min_items, stack.size());
+                          fname, min_items, stack.size());
                 return false;
             }
-            lg::debug("executing function '{}'\n", fn_name);
+            lg::debug("executing function '{}'\n", fname);
             return fn->op(*this);
         }
         return false;

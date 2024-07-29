@@ -41,11 +41,8 @@ std::vector<std::string_view> sym_ok = {
     "lcm",   "ln",   "log",   "log2", "neg",   "perm", "pi",
     "round", "sin",  "sinh",  "sqr",  "sqrt",  "tan",  "tanh",
 };
-std::vector<std::tuple<size_t, std::string_view>> regex_operations = {
-    {36, "drop([1-9][0-9]*)"},   {39, "dup([1-9][0-9]*)"},
-    {44, "([su])([1-9][0-9]*)"}, {79, "roll([1-9][0-9]*)"},
-    {80, "rolld([1-9][0-9]*)"},
-};
+std::vector<std::tuple<smrty::CalcFunction::ptr, std::string_view>>
+    regex_operations;
 
 std::optional<std::string_view> auto_complete(std::string_view in, int state)
 {
@@ -75,26 +72,7 @@ namespace smrty
 {
 // this is normally defined in function_library.cpp, but we don't
 // actually have any functions defined; only stubs. So define a fake here.
-std::string_view fn_name_by_id(size_t id)
-{
-    if (id < operations.size())
-    {
-        return operations[id];
-    }
-    static constexpr std::string_view invalid_function{"<invalid-fn>"};
-    return invalid_function;
-}
-size_t fn_id_by_name(std::string_view name)
-{
-    const auto& fn = std::find(operations.begin(), operations.end(), name);
-    if (fn == operations.end())
-    {
-        throw std::invalid_argument(
-            std::format("Function '{}' does not exist", name));
-    }
-    return std::distance(operations.begin(), fn);
-}
-const CalcFunction* fn_get_fn_ptr_by_name(std::string_view name)
+CalcFunction::ptr fn_get_fn_ptr_by_name(std::string_view name)
 {
     struct OK : public CalcFunction
     {
@@ -125,20 +103,45 @@ const CalcFunction* fn_get_fn_ptr_by_name(std::string_view name)
             return symbolic_op::paren;
         }
     };
-    static OK ok;
+    static CalcFunction::ptr ok = std::make_shared<OK>();
     const auto& fn = std::find(sym_ok.begin(), sym_ok.end(), name);
     if (fn != operations.end())
     {
-        return &ok;
+        return ok;
     }
     return nullptr;
 }
+std::string_view fn_get_name(CalcFunction::ptr p)
+{
+    if (p)
+    {
+        return p->name();
+    }
+    return "<unknown-function>";
+}
+
 } // namespace smrty
+
+void setup_regex_ops()
+{
+    constexpr auto regexes =
+        std::to_array<std::tuple<std::string_view, std::string_view>>(
+            {{"dropn", "drop([1-9][0-9]*)"},
+             {"dupn", "dup([1-9][0-9]*)"},
+             {"int_type", "([su])([1-9][0-9]*)"},
+             {"rolln", "roll([1-9][0-9]*)"},
+             {"rolldn", "rolld([1-9][0-9]*)"}});
+    for (const auto& [name, re] : regexes)
+    {
+        regex_operations.emplace_back(smrty::fn_get_fn_ptr_by_name(name), re);
+    }
+}
 
 int main(int argc, char* argv[])
 {
     lg::debug_level = lg::level::debug;
     auto input = Input::make_shared(true, auto_complete);
+    setup_regex_ops();
     smrty::parser::set_function_lists(operations, regex_operations);
 
     while (true)

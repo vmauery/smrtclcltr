@@ -5,6 +5,7 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 
 #include <algorithm>
+#include <calculator.hpp>
 #include <exception>
 #include <format>
 #include <function_library.hpp>
@@ -21,35 +22,15 @@ namespace
 {
 
 size_t op_names_max_strlen;
-std::map<std::string_view, const CalcFunction*> operations;
+std::map<std::string_view, CalcFunction::ptr> operations;
 std::vector<std::string_view> function_names;
-std::map<size_t, std::string_view> reops;
+std::map<CalcFunction::ptr, std::string_view> reops;
+std::vector<CalcFunction::ptr> user_functions;
 
 } // namespace
 
-size_t fn_id_by_name(std::string_view name)
-{
-    const auto& fn =
-        std::find(function_names.begin(), function_names.end(), name);
-    if (fn == function_names.end())
-    {
-        throw std::invalid_argument(
-            std::format("Function '{}' does not exist", name));
-    }
-    return std::distance(function_names.begin(), fn);
-}
 
-std::string_view fn_name_by_id(size_t id)
-{
-    if (id < function_names.size())
-    {
-        return function_names[id];
-    }
-    static constexpr auto unknown_function = "<unknown-function>";
-    return unknown_function;
-}
-
-const CalcFunction* fn_get_fn_ptr_by_name(std::string_view name)
+CalcFunction::ptr fn_get_fn_ptr_by_name(std::string_view name)
 {
     auto fn = operations.find(name);
     if (fn != operations.end())
@@ -59,13 +40,13 @@ const CalcFunction* fn_get_fn_ptr_by_name(std::string_view name)
     return nullptr;
 }
 
-const CalcFunction* fn_get_fn_ptr_by_id(size_t id)
+std::string_view fn_get_name(CalcFunction::ptr p)
 {
-    if (id < function_names.size())
+    if (p)
     {
-        return fn_get_fn_ptr_by_name(function_names[id]);
+        return p->name();
     }
-    return nullptr;
+    return "<unknown-function>";
 }
 
 std::span<std::string_view> fn_get_all_names()
@@ -73,15 +54,36 @@ std::span<std::string_view> fn_get_all_names()
     return {function_names.begin(), function_names.end()};
 }
 
-void setup_catalog()
+struct DoNotDelete
 {
-    // add the functions in the __functions__ section
+    void operator()(auto*)
+    {
+    }
+};
+
+static std::vector<CalcFunction::ptr> builtin_functions;
+void initialize_builtin_function_vector() __attribute__((constructor));
+void initialize_builtin_function_vector()
+{
+    DoNotDelete undeleter;
     for (auto iter = &__start_calc_functions; iter < &__stop_calc_functions;
          iter++)
     {
-        operations[(*iter)->name()] = *iter;
+        builtin_functions.emplace_back(
+            std::shared_ptr<const CalcFunction>(*iter, undeleter));
+    }
+}
+
+void setup_catalog()
+{
+    operations.clear();
+    // add the functions in the __functions__ section
+    for (const auto& fn : builtin_functions)
+    {
+        operations[fn->name()] = fn;
     }
     op_names_max_strlen = 1;
+    function_names.clear();
     std::transform(operations.begin(), operations.end(),
                    std::back_inserter(function_names), [](const auto& kv) {
                        size_t sz = kv.first.size();
@@ -93,17 +95,15 @@ void setup_catalog()
                    });
     std::sort(function_names.begin(), function_names.end());
 
-    std::vector<std::tuple<size_t, std::string_view>> reop_list{};
+    std::vector<std::tuple<CalcFunction::ptr, std::string_view>> reop_list{};
+    reops.clear();
     for (const auto& [k, v] : operations)
     {
         auto re = v->regex();
         if (re.size())
         {
-            auto first = function_names.begin();
-            auto iter = std::find(first, function_names.end(), k);
-            reops.emplace(std::distance(first, iter), re);
-            reop_list.emplace_back(
-                std::make_tuple(std::distance(first, iter), re));
+            reops.emplace(v, re);
+            reop_list.emplace_back(std::make_tuple(v, re));
         }
     }
     parser::set_function_lists(function_names, reop_list);

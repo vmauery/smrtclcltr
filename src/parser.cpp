@@ -41,42 +41,43 @@ struct regex_parser
     }
 
     constexpr regex_parser(
-        const std::vector<std::tuple<size_t, std::string_view>>& regulars) :
+        const std::vector<
+            std::tuple<smrty::CalcFunction::ptr, std::string_view>>& regulars) :
         regstrs(), regexs()
     {
         regstrs.reserve(regulars.size());
         regexs.reserve(regulars.size());
-        for (const auto& [i, re] : regulars)
+        for (const auto& [p, re] : regulars)
         {
             regstrs.push_back(re);
-            regexs.emplace_back(std::make_tuple(i, std::string{re}));
+            regexs.emplace_back(std::make_tuple(p, std::string{re}));
         }
     }
 
     constexpr regex_parser(
-        std::vector<std::tuple<size_t, std::string_view>>&& regulars) :
-        regstrs(), regexs()
+        std::vector<std::tuple<smrty::CalcFunction::ptr, std::string_view>>&&
+            regulars) : regstrs(), regexs()
     {
         regstrs.reserve(regulars.size());
         regexs.reserve(regulars.size());
-        for (const auto& [i, re] : regulars)
+        for (const auto& [p, re] : regulars)
         {
             regstrs.push_back(re);
-            regexs.emplace_back(std::make_tuple(i, std::string{re}));
+            regexs.emplace_back(std::make_tuple(p, std::string{re}));
         }
     }
 
-    void set_regulars(
-        const std::vector<std::tuple<size_t, std::string_view>>& regulars)
+    void set_regulars(const std::vector<std::tuple<smrty::CalcFunction::ptr,
+                                                   std::string_view>>& regulars)
     {
         regexs.clear();
         regstrs.clear();
         regstrs.reserve(regulars.size());
         regexs.reserve(regulars.size());
-        for (const auto& [i, re] : regulars)
+        for (const auto& [p, re] : regulars)
         {
             regstrs.push_back(re);
-            regexs.emplace_back(std::make_tuple(i, std::string{re}));
+            regexs.emplace_back(std::make_tuple(p, std::string{re}));
         }
         lg::debug("set_regulars({})\n", regstrs);
     }
@@ -91,7 +92,7 @@ struct regex_parser
                                      char32_t>)
         {
         */
-        std::tuple<size_t, std::cmatch> retval;
+        std::tuple<smrty::CalcFunction::ptr, std::cmatch> retval;
         call(first, last, context, skip, flags, success, retval);
         return retval;
         /*
@@ -144,7 +145,7 @@ struct regex_parser
     }
 
     std::vector<std::string_view> regstrs;
-    std::vector<std::tuple<size_t, std::regex>> regexs;
+    std::vector<std::tuple<smrty::CalcFunction::ptr, std::regex>> regexs;
 };
 
 constexpr auto regex() noexcept
@@ -195,9 +196,9 @@ global_state globals{};
 
 // rule declarations
 // bp::rule<class string, std::string> const string_r = "string";
-bp::symbols<int> op_functions{};
-bp::symbols<int> functions{};
-bp::symbols<int> paren_op{};
+bp::symbols<CalcFunction::ptr> op_functions{};
+bp::symbols<CalcFunction::ptr> functions{};
+bp::symbols<CalcFunction::ptr> paren_op{};
 bp::symbols<bool> boolean{{"false", false}, {"true", true}};
 bp::symbols<int> if_sub_words{{"elif", 1}, {"else", 2}, {"endif", 3}};
 //]
@@ -496,14 +497,14 @@ auto const parse_function = [](auto& ctx) {
     auto& attr = _attr(ctx);
     auto& val = _val(ctx);
     // print_ctx_types(parse_function);
-    val.fn_index = attr;
+    val.fn_ptr = attr;
 };
 
 auto const parse_regulars = [](auto& ctx) {
     auto& attr = _attr(ctx);
     auto& val = _val(ctx);
     // print_ctx_types(parse_regulars);
-    val.fn_index = std::get<0>(attr);
+    val.fn_ptr = std::get<0>(attr);
     // turn the cmatches into vector of strings
     auto& matches = std::get<1>(attr);
     std::vector<std::string> args;
@@ -773,7 +774,7 @@ auto const parse_variable = [](auto& ctx) {
     auto& val = _val(ctx);
     print_ctx_types(parse_factorial);
     lg::debug("parse_factorial: val={}, attr={}\n", val, attr);
-    val().fn_index = smrty::fn_id_by_name("!");
+    val().fn_ptr = smrty::fn_get_fn_ptr_by_name("!");
     val().fn_style = symbolic_op::postfix;
     lg::debug("                 val={}, attr={}\n", val, attr);
 };
@@ -783,7 +784,7 @@ auto const parse_expr_passthru_n = [](auto& ctx, int n) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_expr_passthru);
     lg::debug("parse_expr_passthru({}): val={} <<- attr={}\n", n, val, attr);
-    if (val().fn_index == smrty::invalid_function)
+    if (val().fn_ptr == smrty::invalid_function)
     {
         val = attr;
     }
@@ -802,7 +803,7 @@ auto const parse_expr_left_n = [](auto& ctx, int n) {
     // if left is an atomic (number or variable) we need to copy it in
     // from the .left or .right
     // otherwise, we pull in the whole symbolic_parts
-    if (attr().fn_index == smrty::invalid_function)
+    if (attr().fn_ptr == smrty::invalid_function)
     {
         if (std::get_if<std::monostate>(&(attr().left)))
         {
@@ -828,7 +829,7 @@ auto const parse_negation_left = [](auto& ctx) {
     // attr should always have the value on the left
     // if attr.left is a number_parts, negate and turn val into an atomic
     val().left = attr().left;
-    if (attr().fn_index == smrty::invalid_function)
+    if (attr().fn_ptr == smrty::invalid_function)
     {
         if (auto l = std::get_if<number_parts>(&(val().left)); l)
         {
@@ -841,7 +842,7 @@ auto const parse_negation_left = [](auto& ctx) {
             {
                 t->first.mantissa_sign *= -1;
             }
-            val().fn_index = smrty::invalid_function;
+            val().fn_ptr = smrty::invalid_function;
             val().fn_style = smrty::symbolic_op::none;
         }
     }
@@ -853,7 +854,7 @@ auto const parse_expr_right_n = [](auto& ctx, int n) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_expr_right);
     lg::debug("parse_expr_right({}): val={} right <<- attr={}\n", n, val, attr);
-    if (attr().fn_index == smrty::invalid_function)
+    if (attr().fn_ptr == smrty::invalid_function)
     {
         if (std::get_if<std::monostate>(&(attr().right)))
         {
@@ -877,10 +878,10 @@ auto const parse_expr_op = [](auto& ctx) {
     // print_ctx_types(parse_expr_op);
     lg::debug("parse_expr_op: val={}, attr={}\n", val, attr);
     std::string_view v{&attr, 1};
-    if (val().fn_index == smrty::invalid_function)
+    if (val().fn_ptr == smrty::invalid_function)
     {
         val().fn_style = symbolic_op::infix;
-        val().fn_index = smrty::fn_id_by_name(v);
+        val().fn_ptr = smrty::fn_get_fn_ptr_by_name(v);
     }
     else
     {
@@ -888,7 +889,7 @@ auto const parse_expr_op = [](auto& ctx) {
         val = symbolic_parts_ptr();
         val().left = left;
         val().fn_style = symbolic_op::infix;
-        val().fn_index = smrty::fn_id_by_name(v);
+        val().fn_ptr = smrty::fn_get_fn_ptr_by_name(v);
     }
     lg::debug("               val={}, attr={}\n", val, attr);
 };
@@ -898,7 +899,7 @@ auto const parse_negation = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_negation);
     lg::debug("parse_negation: val={}, attr={}\n", val, attr);
-    val().fn_index = smrty::fn_id_by_name("-");
+    val().fn_ptr = smrty::fn_get_fn_ptr_by_name("-");
     val().fn_style = symbolic_op::prefix;
     lg::debug("                val={}, attr={}\n", val, attr);
 };
@@ -908,7 +909,7 @@ auto const parse_number_expr = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_number_expr);
     lg::debug("parse_number_expr: val={}, attr={}\n", val, attr);
-    val().fn_index = smrty::invalid_function;
+    val().fn_ptr = smrty::invalid_function;
     val().left = attr;
     lg::debug("                   val={}, attr={}\n", val, attr);
 };
@@ -919,7 +920,7 @@ auto const store_expr_fn = [](auto& ctx) {
     // print_ctx_types(store_expr_fn);
     lg::debug("store_expr_fn: val={}, attr={}\n", val, attr);
     val().fn_style = symbolic_op::paren;
-    val().fn_index = attr.fn_index;
+    val().fn_ptr = attr.fn_ptr;
     lg::debug("               val={}, attr={}\n", val, attr);
 };
 
@@ -1062,7 +1063,8 @@ void set_current_base(int b)
 
 void set_function_lists(
     std::vector<std::string_view>& fn_names,
-    const std::vector<std::tuple<size_t, std::string_view>>& regex_functions)
+    const std::vector<std::tuple<CalcFunction::ptr, std::string_view>>&
+        regex_functions)
 {
     auto all_nonalnum = [](std::string_view s) {
         auto iter = s.begin();
@@ -1076,14 +1078,16 @@ void set_function_lists(
         }
         return true;
     };
-    size_t i = 0;
+    op_functions.parser_.initial_elements_.clear();
+    paren_op.parser_.initial_elements_.clear();
+    functions.parser_.initial_elements_.clear();
     for (const auto& f : fn_names)
     {
         // operators might interfere with other stuff, so separate
         // them to keep them at lower priority in the parse stack
         if (all_nonalnum(f))
         {
-            op_functions(f, i++);
+            op_functions(f, fn_get_fn_ptr_by_name(f));
         }
         else
         {
@@ -1091,9 +1095,9 @@ void set_function_lists(
             if (auto p = smrty::fn_get_fn_ptr_by_name(f);
                 p && p->symbolic_usage() != symbolic_op::none)
             {
-                paren_op(f, i);
+                paren_op(f, fn_get_fn_ptr_by_name(f));
             }
-            functions(f, i++);
+            functions(f, fn_get_fn_ptr_by_name(f));
         }
     }
     re_fn_def.parser_.parser_.set_regulars(regex_functions);

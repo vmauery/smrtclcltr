@@ -17,7 +17,7 @@ SPDX-License-Identifier: BSD-3-Clause
 namespace smrty
 {
 
-constexpr size_t invalid_function = static_cast<size_t>(-1);
+constexpr auto invalid_function = nullptr;
 
 enum class symbolic_op
 {
@@ -91,12 +91,11 @@ struct symbolic_parts
                                  symbolic_parts_ptr>;
 
     symbolic_parts() :
-        count(counter++), fn_index(invalid_function),
-        fn_style(symbolic_op::none), left(std::monostate()),
-        right(std::monostate())
+        count(counter++), fn_ptr(invalid_function), fn_style(symbolic_op::none),
+        left(std::monostate()), right(std::monostate())
     {
     }
-    size_t fn_index;
+    std::shared_ptr<const CalcFunction> fn_ptr;
     symbolic_op fn_style;
 
     // operand is a number, or a variable, or other symbolic
@@ -109,15 +108,14 @@ struct symbolic_parts
 
 struct function_parts
 {
-    function_parts() :
-        fn_index(invalid_function), fn_style(symbolic_op::none), re_args()
+    function_parts() : fn_ptr(nullptr), fn_style(symbolic_op::none), re_args()
     {
     }
-    explicit function_parts(size_t id) :
-        fn_index(id), fn_style(symbolic_op::none), re_args()
+    explicit function_parts(CalcFunction::ptr fn) :
+        fn_ptr(fn), fn_style(symbolic_op::none), re_args()
     {
     }
-    size_t fn_index;
+    CalcFunction::ptr fn_ptr;
     symbolic_op fn_style;
 
     // re_args is used directly to execute re_op functions
@@ -187,7 +185,7 @@ struct std::formatter<smrty::function_parts>
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto out = ctx.out();
-        out = std::format_to(out, "{}", smrty::fn_name_by_id(fn.fn_index));
+        out = std::format_to(out, "{}", fn_get_name(fn.fn_ptr));
         if (fn.re_args.size())
         {
             out = std::format_to(out, "({:, })", fn.re_args);
@@ -358,11 +356,11 @@ struct std::formatter<smrty::symbolic_parts>
         auto out = ctx.out();
         out =
             std::format_to(out, "[#{}: id:{}, style:{}, left:{}, right:{}]",
-                           sym.count, smrty::fn_name_by_id(sym.fn_index),
+                           sym.count, fn_get_name(sym.fn_ptr),
                            static_cast<int>(sym.fn_style), sym.left, sym.right);
         return out;
         // number_parts or symbolic_parts single operand
-        if (sym.fn_index == smrty::invalid_function)
+        if (sym.fn_ptr == smrty::invalid_function)
         {
             out = std::format_to(out, "[#{}: {}]", sym.count, sym.left);
             return out;
@@ -371,12 +369,12 @@ struct std::formatter<smrty::symbolic_parts>
         if (sym.fn_style == smrty::symbolic_op::infix)
         {
             out = std::format_to(out, "[#{}: {} {} {}]", sym.count, sym.left,
-                                 smrty::fn_name_by_id(sym.fn_index), sym.right);
+                                 fn_get_name(sym.fn_ptr), sym.right);
         }
         else
         {
             out = std::format_to(out, "[#{}: {}({})]", sym.count,
-                                 smrty::fn_name_by_id(sym.fn_index), sym.left);
+                                 fn_get_name(sym.fn_ptr), sym.left);
         }
         return out;
     }

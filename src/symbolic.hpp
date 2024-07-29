@@ -103,7 +103,7 @@ struct symbolic_actual
     fn_prio prio() const;
 
     std::reference_wrapper<symbolic> box;
-    size_t fn_index;
+    CalcFunction::ptr fn_ptr;
     symbolic_op fn_style;
     symbolic_operand left;
     symbolic_operand right;
@@ -192,7 +192,7 @@ struct std::formatter<smrty::symbolic_actual>
     {
         auto out = ctx.out();
         // number_parts or symbolic_parts single operand
-        if (sym.fn_index == smrty::invalid_function)
+        if (sym.fn_ptr == smrty::invalid_function)
         {
             if (sym.fn_style == smrty::symbolic_op::paren)
             {
@@ -216,7 +216,7 @@ struct std::formatter<smrty::symbolic_actual>
             // check for adding explicit parenthesis
             // left side
             if (auto l = std::get_if<smrty::symbolic>(&(sym.left));
-                l && (*(*l)).fn_index != smrty::invalid_function &&
+                l && (*(*l)).fn_ptr != smrty::invalid_function &&
                 (*(*l)).prio() < sym.prio())
             {
                 out = std::format_to(out, "({})", *l);
@@ -226,10 +226,10 @@ struct std::formatter<smrty::symbolic_actual>
                 out = std::format_to(out, "{}", sym.left);
             }
             // op
-            out = std::format_to(out, "{}", smrty::fn_name_by_id(sym.fn_index));
+            out = std::format_to(out, "{}", fn_get_name(sym.fn_ptr));
             // right side
             if (auto r = std::get_if<smrty::symbolic>(&(sym.right));
-                r && (*(*r)).fn_index != smrty::invalid_function &&
+                r && (*(*r)).fn_ptr != smrty::invalid_function &&
                 (*(*r)).prio() < sym.prio())
             {
                 out = std::format_to(out, "({})", *r);
@@ -241,18 +241,15 @@ struct std::formatter<smrty::symbolic_actual>
         }
         else if (sym.fn_style == smrty::symbolic_op::prefix)
         {
-            out = std::format_to(out, "{}{}",
-                                 smrty::fn_name_by_id(sym.fn_index), sym.left);
+            out = std::format_to(out, "{}{}", fn_get_name(sym.fn_ptr), sym.left);
         }
         else if (sym.fn_style == smrty::symbolic_op::postfix)
         {
-            out = std::format_to(out, "{}{}", sym.left,
-                                 smrty::fn_name_by_id(sym.fn_index));
+            out = std::format_to(out, "{}{}", sym.left, fn_get_name(sym.fn_ptr));
         }
         else if (sym.fn_style == smrty::symbolic_op::paren)
         {
-            out = std::format_to(out, "{}({}",
-                                 smrty::fn_name_by_id(sym.fn_index), sym.left);
+            out = std::format_to(out, "{}({}", fn_get_name(sym.fn_ptr), sym.left);
             if (!std::get_if<std::monostate>(&sym.right))
             {
                 out = std::format_to(out, ", {}", sym.right);
@@ -261,9 +258,8 @@ struct std::formatter<smrty::symbolic_actual>
         }
         else /* none */
         {
-            out = std::format_to(out, "({}: {}, {})",
-                                 smrty::fn_name_by_id(sym.fn_index), sym.left,
-                                 sym.right);
+            out = std::format_to(out, "({}: {}, {})", fn_get_name(sym.fn_ptr),
+                                 sym.left, sym.right);
         }
         /*
     none,
