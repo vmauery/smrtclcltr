@@ -24,8 +24,8 @@ struct range : public CalcFunction
             "\n"
             "    Usage: x y range\n"
             "\n"
-            "    Returns the numbers in the range of [x,y) of the "
-            "bottom two items on the stack: x x+1 ... y-1\n"
+            "    Returns a list of the numbers in the range of [x,y) of the\n"
+            "    bottom two items on the stack: x x+1 ... y-1\n"
             // clang-format on
         };
         return _help;
@@ -55,15 +55,16 @@ struct range : public CalcFunction
             step = -1;
         }
         mpz v = *y;
+        std::vector<mpx> items{};
         for (; count > 0; count--)
         {
-            stack_entry ve;
-            ve.value(v, calc.flags);
-            calc.stack.emplace_front(
-                v, calc.config.base, calc.config.fixed_bits,
-                calc.config.precision, calc.config.is_signed, calc.flags);
+            items.push_back(v);
             v += step;
         }
+        calc.stack.emplace_front(numeric{list{std::move(items)}},
+                                 calc.config.base, calc.config.fixed_bits,
+                                 calc.config.precision, calc.config.is_signed,
+                                 calc.flags);
         return true;
     }
     int num_args() const final
