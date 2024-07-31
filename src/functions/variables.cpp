@@ -54,7 +54,7 @@ struct store : public CalcFunction
                     throw std::invalid_argument(
                         "User-defined function already exists with this name");
                 }
-                calc.variables[*n] = val;
+                calc.set_var(*n, val);
                 calc.stack.pop_front();
                 calc.stack.pop_front();
                 return true;
@@ -114,10 +114,10 @@ struct define : public CalcFunction
         {
             if (auto n = std::get_if<std::string>(&(*(*var)).left); n)
             {
-                if (is_user_function(*n))
+                if (auto v = calc.get_var(*n); v)
                 {
                     throw std::invalid_argument(
-                        "User-defined function already exists with this name");
+                        "Variable already exists with this name");
                 }
                 register_user_function(*n, program{*prog});
                 calc.stack.pop_front();
@@ -171,9 +171,9 @@ struct rm : public CalcFunction
             if (auto n = std::get_if<std::string>(&(*(*var)).left); n)
             {
                 // check if n is a variable
-                if (auto v = calc.variables.find(*n); v != calc.variables.end())
+                if (auto v = calc.get_var(*n); v)
                 {
-                    calc.variables.erase(v, ++v);
+                    calc.unset_var(*n);
                 }
                 else if (is_user_function(*n))
                 {
@@ -253,14 +253,9 @@ struct listing : public CalcFunction
             }
         };
 
-        if (calc.variables.size() != 0)
+        std::vector<std::string_view> var_names = calc.get_var_names();
+        if (var_names.size() != 0)
         {
-            std::vector<std::string_view> var_names;
-            var_names.reserve(calc.variables.size());
-            for (const auto& [var, val] : calc.variables)
-            {
-                var_names.push_back(var);
-            }
             ui->out("Variables:\n");
             display(var_names);
             ui->out("\n");
@@ -288,18 +283,20 @@ struct listing : public CalcFunction
         auto size = ui->size();
         auto& tcols = std::get<1>(size);
 
-        if (calc.variables.size() != 0)
+        std::vector<std::string_view> var_names = calc.get_var_names();
+        if (var_names.size() != 0)
         {
             ui->out("Variables:\n");
             size_t max_var_len = 0;
-            for (const auto& [var, val] : calc.variables)
+            for (const auto& var : var_names)
             {
                 max_var_len = std::max(max_var_len, var.size());
             }
 
-            for (const auto& [var, val] : calc.variables)
+            for (const auto& var : var_names)
             {
-                std::string vo = std::format("{}", val);
+                std::optional<numeric> val = calc.get_var(var);
+                std::string vo = std::format("{}", *val);
                 vo.resize(tcols - max_var_len - 2);
                 ui->out("{0: <{1}}: {2}\n", var, max_var_len, vo);
             }

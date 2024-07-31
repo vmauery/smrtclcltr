@@ -34,6 +34,9 @@ Calculator::Calculator()
     config.precision = builtin_default_precision;
     set_default_precision(builtin_default_precision);
 
+    // add a top-level variable scope
+    variables.emplace_front();
+
     // add all the functions
     setup_catalog();
 }
@@ -295,6 +298,62 @@ bool Calculator::run(std::string_view command_line)
         }
     }
     return true;
+}
+
+void Calculator::var_scope_enter()
+{
+    variables.emplace_front();
+}
+
+void Calculator::var_scope_exit()
+{
+    variables.pop_front();
+}
+
+std::vector<std::string_view> Calculator::get_var_names()
+{
+    std::unordered_set<std::string_view> nameset;
+    for (const auto& scope : variables)
+    {
+        for (const auto& [k, v] : scope)
+        {
+            nameset.emplace(k);
+        }
+    }
+    std::vector<std::string_view> names(nameset.begin(), nameset.end());
+    std::sort(names.begin(), names.end());
+    return names;
+}
+
+std::optional<numeric> Calculator::get_var(std::string_view name)
+{
+    for (const auto& scope : variables)
+    {
+        for (const auto& [k, v] : scope)
+        {
+            if (k == name)
+            {
+                return v;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
+void Calculator::set_var(std::string_view name, const numeric& value)
+{
+    auto& scope = variables.front();
+    scope[std::string(name)] = value;
+}
+
+// unset only affects the current scope
+void Calculator::unset_var(std::string_view name)
+{
+    auto& scope = variables.front();
+    if (auto p = scope.find(std::string(name)); p != scope.end())
+    {
+        scope.erase(p);
+    }
 }
 
 bool Calculator::undo()

@@ -222,10 +222,9 @@ void symbolic_actual::eval(Calculator& calc) const
         }
         else if (auto s = std::get_if<std::string>(&left); s)
         {
-            if (auto i = calc.variables.find(*s); i != calc.variables.end())
+            if (auto v = calc.get_var(*s); v)
             {
-                auto v = i->second;
-                push(std::move(v));
+                push(std::move(*v));
             }
             else
             {
@@ -245,10 +244,9 @@ void symbolic_actual::eval(Calculator& calc) const
         }
         else if (auto s = std::get_if<std::string>(&right); s)
         {
-            if (auto i = calc.variables.find(*s); i != calc.variables.end())
+            if (auto v = calc.get_var(*s); v)
             {
-                auto v = i->second;
-                push(std::move(v));
+                push(std::move(*v));
             }
             else
             {
@@ -280,8 +278,8 @@ fn_prio symbolic_actual::prio() const
         {
             return fn_prio::negate;
         }
-        throw std::runtime_error(
-            std::format("unexpected prefix operator '{}'", fn_get_name(fn_ptr)));
+        throw std::runtime_error(std::format("unexpected prefix operator '{}'",
+                                             fn_get_name(fn_ptr)));
     }
     if (fn_style == symbolic_op::infix)
     {

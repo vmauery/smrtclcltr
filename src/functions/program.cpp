@@ -45,13 +45,16 @@ struct execute : public CalcFunction
         program prog{*p};
         calc.stack.pop_front();
 
-        return prog.execute(
+        calc.var_scope_enter();
+        bool retval = prog.execute(
             [&calc](const simple_instruction& itm, execution_flags& eflags) {
                 bool retval = calc.run_one(itm);
                 eflags = calc.flags;
                 return retval;
             },
             calc.flags);
+        calc.var_scope_exit();
+        return retval;
     }
     int num_args() const final
     {

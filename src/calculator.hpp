@@ -55,7 +55,6 @@ class Calculator
 
     Config config;
     Stack stack;
-    std::map<std::string, numeric> variables;
     execution_flags flags;
 
     // enforce singleton
@@ -97,10 +96,21 @@ class Calculator
     bool mpc_mode(e_mpc_mode);
     bool run_one(const simple_instruction& itm);
 
+    // methods to access scoped variables
+    void var_scope_enter();
+    void var_scope_exit();
+    std::vector<std::string_view> get_var_names();
+    std::optional<numeric> get_var(std::string_view name);
+    void set_var(std::string_view name, const numeric& value);
+    void unset_var(std::string_view name);
+
   protected:
     Calculator();
 
     std::deque<Stack> saved_stacks;
+
+    // a stack of variables to allow for scope
+    std::deque<std::map<std::string, numeric>> variables;
 
     void make_functions();
     std::optional<std::string_view> auto_complete(std::string_view in,
