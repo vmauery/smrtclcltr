@@ -500,7 +500,7 @@ struct rolln : public CalcFunction
             "\n"
             "    Usage: x rolln\n"
             "\n"
-            "    Rolls the stack up x times\n"
+            "    Rolls the bottom n stack items up\n"
             // clang-format on
         };
         return _help;
@@ -518,18 +518,16 @@ struct rolln : public CalcFunction
         {
             count = static_cast<size_t>(*np);
         }
-        else if ((count == 0) || (calc.stack.size() < (count + 1)))
+        if ((count == 0) || (calc.stack.size() < (count + 1)))
         {
             throw insufficient_args();
         }
         // remove N
         calc.stack.pop_front();
-        for (size_t i = 0; i < count; i++)
-        {
-            stack_entry a = calc.stack.back();
-            calc.stack.pop_back();
-            calc.stack.push_front(a);
-        }
+        // pick count and push it at front, removing it from original location
+        stack_entry a = calc.stack[count - 1];
+        calc.stack.erase(calc.stack.begin() + count - 1);
+        calc.stack.push_front(a);
         return true;
     }
     int num_args() const final
@@ -601,7 +599,7 @@ struct rolldn : public CalcFunction
             "\n"
             "    Usage: rolldn\n"
             "\n"
-            "    Rolls the stack down x times\n"
+            "    Rolls the bottom n stack items down\n"
             // clang-format on
         };
         return _help;
@@ -615,18 +613,16 @@ struct rolldn : public CalcFunction
         {
             count = static_cast<size_t>(*np);
         }
-        else if ((count == 0) || (calc.stack.size() < (count + 1)))
+        if ((count == 0) || (calc.stack.size() < (count + 1)))
         {
             throw insufficient_args();
         }
         // remove N
         calc.stack.pop_front();
-        for (size_t i = 0; i < count; i++)
-        {
-            stack_entry a = calc.stack.front();
-            calc.stack.pop_front();
-            calc.stack.push_back(a);
-        }
+        // pop bottom and push it at count
+        stack_entry a = calc.stack.front();
+        calc.stack.pop_front();
+        calc.stack.insert(calc.stack.begin() + count - 1, std::move(a));
         return true;
     }
     int num_args() const final
