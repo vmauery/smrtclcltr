@@ -159,7 +159,7 @@ mpq parse_mpq(const smrty::two_number_parts& np)
     mpq num{}, den{};
     if (np.first.base)
     {
-        numeric n = parse_mpz(np.first);
+        mpx n = parse_mpz(np.first);
         if (auto np = std::get_if<mpz>(&n); np)
         {
             num = *np;
@@ -179,7 +179,7 @@ mpq parse_mpq(const smrty::two_number_parts& np)
     }
     if (np.second.base)
     {
-        numeric d = parse_mpz(np.second);
+        mpx d = parse_mpz(np.second);
         if (auto dp = std::get_if<mpz>(&d); dp)
         {
             den = *dp;
@@ -293,7 +293,7 @@ mpz parse_mpz(std::string_view s, int base)
     return mpz{s};
 }
 
-numeric parse_mpz(const smrty::single_number_parts& num)
+mpx parse_mpz(const smrty::single_number_parts& num)
 {
     mpz exponent{1};
     if (num.exponent.size())
@@ -356,55 +356,6 @@ mpc parse_mpc(const smrty::two_number_parts& num)
     mpq imag = parse_mpf(num.second);
 
     return mpc{mpf{real}, mpf{imag}};
-}
-
-matrix parse_matrix(const smrty::compound_parts& num)
-{
-    size_t rows = 0;
-    size_t cols = num.cols;
-    size_t rows_cols = 0;
-    std::vector<matrix::element_type> values{};
-    for (const auto& itm : num.items)
-    {
-        lg::debug("next is '{}'\n", itm);
-        numeric nval = make_numeric(itm);
-        matrix::element_type val;
-        if (!reduce(nval, val)())
-        {
-            throw std::runtime_error("Invalid matrix type");
-        }
-        values.emplace_back(std::move(val));
-        rows_cols++;
-        if ((rows_cols % cols) == 0)
-        {
-            rows++;
-            lg::debug("end of row {}: cols={}, cows_cols={}\n", rows, cols,
-                      rows_cols);
-        }
-    }
-    if ((cols != rows_cols) && ((rows == 2) && ((rows_cols % cols) != 0)))
-    {
-        throw std::invalid_argument(
-            "Failed to parse matrix: column count is inconsistent");
-    }
-    return matrix(cols, rows, std::move(values));
-}
-
-list parse_list(const smrty::compound_parts& num)
-{
-    std::vector<list::element_type> values{};
-    for (const auto& itm : num.items)
-    {
-        lg::debug("next is '{}'\n", itm);
-        numeric nval = make_numeric(itm);
-        list::element_type val;
-        if (!reduce(nval, val)())
-        {
-            throw std::runtime_error("Invalid list type");
-        }
-        values.emplace_back(std::move(val));
-    }
-    return list(std::move(values));
 }
 
 template <typename T>
@@ -576,29 +527,18 @@ std::string mpz_to_bin_string(const mpz& v, std::streamsize width)
 
 mpx make_mpx(const smrty::number_parts& num)
 {
-    numeric nval = make_numeric(num);
-    mpx val;
-    if (!reduce(nval, val)())
-    {
-        return {};
-    }
-    return val;
-}
-
-numeric make_numeric(const smrty::number_parts& num)
-{
     if (const auto n = std::get_if<smrty::single_number_parts>(&num); n)
     {
-        return make_numeric(*n);
+        return make_mpx(*n);
     }
     else if (const auto n = std::get_if<smrty::two_number_parts>(&num); n)
     {
-        return make_numeric(*n);
+        return make_mpx(*n);
     }
     return {};
 }
 
-numeric make_numeric(const smrty::single_number_parts& num)
+mpx make_mpx(const smrty::single_number_parts& num)
 {
     if (num.base == 0)
     {
@@ -610,7 +550,7 @@ numeric make_numeric(const smrty::single_number_parts& num)
     }
 }
 
-numeric make_numeric(const smrty::two_number_parts& num)
+mpx make_mpx(const smrty::two_number_parts& num)
 {
     if (num.number_type == smrty::two_number_parts::type::cmplx)
     {
@@ -626,13 +566,4 @@ numeric make_numeric(const smrty::two_number_parts& num)
 numeric make_numeric(const smrty::time_parts& num)
 {
     return parse_time(num);
-}
-
-numeric make_numeric(const smrty::compound_parts& num)
-{
-    if (num.cols)
-    {
-        return parse_matrix(num);
-    }
-    return parse_list(num);
 }

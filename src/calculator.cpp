@@ -166,15 +166,20 @@ bool Calculator::run_one(const simple_instruction& itm)
         e.precision = config.precision;
         e.fixed_bits = config.fixed_bits;
         e.is_signed = config.is_signed;
-        if (auto n = std::get_if<number_parts>(&itm); n)
+        if (auto n = std::get_if<mpx>(&itm); n)
         {
             // put it on the stack
-            e.value(make_numeric(*n), flags);
+            e.value(variant_cast(*n), flags);
         }
-        else if (auto n = std::get_if<compound_parts>(&itm); n)
+        else if (auto n = std::get_if<matrix>(&itm); n)
         {
             // put it on the stack
-            e.value(make_numeric(*n), flags);
+            e.value(*n, flags);
+        }
+        else if (auto n = std::get_if<list>(&itm); n)
+        {
+            // put it on the stack
+            e.value(*n, flags);
         }
         else if (auto n = std::get_if<time_parts>(&itm); n)
         {
@@ -190,9 +195,9 @@ bool Calculator::run_one(const simple_instruction& itm)
         {
             e.value(*n, flags);
         }
-        else if (auto n = std::get_if<symbolic_parts_ptr>(&itm); n)
+        else if (auto n = std::get_if<symbolic>(&itm); n)
         {
-            e.value(symbolic(*n), flags);
+            e.value(*n, flags);
         }
         stack.push_front(std::move(e));
     }

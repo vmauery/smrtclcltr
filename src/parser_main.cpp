@@ -5,10 +5,10 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 
 #include <input.hpp>
+#include <numeric.hpp>
 #include <optional>
 #include <parser.hpp>
 #include <print.hpp>
-#include <program.hpp>
 #include <string_view>
 #include <vector>
 
@@ -34,12 +34,6 @@ std::vector<std::string_view> operations = {
     "tan",      "tanh",        "uconv",   "undo",      "unix",
     "unsigned", "verbose",     "version", "xor",       "|",
     "~",
-};
-std::vector<std::string_view> sym_ok = {
-    "abs",   "acos", "acosh", "asin", "asinh", "atan", "atanh",
-    "ceil",  "comb", "cos",   "cosh", "floor", "gcd",  "inv",
-    "lcm",   "ln",   "log",   "log2", "neg",   "perm", "pi",
-    "round", "sin",  "sinh",  "sqr",  "sqrt",  "tan",  "tanh",
 };
 std::vector<std::tuple<smrty::CalcFunction::ptr, std::string_view>>
     regex_operations;
@@ -76,10 +70,12 @@ CalcFunction::ptr fn_get_fn_ptr_by_name(std::string_view name)
 {
     struct OK : public CalcFunction
     {
+        explicit OK(std::string_view name) : fake_name(name)
+        {
+        }
         virtual const std::string& name() const final
         {
-            static const std::string _name{"OK"};
-            return _name;
+            return fake_name;
         }
         virtual const std::string& help() const final
         {
@@ -100,16 +96,30 @@ CalcFunction::ptr fn_get_fn_ptr_by_name(std::string_view name)
         }
         symbolic_op symbolic_usage() const final
         {
-            return symbolic_op::paren;
+            if (std::isalnum(fake_name[0]))
+            {
+                return symbolic_op::paren;
+            }
+            return symbolic_op::infix;
         }
+        std::string fake_name;
     };
-    static CalcFunction::ptr ok = std::make_shared<OK>();
-    const auto& fn = std::find(sym_ok.begin(), sym_ok.end(), name);
-    if (fn != operations.end())
+    const auto& fn = std::find(operations.begin(), operations.end(), name);
+    if (fn == operations.end())
     {
-        return ok;
+        return nullptr;
     }
-    return nullptr;
+    static std::vector<CalcFunction::ptr> used{};
+    if (auto it =
+            std::find_if(used.begin(), used.end(),
+                         [name](auto ptr) { return ptr->name() == name; });
+        it != used.end())
+    {
+        return *it;
+    }
+    auto rq = std::make_shared<OK>(name);
+    used.push_back(rq);
+    return rq;
 }
 std::string_view fn_get_name(CalcFunction::ptr p)
 {

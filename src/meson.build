@@ -40,8 +40,10 @@ smrty_lib = static_library(
 common_src = [
   'debug.cpp',
   'input.cpp',
+  'numeric.cpp',
   'parser.cpp',
   'program.cpp',
+  'symbolic.cpp',
   ]
 
 common_lib = static_library(
@@ -53,9 +55,7 @@ common_lib = static_library(
 
 clcltr_src = [
   'calculator.cpp',
-  'numeric.cpp',
   'stack_entry.cpp',
-  'symbolic.cpp',
   'ui.cpp',
   'units.cpp',
   'user_function.cpp',

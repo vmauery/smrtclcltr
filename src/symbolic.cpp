@@ -34,10 +34,6 @@ namespace smrty
 symbolic::symbolic() : ptr(std::make_shared<symbolic_actual>(*this))
 {
 }
-symbolic::symbolic(const symbolic_parts_ptr& o) :
-    ptr(std::make_shared<symbolic_actual>(*this, o()))
-{
-}
 symbolic::symbolic(const symbolic& o) :
     ptr(std::make_shared<symbolic_actual>(*this, *o))
 {
@@ -142,38 +138,6 @@ symbolic_actual::symbolic_actual(symbolic& creator, const symbolic_actual& o) :
     };
     left = std::visit(get_arg, o.left);
     right = std::visit(get_arg, o.right);
-}
-
-symbolic_actual::symbolic_actual(symbolic& creator,
-                                 const symbolic_parts& parts) :
-    box(std::ref(creator)), fn_ptr(parts.fn_ptr), fn_style(parts.fn_style)
-{
-    lg::debug("incoming parts: {}\n", parts);
-    // std::monostate, std::string, number_parts, symbolic_parts_ptr
-    auto get_arg = [](const auto& a) -> symbolic_operand {
-        if constexpr (same_type_v<decltype(a), std::string>)
-        {
-            lg::verbose("arg is variable\n");
-            return a;
-        }
-        else if constexpr (same_type_v<decltype(a), number_parts>)
-        {
-            lg::verbose("arg is numeric\n");
-            return make_mpx(a);
-        }
-        else if constexpr (same_type_v<decltype(a), symbolic_parts_ptr>)
-        {
-            lg::verbose("arg is symbolic\n");
-            return symbolic(a);
-        }
-        else
-        {
-            lg::verbose("arg is monostate\n");
-            return std::monostate();
-        }
-    };
-    left = std::visit(get_arg, parts.left);
-    right = std::visit(get_arg, parts.right);
 }
 
 symbolic_actual::~symbolic_actual()

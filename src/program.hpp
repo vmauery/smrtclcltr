@@ -7,6 +7,8 @@ SPDX-License-Identifier: BSD-3-Clause
 #pragma once
 
 #include <format>
+#include <numeric.hpp>
+#include <numeric>
 #include <parser_parts.hpp>
 #include <regex>
 #include <std_container_format.hpp>
@@ -28,8 +30,8 @@ struct if_elif_statement;
 struct program;
 
 using simple_instruction =
-    std::variant<std::monostate, bool, number_parts, compound_parts, time_parts,
-                 function_parts, symbolic_parts_ptr, program>;
+    std::variant<std::monostate, bool, mpx, list, matrix, time_parts,
+                 function_parts, symbolic, program>;
 using simple_instructions = std::vector<simple_instruction>;
 
 // TODO: add control statement types to instruction variant

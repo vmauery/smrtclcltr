@@ -43,7 +43,6 @@ class symbolic
 {
   public:
     symbolic();
-    symbolic(const symbolic_parts_ptr& o);
     symbolic(const symbolic& o);
     symbolic(symbolic&& o);
     symbolic(const std::string& o);
@@ -88,7 +87,6 @@ struct symbolic_actual
 {
     explicit symbolic_actual(symbolic& creator);
     symbolic_actual(symbolic& creator, const symbolic_actual& o);
-    symbolic_actual(symbolic& creator, const symbolic_parts& parts);
     symbolic_actual(symbolic& creator, const mpx& o);
     symbolic_actual(symbolic& creator, const std::string& o);
     ~symbolic_actual();
@@ -191,7 +189,7 @@ struct std::formatter<smrty::symbolic_actual>
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
         auto out = ctx.out();
-        // number_parts or symbolic_parts single operand
+        // mpx or symbolic single operand
         if (sym.fn_ptr == smrty::invalid_function)
         {
             if (sym.fn_style == smrty::symbolic_op::paren)
@@ -241,15 +239,18 @@ struct std::formatter<smrty::symbolic_actual>
         }
         else if (sym.fn_style == smrty::symbolic_op::prefix)
         {
-            out = std::format_to(out, "{}{}", fn_get_name(sym.fn_ptr), sym.left);
+            out =
+                std::format_to(out, "{}{}", fn_get_name(sym.fn_ptr), sym.left);
         }
         else if (sym.fn_style == smrty::symbolic_op::postfix)
         {
-            out = std::format_to(out, "{}{}", sym.left, fn_get_name(sym.fn_ptr));
+            out =
+                std::format_to(out, "{}{}", sym.left, fn_get_name(sym.fn_ptr));
         }
         else if (sym.fn_style == smrty::symbolic_op::paren)
         {
-            out = std::format_to(out, "{}({}", fn_get_name(sym.fn_ptr), sym.left);
+            out =
+                std::format_to(out, "{}({}", fn_get_name(sym.fn_ptr), sym.left);
             if (!std::get_if<std::monostate>(&sym.right))
             {
                 out = std::format_to(out, ", {}", sym.right);

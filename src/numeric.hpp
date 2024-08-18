@@ -198,7 +198,7 @@ mpz make_fixed(const mpz& v, int bits, bool is_signed);
 
 // string parsers
 extern mpz parse_mpz(std::string_view s, int base = 10);
-extern numeric parse_mpz(const smrty::single_number_parts&);
+extern mpx parse_mpz(const smrty::single_number_parts&);
 extern mpc parse_mpc(std::string_view s);
 static inline mpq parse_mpq(std::string_view s)
 {
@@ -210,11 +210,9 @@ matrix parse_matrix(std::string_view s);
 list parse_list(std::string_view s);
 
 mpx make_mpx(const smrty::number_parts&);
-numeric make_numeric(const smrty::number_parts&);
-numeric make_numeric(const smrty::single_number_parts&);
-numeric make_numeric(const smrty::two_number_parts&);
+mpx make_mpx(const smrty::single_number_parts&);
+mpx make_mpx(const smrty::two_number_parts&);
 numeric make_numeric(const smrty::time_parts&);
-numeric make_numeric(const smrty::compound_parts&);
 
 template <typename TypeOut, typename TypeIn>
 TypeOut coerce_variant(const TypeIn& in)

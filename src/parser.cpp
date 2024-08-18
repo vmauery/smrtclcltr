@@ -20,16 +20,14 @@ void print_parser(auto const& context, regex_parser const&, auto& ostream,
 #include <debug.hpp>
 #include <fstream>
 #include <iostream>
+#include <numeric.hpp>
 #include <parser.hpp>
 #include <parser_parts.hpp>
-#include <program.hpp>
 #include <regex>
 #include <vector>
 
 namespace bp = ::boost::parser;
 using namespace bp::literals;
-
-size_t smrty::symbolic_parts::counter = 0;
 
 namespace boost::parser
 {
@@ -215,9 +213,9 @@ bp::rule<class hex_int, single_number_parts> const hex_int =
     "hexadecimal integer";
 bp::rule<class oct_int, single_number_parts> const oct_int = "octal integer";
 bp::rule<class bin_int, single_number_parts> const bin_int = "binary integer";
-bp::rule<class number_r, number_parts> const number_r = "number";
-bp::rule<class matrix, compound_parts> const matrix = "matrix";
-bp::rule<class list, compound_parts> const list = "list";
+bp::rule<class number_r, mpx> const number_r = "number";
+bp::rule<class matrix_r, matrix> const matrix_r = "matrix";
+bp::rule<class list_r, list> const list_r = "list";
 bp::rule<class time, time_parts> const time = "time";
 bp::rule<class duration, time_parts> const duration = "duration";
 
@@ -235,24 +233,19 @@ bp::rule<class re_fn, function_parts> const re_fn = "regex function";
 bp::rule<class function, function_parts> const function = "function";
 bp::rule<class operators, function_parts> const operators = "operators";
 
-bp::rule<class variable, symbolic_parts_ptr> const variable = "Variable";
-bp::rule<class paren_expr, symbolic_parts_ptr> const paren_expr =
+bp::rule<class variable, symbolic> const variable = "Variable";
+bp::rule<class paren_expr, symbolic> const paren_expr =
     "Parenthetic expression";
 bp::rule<class paren_fn, function_parts> const paren_fn = "symbolic function";
-bp::rule<class paren_fn_call, symbolic_parts_ptr> const paren_fn_call =
-    "Function call";
-bp::rule<class expr_atomic, symbolic_parts_ptr> const expr_atomic =
-    "Atomic expression";
-bp::rule<class factorial, symbolic_parts_ptr> const factorial = "Factorial";
-bp::rule<class expon, symbolic_parts_ptr> const expon = "Exponentiation";
-bp::rule<class negation, symbolic_parts_ptr> const negation = "Negation";
-bp::rule<class multdiv, symbolic_parts_ptr> const multdiv =
-    "Multiplication or division";
-bp::rule<class addsub, symbolic_parts_ptr> const addsub =
-    "Addition or subtraction";
-bp::rule<class equation, symbolic_parts_ptr> const equation = "Equation";
-bp::rule<class symbolic_r, symbolic_parts_ptr> const symbolic_r =
-    "Symbolic expression";
+bp::rule<class paren_fn_call, symbolic> const paren_fn_call = "Function call";
+bp::rule<class expr_atomic, symbolic> const expr_atomic = "Atomic expression";
+bp::rule<class factorial, symbolic> const factorial = "Factorial";
+bp::rule<class expon, symbolic> const expon = "Exponentiation";
+bp::rule<class negation, symbolic> const negation = "Negation";
+bp::rule<class multdiv, symbolic> const multdiv = "Multiplication or division";
+bp::rule<class addsub, symbolic> const addsub = "Addition or subtraction";
+bp::rule<class equation, symbolic> const equation = "Equation";
+bp::rule<class symbolic_r, symbolic> const symbolic_r = "Symbolic expression";
 /*
 auto const add_symbol = [](auto& ctx) {
     using namespace bp::literals;
@@ -493,6 +486,13 @@ auto const parse_rational = [](auto& ctx) {
     // print_ctx_types(parse_rational);
 };
 
+auto const parse_number = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    // print_ctx_types(parse_number);
+    val = make_mpx(attr);
+};
+
 auto const parse_function = [](auto& ctx) {
     auto& attr = _attr(ctx);
     auto& val = _val(ctx);
@@ -516,26 +516,55 @@ auto const parse_regulars = [](auto& ctx) {
     val.re_args = std::move(args);
 };
 
-auto const compound_append = [](auto& ctx) {
-    auto& attr = _attr(ctx);
+auto const append_row = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
     auto& val = _val(ctx);
-    // print_ctx_types(compound_append);
-    val.items.push_back(attr);
+    // first row
+    if (val.cols == 0)
+    {
+        val.values = attr;
+        val.rows = 1;
+        val.cols = attr.size();
+        return;
+    }
+    // individual rows
+    if (attr.size() == val.cols)
+    {
+        val.values.insert(val.values.end(), attr.begin(), attr.end());
+        val.rows++;
+        return;
+    }
+    // lazy entry method; fix it up
+    val.values.insert(val.values.end(), attr.begin(), attr.end());
+    val.rows += attr.size() / val.cols;
+};
+
+auto const append_row_lazy = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    // lazy entry method; fix it up
+    val.values.insert(val.values.end(), attr.begin(), attr.end());
+    val.rows += attr.size() / val.cols;
+    if ((attr.size() % val.rows) != 0)
+    {
+        val.rows++;
+    }
+    val.values.resize(val.rows * val.cols);
 };
 
 auto const parse_matrix = [](auto& ctx) {
     [[maybe_unused]] const auto& attr = _attr(ctx);
-    [[maybe_unused]] auto& val = _val(ctx);
+    auto& val = _val(ctx);
     // print_ctx_types(parse_matrix);
     // val = attr;
+    val.reduce();
 };
 
-auto const count_cols = [](auto& ctx) {
-    [[maybe_unused]] const auto& attr = _attr(ctx);
+auto const set_list_contents = [](auto& ctx) {
+    auto& attr = _attr(ctx);
     auto& val = _val(ctx);
-    // print_ctx_types(count_cols);
-    // setting cols 'makes' it a matrix
-    val.cols = val.items.size();
+    // print_ctx_types(set_list_contents);
+    val = attr;
 };
 
 auto const parse_list = [](auto& ctx) {
@@ -706,15 +735,16 @@ auto const c0mplex_def =
                (ufloating | uinteger)[parse_angle_or_imag] >> bp::char_("ij")]
               [parse_complex];
 
-auto const number_r_def =
-    bin_int | hex_int | oct_int | c0mplex | rati0nal | floating | integer;
+auto const number_r_def = (bin_int | hex_int | oct_int | c0mplex | rati0nal |
+                           floating | integer)[parse_number];
 
-auto const matrix_def =
-    ("["_l > "["_l > +number_r[compound_append] > "]"_l[count_cols] >
-     (*("["_l > +number_r[compound_append] > "]"_l) |
-      (+number_r[compound_append])) > "]"_l)[parse_matrix];
+auto const matrix_r_def =
+    ("["_l > "["_l > (+number_r)[append_row] > "]"_l >
+     ((+number_r)[append_row_lazy] |
+      *("["_l > (+number_r)[append_row] > "]"_l)) > "]"_l)[parse_matrix];
 
-auto const list_def = ("{"_l > +number_r[compound_append] > "}"_l)[parse_list];
+auto const list_r_def =
+    ("{"_l > (+number_r)[set_list_contents] > "}"_l)[parse_list];
 
 // iso 8601 date format
 auto const time_def = bp::lexeme
@@ -742,8 +772,8 @@ auto operators_def = op_functions[parse_function];
 auto re_fn_def = bp::regex()[parse_regulars];
 
 auto const simple_instruction_r_def =
-    (boolean | re_fn | function | time | duration | number_r | matrix | list |
-     program_r | operators)[parse_simple_instruction];
+    (boolean | re_fn | function | time | duration | number_r | matrix_r |
+     list_r | program_r | operators)[parse_simple_instruction];
 
 auto const instruction_r_def =
     (if_elif | simple_instruction_r | symbolic_r)[parse_instruction];
@@ -765,7 +795,7 @@ auto const parse_variable = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_variable);
     lg::debug("parse_variable: val={}, attr={}\n", val, attr);
-    val().left = attr;
+    (*val).left = attr;
     lg::debug("                val={}, attr={}\n", val, attr);
 };
 
@@ -774,8 +804,8 @@ auto const parse_variable = [](auto& ctx) {
     auto& val = _val(ctx);
     print_ctx_types(parse_factorial);
     lg::debug("parse_factorial: val={}, attr={}\n", val, attr);
-    val().fn_ptr = smrty::fn_get_fn_ptr_by_name("!");
-    val().fn_style = symbolic_op::postfix;
+    (*val).fn_ptr = smrty::fn_get_fn_ptr_by_name("!");
+    (*val).fn_style = symbolic_op::postfix;
     lg::debug("                 val={}, attr={}\n", val, attr);
 };
 
@@ -784,13 +814,13 @@ auto const parse_expr_passthru_n = [](auto& ctx, int n) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_expr_passthru);
     lg::debug("parse_expr_passthru({}): val={} <<- attr={}\n", n, val, attr);
-    if (val().fn_ptr == smrty::invalid_function)
+    if ((*val).fn_ptr == smrty::invalid_function)
     {
         val = attr;
     }
     else
     {
-        val().left = attr;
+        (*val).left = attr;
     }
     lg::debug("                        val={} <<- attr={}\n", val, attr);
 };
@@ -802,21 +832,21 @@ auto const parse_expr_left_n = [](auto& ctx, int n) {
     lg::debug("parse_expr_left({}): val={} left <<- attr={}\n", n, val, attr);
     // if left is an atomic (number or variable) we need to copy it in
     // from the .left or .right
-    // otherwise, we pull in the whole symbolic_parts
-    if (attr().fn_ptr == smrty::invalid_function)
+    // otherwise, we pull in the whole symbolic
+    if ((*attr).fn_ptr == smrty::invalid_function)
     {
-        if (std::get_if<std::monostate>(&(attr().left)))
+        if (std::get_if<std::monostate>(&((*attr).left)))
         {
-            val().left = attr().right;
+            (*val).left = (*attr).right;
         }
         else
         {
-            val().left = attr().left;
+            (*val).left = (*attr).left;
         }
     }
     else
     {
-        val().left = attr;
+        (*val).left = attr;
     }
     lg::debug("                    val={} left <<- attr={}\n", val, attr);
 };
@@ -828,22 +858,16 @@ auto const parse_negation_left = [](auto& ctx) {
     lg::debug("parse_negation_left: val={} left <<- attr={}\n", val, attr);
     // attr should always have the value on the left
     // if attr.left is a number_parts, negate and turn val into an atomic
-    val().left = attr().left;
-    if (attr().fn_ptr == smrty::invalid_function)
+    (*val).left = (*attr).left;
+    if ((*attr).fn_ptr == smrty::invalid_function)
     {
-        if (auto l = std::get_if<number_parts>(&(val().left)); l)
+        if (auto l = std::get_if<mpx>(&((*val).left)); l)
         {
             // negate the value and set val function to invalid
-            if (auto s = std::get_if<single_number_parts>(l))
-            {
-                s->mantissa_sign *= -1;
-            }
-            else if (auto t = std::get_if<two_number_parts>(l))
-            {
-                t->first.mantissa_sign *= -1;
-            }
-            val().fn_ptr = smrty::invalid_function;
-            val().fn_style = smrty::symbolic_op::none;
+            *l = std::visit(
+                [](const auto& v) -> mpx { return decltype(v){-1} * v; }, *l);
+            (*val).fn_ptr = smrty::invalid_function;
+            (*val).fn_style = smrty::symbolic_op::none;
         }
     }
     lg::debug("                     val={} left <<- attr={}\n", val, attr);
@@ -854,20 +878,20 @@ auto const parse_expr_right_n = [](auto& ctx, int n) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_expr_right);
     lg::debug("parse_expr_right({}): val={} right <<- attr={}\n", n, val, attr);
-    if (attr().fn_ptr == smrty::invalid_function)
+    if ((*attr).fn_ptr == smrty::invalid_function)
     {
-        if (std::get_if<std::monostate>(&(attr().right)))
+        if (std::get_if<std::monostate>(&((*attr).right)))
         {
-            val().right = attr().left;
+            (*val).right = (*attr).left;
         }
         else
         {
-            val().right = attr().right;
+            (*val).right = (*attr).right;
         }
     }
     else
     {
-        val().right = attr;
+        (*val).right = attr;
     }
     lg::debug("                  val={} right <<- attr={}\n", val, attr);
 };
@@ -878,18 +902,18 @@ auto const parse_expr_op = [](auto& ctx) {
     // print_ctx_types(parse_expr_op);
     lg::debug("parse_expr_op: val={}, attr={}\n", val, attr);
     std::string_view v{&attr, 1};
-    if (val().fn_ptr == smrty::invalid_function)
+    if ((*val).fn_ptr == smrty::invalid_function)
     {
-        val().fn_style = symbolic_op::infix;
-        val().fn_ptr = smrty::fn_get_fn_ptr_by_name(v);
+        (*val).fn_style = symbolic_op::infix;
+        (*val).fn_ptr = smrty::fn_get_fn_ptr_by_name(v);
     }
     else
     {
         auto left = val;
-        val = symbolic_parts_ptr();
-        val().left = left;
-        val().fn_style = symbolic_op::infix;
-        val().fn_ptr = smrty::fn_get_fn_ptr_by_name(v);
+        val = symbolic();
+        (*val).left = left;
+        (*val).fn_style = symbolic_op::infix;
+        (*val).fn_ptr = smrty::fn_get_fn_ptr_by_name(v);
     }
     lg::debug("               val={}, attr={}\n", val, attr);
 };
@@ -899,8 +923,8 @@ auto const parse_negation = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_negation);
     lg::debug("parse_negation: val={}, attr={}\n", val, attr);
-    val().fn_ptr = smrty::fn_get_fn_ptr_by_name("-");
-    val().fn_style = symbolic_op::prefix;
+    (*val).fn_ptr = smrty::fn_get_fn_ptr_by_name("-");
+    (*val).fn_style = symbolic_op::prefix;
     lg::debug("                val={}, attr={}\n", val, attr);
 };
 
@@ -909,8 +933,8 @@ auto const parse_number_expr = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_number_expr);
     lg::debug("parse_number_expr: val={}, attr={}\n", val, attr);
-    val().fn_ptr = smrty::invalid_function;
-    val().left = attr;
+    (*val).fn_ptr = smrty::invalid_function;
+    (*val).left = attr;
     lg::debug("                   val={}, attr={}\n", val, attr);
 };
 
@@ -919,8 +943,8 @@ auto const store_expr_fn = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(store_expr_fn);
     lg::debug("store_expr_fn: val={}, attr={}\n", val, attr);
-    val().fn_style = symbolic_op::paren;
-    val().fn_ptr = attr.fn_ptr;
+    (*val).fn_style = symbolic_op::paren;
+    (*val).fn_ptr = attr.fn_ptr;
     lg::debug("               val={}, attr={}\n", val, attr);
 };
 
@@ -1003,7 +1027,7 @@ auto const store_expr_fn = [](auto& ctx) {
     print_ctx_types(parse_junk);
 };
 
-// all symbolic instruction types make symbolic_parts
+// all symbolic instruction types make symbolic
 auto const variable_def = (+bp::char_('a', 'z'))[parse_variable];
 auto const paren_expr_def = "("_l > addsub[parse_expr_passthru_1] > ")"_l;
 auto const paren_fn_def = paren_op[parse_function];
@@ -1043,10 +1067,10 @@ auto const symbolic_r_def = "'"_l[set_no_commas] >
                             "'"_l[set_commas_ok];
 
 BOOST_PARSER_DEFINE_RULES(uinteger, integer, ufloating, floating, rati0nal,
-                          c0mplex, number_r, hex_int, oct_int, bin_int, matrix,
-                          list, time, duration, if_elif, simple_instruction_r,
-                          instruction_r, program_r, re_fn, function, operators,
-                          user_input);
+                          c0mplex, number_r, hex_int, oct_int, bin_int,
+                          matrix_r, list_r, time, duration, if_elif,
+                          simple_instruction_r, instruction_r, program_r, re_fn,
+                          function, operators, user_input);
 BOOST_PARSER_DEFINE_RULES(variable, paren_expr, paren_fn, paren_fn_call,
                           expr_atomic, factorial, expon, negation, multdiv,
                           addsub, equation, symbolic_r);
@@ -1120,8 +1144,8 @@ std::optional<program> parse_user_input(std::string_view str,
     return bp::parse(str, parser, bp::ws, trace);
 }
 
-std::optional<symbolic_parts_ptr>
-    parse_symbolic(std::string_view str, diagnostic_function errors_callback)
+std::optional<symbolic> parse_symbolic(std::string_view str,
+                                       diagnostic_function errors_callback)
 {
     // Initialize our globals
     global_state g{current_base_actual, true};
