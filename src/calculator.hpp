@@ -39,7 +39,7 @@ class Calculator
         polar,
         ij
     };
-    struct Config
+    struct _Config
     {
         bool interactive = true;
         bool debug = false;
@@ -53,7 +53,7 @@ class Calculator
     };
     using Stack = std::deque<stack_entry>;
 
-    Config config;
+    _Config config;
     Stack stack;
     execution_flags flags;
 

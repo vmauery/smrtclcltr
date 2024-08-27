@@ -38,6 +38,7 @@ smrty_lib = static_library(
 )
 
 common_src = [
+  'config.cpp',
   'ctrl_statements.cpp',
   'debug.cpp',
   'input.cpp',

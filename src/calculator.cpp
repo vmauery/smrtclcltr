@@ -11,6 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <boost/multiprecision/number.hpp>
 #include <calculator.hpp>
 #include <cmath>
+#include <config.hpp>
 #include <debug.hpp>
 #include <function.hpp>
 #include <input.hpp>
@@ -225,6 +226,45 @@ bool Calculator::run(std::string_view command_line)
         input->set_interactive(false);
     }
     auto ui = ui::get();
+    {
+        auto& cfg = Config::get();
+        std::optional<std::string_view> cfgline;
+        while ((cfgline = cfg->readline()))
+        {
+            std::string errmsg{};
+            auto maybe_program = parser::parse_user_input(
+                *cfgline, [&errmsg](std::string_view msg) { errmsg = msg; });
+            if (!maybe_program || errmsg.size())
+            {
+                if (errmsg.size())
+                {
+                    ui->out("{}\n", errmsg);
+                }
+                else
+                {
+                    ui->out("Invalid config line: {}\n", *cfgline);
+                }
+                continue;
+            }
+            // attempt to execute the program
+            // if the program is aborted, do not print the stack
+            try
+            {
+                maybe_program->execute(
+                    [this](const simple_instruction& itm,
+                           execution_flags& eflags) {
+                        bool retval = run_one(itm);
+                        eflags = flags;
+                        return retval;
+                    },
+                    flags);
+            }
+            catch (const std::exception& e)
+            {
+                lg::error("Parsing config: exception: {}\n", e.what());
+            }
+        }
+    }
     while (_running)
     {
         std::optional<std::string> nextline = input->readline();

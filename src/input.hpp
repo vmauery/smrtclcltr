@@ -42,9 +42,13 @@ class Input
 
     template <typename T>
     Input(bool interactive, T&& auto_complete_cb) :
-        interactive(interactive),
+        interactive(interactive), history_file(),
         auto_complete(std::forward<T>(auto_complete_cb))
     {
+        if (interactive)
+        {
+            start_history();
+        }
         if (auto_complete)
         {
             rl_attempted_completion_function = input::c_input_completion;
@@ -52,12 +56,21 @@ class Input
         }
     }
 
+    void start_history();
+    void end_history();
+
   public:
     template <typename T>
     Input(bool interactive, T&& auto_complete, const Private&) :
         Input(interactive, std::forward<T>(auto_complete))
     {
     }
+
+    ~Input()
+    {
+        end_history();
+    }
+
     template <typename T>
     static std::shared_ptr<Input> make_shared(bool interactive,
                                               T&& auto_complete)
@@ -76,6 +89,7 @@ class Input
 
   protected:
     bool interactive;
+    std::string history_file;
     std::function<std::optional<std::string_view>(std::string_view, int)>
         auto_complete;
 };

@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdio>
 #include <deque>
+#include <filesystem>
 #include <format>
 #include <list>
 #include <regex>
@@ -162,6 +163,47 @@ struct std::formatter<std::monostate>
         auto out = ctx.out();
         constexpr std::string_view name{"monostate"};
         out = std::copy(name.begin(), name.end(), out);
+        return out;
+    }
+};
+
+template <>
+struct std::formatter<std::filesystem::path>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // literally nothing to parse here
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const std::filesystem::path& p,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        auto ps = p.string();
+        out = std::copy(ps.begin(), ps.end(), out);
+        return out;
+    }
+};
+
+template <>
+struct std::formatter<std::error_code>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        // literally nothing to parse here
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const std::error_code& e,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        out = std::format_to(out, "{}:{}", e.category().name(), e.value());
         return out;
     }
 };

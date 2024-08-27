@@ -4,6 +4,9 @@ Copyright © 2020 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <config.hpp>
+#include <cstdlib>
+#include <filesystem>
 #include <input.hpp>
 
 namespace input
@@ -102,5 +105,21 @@ std::optional<std::string> Input::readline()
             return "";
         }
         return std::nullopt;
+    }
+}
+
+void Input::start_history()
+{
+    using_history();
+    auto& cfg = smrty::Config::get();
+    history_file = cfg->path_of("history");
+    read_history(history_file.c_str());
+}
+
+void Input::end_history()
+{
+    if (history_file.size() > 0)
+    {
+        write_history(history_file.c_str());
     }
 }
