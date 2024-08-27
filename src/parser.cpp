@@ -14,9 +14,9 @@ void print_parser(auto const& context, regex_parser const&, auto& ostream,
 } // namespace detail
 } // namespace boost::parser
 
-#include <boost/parser/parser.hpp>
 #include <cctype>
 #include <climits>
+#include <ctrl_statements.hpp>
 #include <debug.hpp>
 #include <fstream>
 #include <iostream>
@@ -25,6 +25,9 @@ void print_parser(auto const& context, regex_parser const&, auto& ostream,
 #include <parser_parts.hpp>
 #include <regex>
 #include <vector>
+
+// this is last
+#include <boost/parser/parser.hpp>
 
 namespace bp = ::boost::parser;
 using namespace bp::literals;
@@ -219,8 +222,15 @@ bp::rule<class list_r, list> const list_r = "list";
 bp::rule<class time, time_parts> const time = "time";
 bp::rule<class duration, time_parts> const duration = "duration";
 
-bp::rule<class if_elif, if_elif_statement> const if_elif =
+bp::rule<class if_elif, statement::ptr> const if_elif =
     "if/then[/elif/else]/endif statement";
+
+bp::rule<class loop_instruction, instruction> const loop_instruction =
+    "loop body instruction";
+bp::rule<class while_loop, statement::ptr> const while_loop =
+    "while/do/done statement";
+bp::rule<class for_loop, statement::ptr> const for_loop =
+    "for/in/do/done statement";
 
 bp::rule<class program_r, program> const program_r = "program";
 bp::rule<class user_input, program> const user_input = "user input";
@@ -401,16 +411,18 @@ auto const parse_if_cond = [](auto& ctx) {
     auto& attr = _attr(ctx);
     auto& val = _val(ctx);
     // print_ctx_types(parse_if_cond);
-    val.branches.emplace_back(
-        std::make_tuple(true, simple_program{attr}, program{}));
+    auto ifstmt = std::make_shared<if_elif_statement>();
+    ifstmt->set_cond(attr);
+    val = ifstmt;
 };
 
 auto const parse_if_body = [](auto& ctx) {
     // parse_if_body: attr = vector<instruction>, val = if_elif_statement
     auto& attr = _attr(ctx);
     auto& val = _val(ctx);
+    auto ifstmt = std::dynamic_pointer_cast<if_elif_statement>(val);
     // print_ctx_types(parse_if_body);
-    std::get<program>(val.branches.back()).body = attr;
+    ifstmt->set_body(attr);
 };
 
 auto const parse_else = [](auto& ctx) {
@@ -419,9 +431,53 @@ auto const parse_else = [](auto& ctx) {
     auto& val = _val(ctx);
     // print_ctx_types(parse_else);
     // new branch with an empty condition
-    val.branches.emplace_back(
-        std::make_tuple(true, simple_program{}, program{}));
-    std::get<program>(val.branches.back()).body = attr;
+    auto ifstmt = std::dynamic_pointer_cast<if_elif_statement>(val);
+    ifstmt->set_else(attr);
+};
+
+auto const parse_while_cond = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    // print_ctx_types(parse_while_cond);
+    auto whl = std::make_shared<while_statement>();
+    whl->cond = attr;
+    val = whl;
+};
+
+auto const parse_loop_body = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    // print_ctx_types(parse_loop_body);
+    if (auto whl = std::dynamic_pointer_cast<while_statement>(val); whl)
+    {
+        whl->set_body(attr);
+        val = whl;
+    }
+    else if (auto fl = std::dynamic_pointer_cast<for_statement>(val); fl)
+    {
+        fl->set_body(attr);
+        val = fl;
+    }
+};
+
+auto const parse_for_var = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    // print_ctx_types(parse_for_var);
+    auto fl = std::make_shared<for_statement>();
+    // fl->var_name = std::get<std::string>((*attr).left);
+    fl->set_var(attr);
+    val = fl;
+};
+
+auto const parse_for_cond = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    // print_ctx_types(parse_for_cond);
+    // parse_for_cond: attr = vector<simple_instruction>, val = for_statement
+    auto fl = std::dynamic_pointer_cast<for_statement>(val);
+    fl->set_setup(attr);
+    val = fl;
 };
 
 auto const parse_real = [](auto& ctx) {
@@ -654,6 +710,21 @@ auto const save_time_suffix = [](auto& ctx) {
     val.suffix = attr;
 };
 
+auto const parse_keyword = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    print_ctx_types(parse_keyword);
+    keyword k{attr};
+    val = simple_instruction{k};
+};
+
+auto const passthru = [](auto& ctx) {
+    const auto& attr = _attr(ctx);
+    auto& val = _val(ctx);
+    print_ctx_types(passthru);
+    val = attr;
+};
+
 auto const set_binary = [](auto& ctx) {
     auto& val = _val(ctx);
     print_ctx_val_type(set_binary);
@@ -773,10 +844,10 @@ auto re_fn_def = bp::regex()[parse_regulars];
 
 auto const simple_instruction_r_def =
     (boolean | re_fn | function | time | duration | number_r | matrix_r |
-     list_r | program_r | operators)[parse_simple_instruction];
+     list_r | symbolic_r | program_r | operators)[parse_simple_instruction];
 
 auto const instruction_r_def =
-    (if_elif | simple_instruction_r | symbolic_r)[parse_instruction];
+    (if_elif | while_loop | for_loop | simple_instruction_r)[parse_instruction];
 
 auto const if_elif_def =
     "if"_l > (+simple_instruction_r)[parse_if_cond] > "then"_l >
@@ -784,6 +855,19 @@ auto const if_elif_def =
     *("elif"_l > (+(simple_instruction_r - if_sub_words))[parse_if_cond] >
       "then"_l > (+(instruction_r - if_sub_words))[parse_if_body]) >
     -("else"_l > (+(instruction_r - if_sub_words))[parse_else]) > "endif"_l;
+
+auto const loop_instruction_def =
+    (bp::string("break") | bp::string("continue"))[parse_keyword] |
+    instruction_r[passthru];
+
+auto const while_loop_def = "while"_l >
+                            (+simple_instruction_r)[parse_while_cond] > "do"_l >
+                            (+loop_instruction)[parse_loop_body] > "done"_l;
+
+auto const for_loop_def = "for"_l > bp::lexeme[variable[parse_for_var]] >
+                          "in"_l > (+simple_instruction_r)[parse_for_cond] >
+                          "do"_l > (+loop_instruction)[parse_loop_body] >
+                          "done"_l;
 
 auto const program_r_def = "$("_l > (*instruction_r)[parse_standalone_program] >
                            ")"_l;
@@ -1068,9 +1152,11 @@ auto const symbolic_r_def = "'"_l[set_no_commas] >
 
 BOOST_PARSER_DEFINE_RULES(uinteger, integer, ufloating, floating, rati0nal,
                           c0mplex, number_r, hex_int, oct_int, bin_int,
-                          matrix_r, list_r, time, duration, if_elif,
-                          simple_instruction_r, instruction_r, program_r, re_fn,
-                          function, operators, user_input);
+                          matrix_r, list_r, time, duration, if_elif, while_loop,
+                          for_loop, loop_instruction, simple_instruction_r,
+                          instruction_r, program_r, re_fn, function, operators,
+                          user_input);
+
 BOOST_PARSER_DEFINE_RULES(variable, paren_expr, paren_fn, paren_fn_call,
                           expr_atomic, factorial, expon, negation, multdiv,
                           addsub, equation, symbolic_r);

@@ -4,6 +4,7 @@ Copyright © 2024 Vernon Mauery; All rights reserved.
 SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <calculator.hpp>
 #include <input.hpp>
 #include <numeric.hpp>
 #include <optional>
@@ -128,6 +129,14 @@ std::string_view fn_get_name(CalcFunction::ptr p)
         return p->name();
     }
     return "<unknown-function>";
+}
+
+// for-loops need to directly acces calculator, so need to stub it out here
+Calculator::Calculator()
+{
+}
+void Calculator::set_var(std::string_view, const numeric&)
+{
 }
 
 } // namespace smrty

@@ -8,25 +8,14 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <format>
 #include <function_library.hpp>
+#include <numeric.hpp>
 #include <parser.hpp>
-#include <regex>
 #include <std_container_format.hpp>
 #include <string>
 #include <vector>
 
 namespace smrty
 {
-
-constexpr auto invalid_function = nullptr;
-
-enum class symbolic_op
-{
-    none,
-    paren,
-    prefix,
-    infix,
-    postfix,
-};
 
 struct single_number_parts
 {

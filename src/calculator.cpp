@@ -349,11 +349,13 @@ void Calculator::set_var(std::string_view name, const numeric& value)
 {
     auto& scope = variables.front();
     scope[std::string(name)] = value;
+    lg::debug("set_var('{}', {})\n", name, value);
 }
 
 // unset only affects the current scope
 void Calculator::unset_var(std::string_view name)
 {
+    lg::debug("unset_var('{}')\n", name);
     auto& scope = variables.front();
     if (auto p = scope.find(std::string(name)); p != scope.end())
     {
@@ -570,7 +572,7 @@ void Calculator::show_stack()
             }
             else if (auto sym = std::get_if<symbolic>(&v); sym)
             {
-                ui->out("{}'{}'{}\n", row_idx, *sym, it->unit());
+                ui->out("{}{}{}\n", row_idx, *sym, it->unit());
             }
             else
             {

@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <numeric.hpp>
 #include <parser.hpp>
+#include <program.hpp>
 
 namespace smrty
 {
@@ -37,16 +38,13 @@ namespace smrty
 // endif
 //
 // while [ statements ] do
-//     [ statements ]
+//     [ statements ; continue ; break ]
 // loop
 //
-// foreach <var> in (list|<start> <stop> range) do
-//     [ statements ]
+// for <var> in {list|x y range|instructions that emit a list} do
+//     [ statements ; continue ; break ]
 // next
 //
-// for <var> do
-//     [ statements ]
-// next
 
 program::program() : body(), next(body.begin()), standalone(false)
 {
@@ -96,9 +94,11 @@ const simple_instruction& program::next_item(execution_flags& flags)
             next++;
             return *s;
         }
-        else if (auto s = std::get_if<if_elif_statement>(&(*next)); s)
+        // control statements
+        else if (auto s = std::get_if<statement::ptr>(&(*next)); s)
         {
-            if (const auto& itm = s->next_item(flags); !is_noop(itm))
+            lg::debug("ctrl-statement: {}\n", *s);
+            if (const auto& itm = (*s)->next_item(flags); !is_noop(itm))
             {
                 return itm;
             }
@@ -106,9 +106,6 @@ const simple_instruction& program::next_item(execution_flags& flags)
             // recurse
             return next_item(flags);
         }
-        //
-        // TODO: add other control statements here (loops, etc.)
-        //
     }
     next = body.begin();
     return noop;
@@ -151,14 +148,28 @@ simple_program::simple_program() : body(), next(body.begin())
 {
 }
 
-simple_program::simple_program(const simple_instructions& si) :
-    body(si), next(body.begin())
+simple_program::simple_program(const simple_instructions& si) : body(si)
 {
+    next = body.begin();
 }
 
 simple_program::simple_program(const simple_program& o) :
     body(o.body), next(body.begin())
 {
+}
+
+simple_program& simple_program::operator=(const simple_program& o)
+{
+    body = o.body;
+    next = body.begin();
+    return *this;
+}
+
+simple_program& simple_program::operator=(simple_program&& o)
+{
+    body = std::move(o.body);
+    next = body.begin();
+    return *this;
 }
 
 simple_program::~simple_program()
@@ -172,93 +183,6 @@ const simple_instruction& simple_program::next_item(execution_flags&)
         return *next++;
     }
     next = body.begin();
-    return noop;
-}
-
-if_elif_statement::if_elif_statement() :
-    branches(), current_branch(branches.begin())
-{
-}
-
-if_elif_statement::if_elif_statement(const if_elif_statement& o) :
-    branches(o.branches), current_branch(branches.begin())
-{
-}
-
-if_elif_statement::~if_elif_statement()
-{
-}
-
-const simple_instruction&
-    if_elif_statement::branch_next_item(execution_flags& flags)
-{
-    auto& [test_phase, condition, body] = *current_branch;
-    /*
-    if (lg::debug_level == lg::level::debug)
-    {
-        // are we on the first branch
-        if (condition.next == condition.body.begin())
-        {
-            if (current_branch == branches.begin())
-            {
-                if (condition.next == condition.body.begin())
-                {
-                    lg::debug("Starting [IF] condition execution\n");
-                }
-            }
-            else if (condition.size() != 0)
-            {
-                lg::debug("Starting [ELIF] condition execution\n");
-            }
-            else
-            {
-                lg::debug("Starting [ELSE] body execution\n");
-            }
-        }
-    }
-    */
-    if (condition.body.size() && test_phase)
-    {
-        lg::debug("Executing next item in condition\n");
-        if (const auto& itm = condition.next_item(flags); !is_noop(itm))
-        {
-            return itm;
-        }
-        lg::debug("End of condition; flags: z({}) c({}) o({}) s({})\n",
-                  flags.zero, flags.carry, flags.overflow, flags.sign);
-        if (flags.zero)
-        {
-            return noop;
-        }
-        test_phase = false;
-    }
-    if (auto& itm = body.next_item(flags); !is_noop(itm))
-    {
-        return itm;
-    }
-    test_phase = true;
-    return noop;
-}
-
-const simple_instruction& if_elif_statement::next_item(execution_flags& flags)
-{
-    while (current_branch != branches.end())
-    {
-        bool continue_next = std::get<bool>(*current_branch);
-        if (const auto& itm = branch_next_item(flags); !is_noop(itm))
-        {
-            return itm;
-        }
-        // the condition was true and we are finished
-        // executing the body. Reset conditional.
-        if (!continue_next)
-        {
-            current_branch = branches.begin();
-            return noop;
-        }
-        current_branch++;
-    }
-    current_branch = branches.begin();
     return noop;
 }
 

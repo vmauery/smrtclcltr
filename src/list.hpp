@@ -17,6 +17,7 @@ struct basic_list
 {
     using element_type = T;
     using default_element_type = typename variant0_or_single<T>::type;
+    using iterator = std::vector<T>::iterator;
 
     std::vector<T> values;
 
@@ -40,6 +41,15 @@ struct basic_list
         values(std::forward<std::vector<T>>(init))
     {
         reduce();
+    }
+
+    iterator begin()
+    {
+        return values.begin();
+    }
+    iterator end()
+    {
+        return values.end();
     }
 
     void reduce()

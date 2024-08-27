@@ -200,7 +200,16 @@ struct std::formatter<std::variant<Types...>>
     auto format(const std::variant<Types...>& t,
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
-        const auto& fmtstr = sub_formats[t.index()];
+        // check for empty variant
+        auto idx = t.index();
+        if (idx < 0 || idx >= sub_formats.size())
+        {
+            auto out = ctx.out();
+            constexpr std::string_view empty{"<empty-variant>"};
+            out = std::copy(empty.begin(), empty.end(), out);
+            return out;
+        }
+        const auto& fmtstr = sub_formats[idx];
         // lg::debug("fmtstr[{}] = {}\n", t.index(), fmtstr);
         return std::visit(
             [&fmtstr, &ctx](const auto& v) {

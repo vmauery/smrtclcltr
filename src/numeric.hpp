@@ -176,6 +176,7 @@ using list = basic_list<mpx>;
 // symbolic uses mpx
 #include <symbolic.hpp>
 #include <program.hpp>
+#include <ctrl_statements.hpp>
 // clang-format on
 
 using numeric = std::variant<bool, mpz, mpq, mpf, mpc, list, matrix, time_,

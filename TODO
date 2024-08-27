@@ -36,3 +36,4 @@ Ideas for future development
    * debug for types
    * debug for units
  * Multi-processor support for things that can run in parallel
+ * Timeouts for runaway calculations

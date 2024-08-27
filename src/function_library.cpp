@@ -26,6 +26,7 @@ namespace
 size_t op_names_max_strlen;
 std::map<std::string_view, CalcFunction::ptr> operations;
 std::vector<std::string_view> function_names;
+std::vector<std::string_view> auto_complete_words;
 std::map<CalcFunction::ptr, std::string_view> reops;
 std::vector<CalcFunction::ptr> user_functions;
 
@@ -101,6 +102,13 @@ void setup_catalog()
                    });
     std::sort(function_names.begin(), function_names.end());
 
+    auto_complete_words = function_names;
+    auto_complete_words.insert(auto_complete_words.end(),
+                               {"break", "continue", "do", "done", "elif",
+                                "else", "endif", "for", "if", "in", "then",
+                                "while"});
+    std::sort(auto_complete_words.begin(), auto_complete_words.end());
+
     std::vector<std::tuple<CalcFunction::ptr, std::string_view>> reop_list{};
     reops.clear();
     for (const auto& [k, v] : operations)
@@ -148,14 +156,14 @@ const std::vector<CalcFunction::ptr>& fn_get_all_user()
 
 std::span<std::string_view> fn_list_all_starts_with(std::string_view start)
 {
-    std::vector<std::string_view>::iterator first = function_names.end();
-    for (auto iter = function_names.begin(); iter != function_names.end();
-         iter++)
+    std::vector<std::string_view>::iterator first = auto_complete_words.end();
+    for (auto iter = auto_complete_words.begin();
+         iter != auto_complete_words.end(); iter++)
     {
         if (iter->starts_with(start))
         {
             first = iter++;
-            for (; iter != function_names.end(); iter++)
+            for (; iter != auto_complete_words.end(); iter++)
             {
                 if (!(iter->starts_with(start)))
                 {

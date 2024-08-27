@@ -8,7 +8,6 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <format>
 #include <function_library.hpp>
-#include <parser_parts.hpp>
 #include <regex>
 #include <std_container_format.hpp>
 #include <string>
@@ -16,6 +15,17 @@ SPDX-License-Identifier: BSD-3-Clause
 
 namespace smrty
 {
+
+constexpr auto invalid_function = nullptr;
+
+enum class symbolic_op
+{
+    none,
+    paren,
+    prefix,
+    infix,
+    postfix,
+};
 
 // 6/7+3*8*-x^(y+2)*sin(5*z)
 //           sym('+')
@@ -288,8 +298,19 @@ struct std::formatter<smrty::symbolic>
     auto format(const smrty::symbolic& b,
                 FormatContext& ctx) const -> decltype(ctx.out())
     {
+        // only quote the outer-most symbolic
+        static bool quotes = true;
         auto out = ctx.out();
-        out = std::format_to(out, "{}", *b);
+        if (quotes)
+        {
+            quotes = false;
+            out = std::format_to(out, "'{}'", *b);
+            quotes = true;
+        }
+        else
+        {
+            out = std::format_to(out, "{}", *b);
+        }
         return out;
     }
 };
