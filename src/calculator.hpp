@@ -67,6 +67,11 @@ class Calculator
     Calculator(const no_touchy&) : Calculator()
     {
     }
+    // to require access via get(); no copies
+    Calculator(const Calculator&) = delete;
+    Calculator(Calculator&&) = delete;
+    Calculator& operator=(const Calculator&) = delete;
+    Calculator& operator=(Calculator&&) = delete;
     static Calculator& get()
     {
         static std::unique_ptr<Calculator> _this{};
