@@ -25,6 +25,9 @@ struct ui : public std::enable_shared_from_this<ui>
     {
     }
 
+    ui(ui&&) = delete;
+    ui(const ui&) = delete;
+
   public:
     ui(const Private&) : ui()
     {
