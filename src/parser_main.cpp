@@ -135,6 +135,9 @@ std::string_view fn_get_name(CalcFunction::ptr p)
 Calculator::Calculator()
 {
 }
+Calculator::~Calculator()
+{
+}
 void Calculator::set_var(std::string_view, const numeric&)
 {
 }

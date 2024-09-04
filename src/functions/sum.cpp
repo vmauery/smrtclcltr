@@ -84,7 +84,7 @@ struct sum : public CalcFunction
     }
     int num_args() const final
     {
-        return -3;
+        return -1;
     }
     int num_resp() const final
     {

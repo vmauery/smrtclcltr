@@ -13,6 +13,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <cmath>
 #include <config.hpp>
 #include <debug.hpp>
+#include <fstream>
 #include <function.hpp>
 #include <input.hpp>
 #include <iostream>
@@ -20,9 +21,119 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <parser.hpp>
 #include <string>
 #include <ui.hpp>
+#include <user_function.hpp>
 
 namespace smrty
 {
+
+void Calculator::save_state(const std::filesystem::path& filename)
+{
+    std::ofstream cfgout(filename, std::ios_base::out | std::ios_base::trunc);
+    if (!cfgout.is_open())
+    {
+        lg::error("Failed to save settings to {}\n", filename);
+        return;
+    }
+    // do this first so final settings override
+    if (config.save_stack)
+    {
+        // traverse stack from top to bottom
+        int current_base = Settings::default_base;
+        int current_fixed_bits = Settings::default_fixed_bits;
+        bool current_is_signed = Settings::default_is_signed;
+        int current_precision = builtin_default_precision;
+        for (auto it = stack.rbegin(); it != stack.rend(); it++)
+        {
+            const auto& entry = *it;
+            // each entry has a separate precision, base, unit, signed, and bits
+            // manually enter those here to ensure proper reproduction of values
+
+            if (entry.base != current_base)
+            {
+                current_base = entry.base;
+                cfgout << entry.base << " base\n";
+            }
+            if ((entry.fixed_bits != current_fixed_bits) ||
+                (entry.is_signed != current_is_signed))
+            {
+                current_fixed_bits = entry.fixed_bits;
+                current_is_signed = entry.is_signed;
+                cfgout << (entry.is_signed ? 's' : 'u') << entry.fixed_bits
+                       << "\n";
+            }
+            if (entry.precision != current_precision)
+            {
+                current_precision = entry.precision;
+                cfgout << entry.precision << " precision\n";
+            }
+
+            cfgout << format_stack_entry(entry, 0) << "\n";
+        }
+    }
+
+    cfgout << "\n";
+    // save vars
+    auto& scope = variables.front();
+    for (const auto& [k, v] : scope)
+    {
+        cfgout << std::format("{} '{}' sto\n", v, k);
+    }
+
+    // user-defined functions
+    auto user_fns = fn_get_all_user();
+    if (user_fns.size() != 0)
+    {
+        std::vector<std::string_view> fn_names;
+        fn_names.reserve(user_fns.size());
+        for (const auto& ptr : user_fns)
+        {
+            auto fn = dynamic_pointer_cast<const UserFunction>(ptr);
+            cfgout << std::format("{} '{}' def\n", fn->function, fn->name());
+        }
+    }
+
+    // settings
+    cfgout << "\n";
+    cfgout << config.base << " base\n";
+    cfgout << (config.is_signed ? 's' : 'u') << config.fixed_bits << "\n";
+    cfgout << config.precision << " precision\n";
+    if (config.angle_mode == e_angle_mode::degrees)
+    {
+        cfgout << "deg\n";
+    }
+    else if (config.angle_mode == e_angle_mode::gradians)
+    {
+        cfgout << "grad\n";
+    }
+    else
+    {
+        cfgout << "rad\n";
+    }
+    if (config.mpq_mode == e_mpq_mode::quotient)
+    {
+        cfgout << "q\n";
+    }
+    else
+    {
+        cfgout << "f\n";
+    }
+    if (config.mpc_mode == e_mpc_mode::polar)
+    {
+        cfgout << "polar\n";
+    }
+    else if (config.mpc_mode == e_mpc_mode::ij)
+    {
+        cfgout << "ij\n";
+    }
+    else
+    {
+        cfgout << "rectangular\n";
+    }
+    if (config.debug)
+    {
+        cfgout << "debug\n";
+    }
+}
 
 Calculator::Calculator()
 {
@@ -40,6 +151,12 @@ Calculator::Calculator()
 
     // add all the functions
     setup_catalog();
+}
+
+Calculator::~Calculator()
+{
+    auto& cfg = Config::get();
+    save_state(cfg->path_of("config"));
 }
 
 std::string binary_to_hex(std::string_view v)
@@ -226,6 +343,7 @@ bool Calculator::run(std::string_view command_line)
         input->set_interactive(false);
     }
     auto ui = ui::get();
+    if (config.interactive)
     {
         auto& cfg = Config::get();
         std::optional<std::string_view> cfgline;
@@ -262,6 +380,17 @@ bool Calculator::run(std::string_view command_line)
             catch (const std::exception& e)
             {
                 lg::error("Parsing config: exception: {}\n", e.what());
+            }
+        }
+        if (stack.size())
+        {
+            try
+            {
+                show_stack();
+            }
+            catch (const std::exception& e)
+            {
+                lg::error("Exception: {}\n", e.what());
             }
         }
     }
@@ -496,6 +625,93 @@ bool Calculator::precision(unsigned int p)
     return false;
 }
 
+std::string Calculator::format_stack_entry(const stack_entry& e,
+                                           size_t first_col)
+{
+    std::string out{};
+    auto& v = e.value();
+    auto& u = e.unit();
+    if (auto q = std::get_if<mpq>(&v); q)
+    {
+        // mpq gets special treatment to print a quotient or float
+        if (config.mpq_mode == e_mpq_mode::quotient)
+        {
+            out = std::format("{:q}{}", *q, u);
+        }
+        else // floating
+        {
+            out = std::format("{0:.{1}f}{2}", *q, e.precision, u);
+        }
+    }
+    else if (auto c = std::get_if<mpc>(&v); c)
+    {
+        // mpc gets special treatment with three print styles
+        if (config.mpc_mode == e_mpc_mode::polar)
+        {
+            out = std::format("{0:.{1}p}{2}", *c, e.precision, u);
+        }
+        else if (config.mpc_mode == e_mpc_mode::rectangular)
+        {
+            out = std::format("{0:.{1}r}{2}", *c, e.precision, u);
+        }
+        else // ij mode
+        {
+            out = std::format("{0:.{1}i}{2}", *c, e.precision, u);
+        }
+    }
+    else if (auto f = std::get_if<mpf>(&v); f)
+    {
+        out = std::format("{0:.{1}f}{2}", *f, e.precision, u);
+    }
+    else if (auto z = std::get_if<mpz>(&v); z)
+    {
+        switch (e.base)
+        {
+            case 2:
+                out = std::format("{0:#{1}b}{2}", *z, e.fixed_bits, u);
+                break;
+            case 8:
+                out = std::format("{0:#{1}o}{2}", *z, e.fixed_bits, u);
+                break;
+            case 10:
+                out = std::format("{0:{1}d}{2}", *z, e.fixed_bits, u);
+                break;
+            case 16:
+                out = std::format("{0:#{1}x}{2}", *z, e.fixed_bits, u);
+                break;
+        }
+    }
+    else if (auto m = std::get_if<matrix>(&v); m)
+    {
+        if (first_col == 0)
+        {
+            // one-line format
+            out = std::format("{}", *m);
+        }
+        else
+        {
+            // fancy format
+            const auto& [rows, cols] = ui::get()->size();
+            out = std::format_runtime("{0:{1}.{2}{:d}{:.5f}{:.5f}{:.5i}}{3}",
+                                      *m, first_col, cols, u);
+        }
+    }
+    else if (auto lst = std::get_if<list>(&v); lst)
+    {
+        out = std::format_runtime("{:{:d}{:.5f}{:.5f}{:.5i}}{}", *lst, u);
+    }
+    else if (auto sym = std::get_if<symbolic>(&v); sym)
+    {
+        out = std::format("{}{}", *sym, u);
+    }
+    else
+    {
+        out = std::visit(
+            [&u](const auto& a) { return std::format("{}{}", a, u); }, v);
+    }
+    return out;
+}
+
 void Calculator::show_stack()
 {
     // on higher lines; truncate?
@@ -538,90 +754,7 @@ void Calculator::show_stack()
                 row_idx = std::format("{:d}: ", c);
                 first_col += row_idx.size();
             }
-            auto& v = it->value();
-
-            if (auto q = std::get_if<mpq>(&v); q)
-            {
-                // mpq gets special treatment to print a quotient or float
-                if (config.mpq_mode == e_mpq_mode::quotient)
-                {
-                    ui->out("{}{:q}{}\n", row_idx, *q, it->unit());
-                }
-                else // floating
-                {
-                    ui->out("{0}{1:.{2}f}{3}\n", row_idx, *q, it->precision,
-                            it->unit());
-                }
-            }
-            else if (auto c = std::get_if<mpc>(&v); c)
-            {
-                // mpc gets special treatment with three print styles
-                if (config.mpc_mode == e_mpc_mode::polar)
-                {
-                    ui->out("{0}{1:.{2}p}{3}\n", row_idx, *c, it->precision,
-                            it->unit());
-                }
-                else if (config.mpc_mode == e_mpc_mode::rectangular)
-                {
-                    ui->out("{0}{1:.{2}r}{3}\n", row_idx, *c, it->precision,
-                            it->unit());
-                }
-                else // ij mode
-                {
-                    ui->out("{0}{1:.{2}i}{3}\n", row_idx, *c, it->precision,
-                            it->unit());
-                }
-            }
-            else if (auto f = std::get_if<mpf>(&v); f)
-            {
-                ui->out("{0}{1:.{2}f}{3}\n", row_idx, *f, it->precision,
-                        it->unit());
-            }
-            else if (auto z = std::get_if<mpz>(&v); z)
-            {
-                switch (it->base)
-                {
-                    case 2:
-                        ui->out("{0}{1:#{2}b}{3}\n", row_idx, *z,
-                                it->fixed_bits, it->unit());
-                        break;
-                    case 8:
-                        ui->out("{0}{1:#{2}o}{3}\n", row_idx, *z,
-                                it->fixed_bits, it->unit());
-                        break;
-                    case 10:
-                        ui->out("{0}{1:{2}d}{3}\n", row_idx, *z, it->fixed_bits,
-                                it->unit());
-                        break;
-                    case 16:
-                        ui->out("{0}{1:#{2}x}{3}\n", row_idx, *z,
-                                it->fixed_bits, it->unit());
-                        break;
-                }
-            }
-            else if (auto m = std::get_if<matrix>(&v); m)
-            {
-                constexpr int screen_width = 80;
-                ui->out("{0}{1:{2}.{3}{:d}{:.5f}{:.5f}{:.5i}}{4}\n", row_idx,
-                        *m, first_col, screen_width, it->unit());
-            }
-            else if (auto lst = std::get_if<list>(&v); lst)
-            {
-                ui->out("{}{:{:d}{:.5f}{:.5f}{:.5i}}{}\n", row_idx, *lst,
-                        it->unit());
-            }
-            else if (auto sym = std::get_if<symbolic>(&v); sym)
-            {
-                ui->out("{}{}{}\n", row_idx, *sym, it->unit());
-            }
-            else
-            {
-                std::visit(
-                    [it, ui, &row_idx](const auto& a) {
-                        ui->out("{}{}{}\n", row_idx, a, it->unit());
-                    },
-                    v);
-            }
+            ui->out("{}{}\n", row_idx, format_stack_entry(*it, first_col));
         }
         catch (const std::exception& e)
         {

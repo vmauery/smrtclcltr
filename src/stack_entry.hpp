@@ -48,6 +48,10 @@ class stack_entry
         store_value(numeric{n}, flags);
     }
 
+    const smrty::units::unit& unit() const
+    {
+        return _unit;
+    }
     smrty::units::unit& unit()
     {
         return _unit;

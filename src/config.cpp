@@ -64,6 +64,7 @@ Config::Config(const Private&, std::string_view profile) : profile_name(profile)
     {
         lines.emplace_back(std::string_view{line});
     }
+    next_line = lines.begin();
 }
 
 Config::~Config()

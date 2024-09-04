@@ -11,6 +11,21 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <std_container_format.hpp>
 
+namespace std
+{
+
+// list and matrix do not format at compile time, so calls to std::format
+// will fail. This offers a runtime format mechanism until the c++26
+// std::runtime_format() mechanism will force std::format to parse and
+// format at runtime.
+template <class... Args>
+static inline std::string format_runtime(std::string_view f, Args&&... args)
+{
+    return vformat(f, std::make_format_args(args...));
+}
+
+} // namespace std
+
 // This assumes that mpz, mpf, mpc, mpq are already fully defined
 // These formatters are common for both boost types and basic types
 

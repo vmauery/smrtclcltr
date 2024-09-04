@@ -5,6 +5,7 @@ SPDX-License-Identifier: BSD-3-Clause
 */
 #pragma once
 
+#include <config.hpp>
 #include <deque>
 #include <functional>
 #include <input.hpp>
@@ -39,21 +40,26 @@ class Calculator
         polar,
         ij
     };
-    struct _Config
+    struct Settings
     {
+        static constexpr int default_base = 10;
+        static constexpr int default_fixed_bits = 0;
+        static constexpr bool default_is_signed = true;
+
         bool interactive = true;
         bool debug = false;
-        int base = 10;
-        int fixed_bits = 0;
-        bool is_signed = true;
-        int precision = 8;
+        int base = default_base;
+        int fixed_bits = default_fixed_bits;
+        bool is_signed = default_is_signed;
+        int precision = builtin_default_precision;
         e_angle_mode angle_mode = e_angle_mode::radians;
         e_mpq_mode mpq_mode = e_mpq_mode::floating;
         e_mpc_mode mpc_mode = e_mpc_mode::rectangular;
+        bool save_stack = true;
     };
     using Stack = std::deque<stack_entry>;
 
-    _Config config;
+    Settings config;
     Stack stack;
     execution_flags flags;
 
@@ -67,6 +73,8 @@ class Calculator
     Calculator(const no_touchy&) : Calculator()
     {
     }
+    ~Calculator();
+    void save_state(const std::filesystem::path& filename);
     // to require access via get(); no copies
     Calculator(const Calculator&) = delete;
     Calculator(Calculator&&) = delete;
@@ -121,6 +129,7 @@ class Calculator
     std::optional<std::string_view> auto_complete(std::string_view in,
                                                   int state);
 
+    std::string format_stack_entry(const stack_entry& e, size_t first_col);
     void show_stack();
 
     bool _running = true;

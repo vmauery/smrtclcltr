@@ -690,7 +690,7 @@ struct int_type : public CalcFunction
             "    and denotes unsigned (0) or signed (1) and\n"
             "    y denotes the number of bits\n"
             "\n"
-            "    Alternate mechanism is of the form [su][1-9][0-9]* where\n"
+            "    Alternate mechanism is of the form [su][0-9]+ where\n"
             "    the signed/unsigned and bits are put together, e.g. s32\n"
             "    for 32-bit signed, or u16 for 16-bit unsigned\n"
             // clang-format on
@@ -734,7 +734,7 @@ struct int_type : public CalcFunction
     }
     virtual const std::string_view regex() const final
     {
-        static const auto _regex = "([us])([1-9][0-9]*)";
+        static const auto _regex = "([us])(0|[1-9][0-9]*)";
         return _regex;
     }
     int num_args() const final
