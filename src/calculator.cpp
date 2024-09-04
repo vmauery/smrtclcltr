@@ -187,8 +187,6 @@ Calculator::Calculator()
 
 Calculator::~Calculator()
 {
-    auto& cfg = Config::get();
-    save_state(cfg->path_of("config"));
 }
 
 std::string binary_to_hex(std::string_view v)
@@ -375,9 +373,9 @@ bool Calculator::run(std::string_view command_line)
         input->set_interactive(false);
     }
     auto ui = ui::get();
+    auto& cfg = Config::get();
     if (config.interactive)
     {
-        auto& cfg = Config::get();
         std::optional<std::string_view> cfgline;
         while ((cfgline = cfg->readline()))
         {
@@ -503,6 +501,7 @@ bool Calculator::run(std::string_view command_line)
             lg::error("Exception: {}\n", e.what());
         }
     }
+    save_state(cfg->path_of("config"));
     return true;
 }
 
