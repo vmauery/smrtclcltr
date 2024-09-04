@@ -13,23 +13,53 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <cmath>
 #include <config.hpp>
 #include <debug.hpp>
-#include <fstream>
 #include <function.hpp>
 #include <input.hpp>
-#include <iostream>
 #include <numeric>
 #include <parser.hpp>
 #include <string>
 #include <ui.hpp>
 #include <user_function.hpp>
 
+class file_wrapper
+{
+  public:
+    file_wrapper() = delete;
+    file_wrapper(file_wrapper&&) = delete;
+    file_wrapper(const std::filesystem::path& fname, const std::string& mode)
+    {
+        f = fopen(fname.c_str(), mode.c_str());
+        if (!f)
+        {
+            throw std::runtime_error(std::format("Failed to open {}", fname));
+        }
+    }
+    ~file_wrapper()
+    {
+        if (f)
+        {
+            fclose(f);
+        }
+    }
+    operator bool() const
+    {
+        return f != nullptr;
+    }
+    operator FILE*() const
+    {
+        return f;
+    }
+
+    FILE* f;
+};
+
 namespace smrty
 {
 
 void Calculator::save_state(const std::filesystem::path& filename)
 {
-    std::ofstream cfgout(filename, std::ios_base::out | std::ios_base::trunc);
-    if (!cfgout.is_open())
+    file_wrapper cfgout(filename.c_str(), "w+");
+    if (!cfgout)
     {
         lg::error("Failed to save settings to {}\n", filename);
         return;
@@ -51,35 +81,36 @@ void Calculator::save_state(const std::filesystem::path& filename)
             if (entry.base != current_base)
             {
                 current_base = entry.base;
-                cfgout << entry.base << " base\n";
+                std::print(cfgout, "{} base\n", entry.base);
             }
             if ((entry.fixed_bits != current_fixed_bits) ||
                 (entry.is_signed != current_is_signed))
             {
                 current_fixed_bits = entry.fixed_bits;
                 current_is_signed = entry.is_signed;
-                cfgout << (entry.is_signed ? 's' : 'u') << entry.fixed_bits
-                       << "\n";
+                std::print(cfgout, "{}{}\n", (entry.is_signed ? 's' : 'u'),
+                           entry.fixed_bits);
             }
             if (entry.precision != current_precision)
             {
                 current_precision = entry.precision;
-                cfgout << entry.precision << " precision\n";
+                std::print(cfgout, "{} precision\n", entry.precision);
             }
 
-            cfgout << format_stack_entry(entry, 0) << "\n";
+            std::print(cfgout, "{}\n", format_stack_entry(entry, 0));
         }
     }
 
-    cfgout << "\n";
+    std::print(cfgout, "\n# variables\n");
     // save vars
     auto& scope = variables.front();
     for (const auto& [k, v] : scope)
     {
-        cfgout << std::format("{} '{}' sto\n", v, k);
+        std::print(cfgout, "{} '{}' sto\n", v, k);
     }
 
     // user-defined functions
+    std::print(cfgout, "\n# user-defined functions\n");
     auto user_fns = fn_get_all_user();
     if (user_fns.size() != 0)
     {
@@ -88,50 +119,51 @@ void Calculator::save_state(const std::filesystem::path& filename)
         for (const auto& ptr : user_fns)
         {
             auto fn = dynamic_pointer_cast<const UserFunction>(ptr);
-            cfgout << std::format("{} '{}' def\n", fn->function, fn->name());
+            std::print(cfgout, "{} '{}' def\n", fn->function, fn->name());
         }
     }
 
     // settings
-    cfgout << "\n";
-    cfgout << config.base << " base\n";
-    cfgout << (config.is_signed ? 's' : 'u') << config.fixed_bits << "\n";
-    cfgout << config.precision << " precision\n";
+    std::print(cfgout, "\n# settings\n");
+    std::print(cfgout, "{} base\n", config.base);
+    std::print(cfgout, "{}{}\n", (config.is_signed ? 's' : 'u'),
+               config.fixed_bits);
+    std::print(cfgout, "{} precision\n", config.precision);
     if (config.angle_mode == e_angle_mode::degrees)
     {
-        cfgout << "deg\n";
+        std::print(cfgout, "deg\n");
     }
     else if (config.angle_mode == e_angle_mode::gradians)
     {
-        cfgout << "grad\n";
+        std::print(cfgout, "grad\n");
     }
     else
     {
-        cfgout << "rad\n";
+        std::print(cfgout, "rad\n");
     }
     if (config.mpq_mode == e_mpq_mode::quotient)
     {
-        cfgout << "q\n";
+        std::print(cfgout, "q\n");
     }
     else
     {
-        cfgout << "f\n";
+        std::print(cfgout, "f\n");
     }
     if (config.mpc_mode == e_mpc_mode::polar)
     {
-        cfgout << "polar\n";
+        std::print(cfgout, "polar\n");
     }
     else if (config.mpc_mode == e_mpc_mode::ij)
     {
-        cfgout << "ij\n";
+        std::print(cfgout, "ij\n");
     }
     else
     {
-        cfgout << "rectangular\n";
+        std::print(cfgout, "rectangular\n");
     }
     if (config.debug)
     {
-        cfgout << "debug\n";
+        std::print(cfgout, "debug\n");
     }
 }
 

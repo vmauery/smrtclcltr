@@ -47,6 +47,11 @@ static inline void print(std::string_view str)
     write(stdout, str);
 }
 
+static inline void print(FILE* f, const char* str)
+{
+    write(f, str);
+}
+
 static inline void print(const char* str)
 {
     write(stdout, str);
