@@ -833,9 +833,9 @@ auto const time_def = bp::lexeme
 
 auto const duration_def =
     bp::lexeme[(floating | integer)[save_duration] >>
-               (bp::string("d") | bp::string("h") | bp::string("m") |
-                bp::string("s") | bp::string("ns") | bp::string("us") |
-                bp::string("ms"))[save_time_suffix]];
+               (bp::string("ns") | bp::string("us") | bp::string("ms") |
+                bp::string("s") | bp::string("m") | bp::string("h") |
+                bp::string("d"))[save_time_suffix]];
 
 auto function_def = functions[parse_function];
 auto operators_def = op_functions[parse_function];

@@ -195,6 +195,8 @@ static constexpr auto numeric_types = std::to_array<const char*>({
     "symbolic",
 });
 
+std::pair<mpz, mpq> divide_with_remainder(const mpq& value, const mpq& divisor);
+
 mpz make_fixed(const mpz& v, int bits, bool is_signed);
 
 // string parsers

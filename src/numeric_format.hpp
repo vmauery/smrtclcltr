@@ -586,3 +586,133 @@ struct std::formatter<basic_list<T>>
         return out;
     }
 };
+
+template <typename T>
+struct std::formatter<basic_time<T>>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
+    {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const basic_time<T>& t,
+                FormatContext& ctx) const -> decltype(ctx.out())
+    {
+        auto out = ctx.out();
+        // lg::debug("str(): value={:q}\n", t.value);
+        if (t.absolute)
+        {
+#ifdef USE_BASIC_TYPES
+            long long nanos = static_cast<long long>(
+                helper::numerator(t.value) *
+                (one_million / helper::denominator(t.value)));
+            std::chrono::duration d = std::chrono::microseconds(nanos);
+#else  // !USE_BASIC_TYPES
+            long long nanos = static_cast<long long>(
+                helper::numerator(t.value) *
+                (one_billion / helper::denominator(t.value)));
+            std::chrono::duration d = std::chrono::nanoseconds(nanos);
+#endif // USE_BASIC_TYPES
+       // lg::debug("value={}, nanos={}\n", t.value, nanos);
+            std::chrono::time_point<std::chrono::system_clock> tp(d);
+            return std::format_to(out, "{:%FT%T}", tp);
+            // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
+            // return std::strftime(std::localtime(&t_c), "%FT%T");
+        }
+
+        // duration
+        static const mpq one_day{86400, 1};
+        static const mpq one_hour{3600, 1};
+        static const mpq one_minute{60, 1};
+        static const mpq one_second{1, 1};
+        static const mpq one_ms{1, 1000};
+        static const mpq one_us{1, 1000000};
+        static const mpq one_ns{1, 1000000000};
+
+        mpq pval = abs_fn(t.value);
+        if (pval >= one_second)
+        {
+            // for things larger than a second; do Wd Xh Ym Z.ZZs
+            std::string full{};
+            bool first = true;
+            if (pval >= one_day)
+            {
+                if (first)
+                {
+                    out = std::format_to(out, "{:f}d", pval / one_day);
+                }
+                const auto& [w, f] = divide_with_remainder(pval, one_day);
+                if (f == 0)
+                {
+                    return out;
+                }
+                pval = f;
+                full = std::format("{}d", w);
+                first = false;
+            }
+            if (pval >= one_hour)
+            {
+                if (first)
+                {
+                    out = std::format_to(out, "{:f}h", pval / one_hour);
+                }
+                else
+                {
+                    full += ' ';
+                }
+                const auto& [w, f] = divide_with_remainder(pval, one_hour);
+                if (f == 0)
+                {
+                    return out;
+                }
+                pval = f;
+                full += std::format("{}h", w);
+                first = false;
+            }
+            if (pval >= one_minute)
+            {
+                if (first)
+                {
+                    out = std::format_to(out, "{:f}m", pval / one_minute);
+                }
+                else
+                {
+                    full += ' ';
+                }
+                const auto& [w, f] = divide_with_remainder(pval, one_minute);
+                if (f == 0)
+                {
+                    return out;
+                }
+                pval = f;
+                full += std::format("{}m", w);
+                first = false;
+            }
+            if (pval >= one_second)
+            {
+                std::string seconds = std::format("{:f}s", pval / one_second);
+                if (first)
+                {
+                    out = std::copy(seconds.begin(), seconds.end(), out);
+                    return out;
+                }
+                else
+                {
+                    full += ' ' + seconds;
+                }
+            }
+            return std::format_to(out, " # ({})", full);
+        }
+        if (pval >= one_ms)
+        {
+            return std::format_to(out, "{:f}ms", t.value / one_ms);
+        }
+        if (pval >= one_us)
+        {
+            return std::format_to(out, "{:f}us", t.value / one_us);
+        }
+        return std::format_to(out, "{:f}ns", t.value / one_ns);
+    }
+};

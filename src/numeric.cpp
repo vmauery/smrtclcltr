@@ -567,3 +567,19 @@ numeric make_numeric(const smrty::time_parts& num)
 {
     return parse_time(num);
 }
+
+std::pair<mpz, mpq> divide_with_remainder(const mpq& value, const mpq& divisor)
+{
+    if (value < divisor)
+    {
+        return {0, value};
+    }
+    if (value == divisor)
+    {
+        return {1, 0};
+    }
+    mpq f = value / divisor;
+    mpz whole = helper::numerator(f) / helper::denominator(f);
+    mpq rem = f - whole;
+    return {whole, rem * divisor};
+}
