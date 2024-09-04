@@ -202,8 +202,8 @@ bp::symbols<CalcFunction::ptr> functions{};
 bp::symbols<CalcFunction::ptr> paren_op{};
 bp::symbols<bool> boolean{{"false", false}, {"true", true}};
 bp::symbols<int> if_sub_words{{"elif", 1}, {"else", 2}, {"endif", 3}};
-//]
-//[ self_filling_symbol_table_parser
+
+bp::rule<class comment, std::string> const comment = "comment";
 bp::rule<class uinteger, single_number_parts> const uinteger =
     "unsigned integer";
 bp::rule<class integer, single_number_parts> const integer = "integer";
@@ -846,8 +846,11 @@ auto const simple_instruction_r_def =
     (boolean | re_fn | function | time | duration | number_r | matrix_r |
      list_r | symbolic_r | program_r | operators)[parse_simple_instruction];
 
-auto const instruction_r_def =
-    (if_elif | while_loop | for_loop | simple_instruction_r)[parse_instruction];
+auto const comment_def = bp::omit["#"_l >> *bp::char_];
+
+auto const instruction_r_def = (if_elif | while_loop | for_loop |
+                                simple_instruction_r)[parse_instruction] |
+                               bp::omit[comment];
 
 auto const if_elif_def =
     "if"_l > (+simple_instruction_r)[parse_if_cond] > "then"_l >
@@ -1155,7 +1158,7 @@ BOOST_PARSER_DEFINE_RULES(uinteger, integer, ufloating, floating, rati0nal,
                           matrix_r, list_r, time, duration, if_elif, while_loop,
                           for_loop, loop_instruction, simple_instruction_r,
                           instruction_r, program_r, re_fn, function, operators,
-                          user_input);
+                          comment, user_input);
 
 BOOST_PARSER_DEFINE_RULES(variable, paren_expr, paren_fn, paren_fn_call,
                           expr_atomic, factorial, expon, negation, multdiv,
