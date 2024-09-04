@@ -659,7 +659,6 @@ bool Calculator::precision(unsigned int p)
 std::string Calculator::format_stack_entry(const stack_entry& e,
                                            size_t first_col)
 {
-    std::string out{};
     auto& v = e.value();
     auto& u = e.unit();
     if (auto q = std::get_if<mpq>(&v); q)
@@ -667,80 +666,75 @@ std::string Calculator::format_stack_entry(const stack_entry& e,
         // mpq gets special treatment to print a quotient or float
         if (config.mpq_mode == e_mpq_mode::quotient)
         {
-            out = std::format("{:q}{}", *q, u);
+            return std::format("{:q}{}", *q, u);
         }
-        else // floating
-        {
-            out = std::format("{0:.{1}f}{2}", *q, e.precision, u);
-        }
+        // floating
+        return std::format("{0:.{1}f}{2}", *q, e.precision, u);
     }
-    else if (auto c = std::get_if<mpc>(&v); c)
+    if (auto c = std::get_if<mpc>(&v); c)
     {
         // mpc gets special treatment with three print styles
         if (config.mpc_mode == e_mpc_mode::polar)
         {
-            out = std::format("{0:.{1}p}{2}", *c, e.precision, u);
+            return std::format("{0:.{1}p}{2}", *c, e.precision, u);
         }
-        else if (config.mpc_mode == e_mpc_mode::rectangular)
+        if (config.mpc_mode == e_mpc_mode::rectangular)
         {
-            out = std::format("{0:.{1}r}{2}", *c, e.precision, u);
+            return std::format("{0:.{1}r}{2}", *c, e.precision, u);
         }
-        else // ij mode
-        {
-            out = std::format("{0:.{1}i}{2}", *c, e.precision, u);
-        }
+        // ij mode
+        return std::format("{0:.{1}i}{2}", *c, e.precision, u);
     }
-    else if (auto f = std::get_if<mpf>(&v); f)
+    if (auto f = std::get_if<mpf>(&v); f)
     {
-        out = std::format("{0:.{1}f}{2}", *f, e.precision, u);
+        return std::format("{0:.{1}f}{2}", *f, e.precision, u);
     }
-    else if (auto z = std::get_if<mpz>(&v); z)
+    if (auto z = std::get_if<mpz>(&v); z)
     {
-        switch (e.base)
+        if (e.base == 2)
         {
-            case 2:
-                out = std::format("{0:#{1}b}{2}", *z, e.fixed_bits, u);
-                break;
-            case 8:
-                out = std::format("{0:#{1}o}{2}", *z, e.fixed_bits, u);
-                break;
-            case 10:
-                out = std::format("{0:{1}d}{2}", *z, e.fixed_bits, u);
-                break;
-            case 16:
-                out = std::format("{0:#{1}x}{2}", *z, e.fixed_bits, u);
-                break;
+            return std::format("{0:#{1}b}{2}", *z, e.fixed_bits, u);
         }
+        if (e.base == 8)
+        {
+            return std::format("{0:#{1}o}{2}", *z, e.fixed_bits, u);
+        }
+        if (e.base == 10)
+        {
+            return std::format("{0:{1}d}{2}", *z, e.fixed_bits, u);
+        }
+        if (e.base == 16)
+        {
+            return std::format("{0:#{1}x}{2}", *z, e.fixed_bits, u);
+        }
+        return std::format("{}{}", *z, u);
     }
-    else if (auto m = std::get_if<matrix>(&v); m)
+    if (auto m = std::get_if<matrix>(&v); m)
     {
         if (first_col == 0)
         {
             // one-line format
-            out = std::format("{}", *m);
+            return std::format("{}", *m);
         }
-        else
-        {
-            // fancy format
-            const auto& [rows, cols] = ui::get()->size();
-            out = std::format_runtime("{0:{1}.{2}{:d}{:.5f}{:.5f}{:.5i}}{3}",
-                                      *m, first_col, cols, u);
-        }
+        // fancy format
+        const auto& [rows, cols] = ui::get()->size();
+        return std::format_runtime("{0:{1}.{2}{:d}{:.5f}{:.5f}{:.5i}}{3}", *m,
+                                   first_col, cols, u);
     }
-    else if (auto lst = std::get_if<list>(&v); lst)
+    if (auto lst = std::get_if<list>(&v); lst)
     {
-        out = std::format_runtime("{:{:d}{:.5f}{:.5f}{:.5i}}{}", *lst, u);
+        return std::format_runtime("{:{:d}{:.5f}{:.5f}{:.5i}}{}", *lst, u);
     }
-    else if (auto sym = std::get_if<symbolic>(&v); sym)
+    if (auto sym = std::get_if<symbolic>(&v); sym)
     {
-        out = std::format("{}{}", *sym, u);
+        return std::format("{}{}", *sym, u);
     }
-    else
+    if (auto tm = std::get_if<time_>(&v); tm)
     {
-        out = std::visit(
-            [&u](const auto& a) { return std::format("{}{}", a, u); }, v);
+        return std::format("{}", *tm);
     }
-    return out;
+    return std::visit([&u](const auto& a) { return std::format("{}{}", a, u); },
+                      v);
 }
 
 void Calculator::show_stack()
