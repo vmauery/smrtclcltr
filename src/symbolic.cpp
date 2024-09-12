@@ -394,6 +394,16 @@ symbolic lcm(const symbolic& a, const symbolic& b)
     return f;
 }
 
+symbolic lcm(const mpz& a, const symbolic& b)
+{
+    return lcm(symbolic{a}, b);
+}
+
+symbolic lcm(const symbolic& a, const mpz& b)
+{
+    return lcm(a, symbolic{b});
+}
+
 symbolic gcd(const symbolic& a, const symbolic& b)
 {
     symbolic f{};
@@ -406,6 +416,16 @@ symbolic gcd(const symbolic& a, const symbolic& b)
     return f;
 }
 
+symbolic gcd(const mpz& a, const symbolic& b)
+{
+    return gcd(symbolic{a}, b);
+}
+
+symbolic gcd(const symbolic& a, const mpz& b)
+{
+    return gcd(a, symbolic{b});
+}
+
 symbolic pow(const symbolic& a, const symbolic& b)
 {
     symbolic f{};
@@ -416,6 +436,16 @@ symbolic pow(const symbolic& a, const symbolic& b)
     fn.right = b;
     lg::verbose("symbolic pow: {}\n", f);
     return f;
+}
+
+symbolic pow(const mpx& a, const symbolic& b)
+{
+    return pow(symbolic{a}, b);
+}
+
+symbolic pow(const symbolic& a, const mpx& b)
+{
+    return pow(a, symbolic{b});
 }
 
 symbolic exp(const symbolic& v)

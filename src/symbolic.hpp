@@ -56,10 +56,10 @@ class symbolic
     symbolic(const symbolic& o);
     symbolic(symbolic&& o);
     symbolic(const std::string& o);
-    symbolic(const mpx& o);
+    explicit symbolic(const mpx& o);
     template <typename T>
         requires is_one_of_v<T, mpx>
-    symbolic(const T& o) : symbolic(mpx{o})
+    explicit symbolic(const T& o) : symbolic(mpx{o})
     {
     }
     ~symbolic();
@@ -121,8 +121,14 @@ symbolic floor(const symbolic& v);
 symbolic ceil(const symbolic& v);
 symbolic round(const symbolic& v);
 symbolic lcm(const symbolic& a, const symbolic& b);
+symbolic lcm(const symbolic& a, const mpz& b);
+symbolic lcm(const mpz& a, const symbolic& b);
 symbolic gcd(const symbolic& a, const symbolic& b);
+symbolic gcd(const symbolic& a, const mpz& b);
+symbolic gcd(const mpz& a, const symbolic& b);
 symbolic pow(const symbolic& a, const symbolic& b);
+symbolic pow(const mpx& a, const symbolic& b);
+symbolic pow(const symbolic& a, const mpx& b);
 symbolic exp(const symbolic& v);
 symbolic factorial(const symbolic& v);
 symbolic tgamma(const symbolic& v);
