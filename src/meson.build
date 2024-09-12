@@ -14,6 +14,7 @@ smrty_functions = [
   'functions/matrix.cpp',
   'functions/mode_funcs.cpp',
   'functions/modular_funcs.cpp',
+  'functions/money_funcs.cpp',
   'functions/probability.cpp',
   'functions/product.cpp',
   'functions/program.cpp',

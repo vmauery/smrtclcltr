@@ -411,6 +411,130 @@ bool three_arg_limited_op(Calculator& calc, const Fn& fn,
     return true;
 }
 
+template <typename It, typename Ot, typename Lt>
+struct three_arg_conv
+{
+    template <typename Fn>
+    static bool op(Calculator&, const Fn&)
+    {
+        return false;
+    }
+};
+template <typename... Itypes, typename... Otypes, typename... Ltypes>
+struct three_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
+{
+    template <typename Fn>
+    static bool op(Calculator& calc, const Fn& fn)
+    {
+        if (calc.stack.size() < 3)
+        {
+            throw std::invalid_argument("Requires 3 arguments");
+        }
+        stack_entry& a = calc.stack[2];
+        stack_entry& b = calc.stack[1];
+        stack_entry& c = calc.stack[0];
+
+        if ((a.unit() != units::unit()) || (b.unit() != units::unit()) ||
+            (c.unit() != units::unit()))
+        {
+            throw units_prohibited();
+        }
+
+        numeric ca = a.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
+        numeric cb = b.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cb);
+        numeric cc = c.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cc);
+        std::variant<Ltypes...> lca;
+        std::variant<Ltypes...> lcb;
+        std::variant<Ltypes...> lcc;
+        if (!reduce(ca, lca)() || !reduce(cb, lcb)() || !reduce(cc, lcc)())
+        {
+            throw std::runtime_error(
+                "Argument(s) failed to reduce after conversion");
+        }
+        auto cv = std::visit([&fn](const auto& a, const auto& b,
+                                   const auto& c) { return fn(a, b, c); },
+                             lca, lcb, lcc);
+
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+
+        calc.stack.emplace_front(std::move(cv), units::unit(), calc.config.base,
+                                 calc.config.fixed_bits,
+                                 std::min(a.precision, b.precision),
+                                 calc.config.is_signed, calc.flags);
+        return true;
+    }
+};
+
+template <typename It, typename Ot, typename Lt>
+struct four_arg_conv
+{
+    template <typename Fn>
+    static bool op(Calculator&, const Fn&)
+    {
+        return false;
+    }
+};
+template <typename... Itypes, typename... Otypes, typename... Ltypes>
+struct four_arg_conv<ITypes<Itypes...>, OTypes<Otypes...>, LTypes<Ltypes...>>
+{
+    template <typename Fn>
+    static bool op(Calculator& calc, const Fn& fn)
+    {
+        if (calc.stack.size() < 4)
+        {
+            throw std::invalid_argument("Requires 4 arguments");
+        }
+        stack_entry& a = calc.stack[3];
+        stack_entry& b = calc.stack[2];
+        stack_entry& c = calc.stack[1];
+        stack_entry& d = calc.stack[0];
+
+        if ((a.unit() != units::unit()) || (b.unit() != units::unit()) ||
+            (c.unit() != units::unit()) || (d.unit() != units::unit()))
+        {
+            throw units_prohibited();
+        }
+
+        numeric ca = a.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(ca);
+        numeric cb = b.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cb);
+        numeric cc = c.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cc);
+        numeric cd = d.value();
+        conversion<std::tuple<Itypes...>, std::tuple<Otypes...>>::op(cd);
+        std::variant<Ltypes...> lca;
+        std::variant<Ltypes...> lcb;
+        std::variant<Ltypes...> lcc;
+        std::variant<Ltypes...> lcd;
+        if (!reduce(ca, lca)() || !reduce(cb, lcb)() || !reduce(cc, lcc)() ||
+            !reduce(cd, lcd)())
+        {
+            throw std::runtime_error(
+                "Argument(s) failed to reduce after conversion");
+        }
+        auto cv = std::visit([&fn](const auto& a, const auto& b, const auto& c,
+                                   const auto& d) { return fn(a, b, c, d); },
+                             lca, lcb, lcc, lcd);
+
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+        calc.stack.pop_front();
+
+        calc.stack.emplace_front(std::move(cv), units::unit(), calc.config.base,
+                                 calc.config.fixed_bits,
+                                 std::min(a.precision, b.precision),
+                                 calc.config.is_signed, calc.flags);
+        return true;
+    }
+};
+
 static const mpf one_eighty_f{180.0l};
 static const mpf two_hundred_f{200.0l};
 
