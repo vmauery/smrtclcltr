@@ -322,23 +322,24 @@ struct calendar : public CalcFunction
         int dom = 0 - first_dom;
         for (unsigned w = 0; w < num_weeks; w++)
         {
-            std::string days{};
-            days.reserve(24);
+            std::vector<std::string> days{};
+            days.reserve(8);
             for (int di = 0; di < 7 && dom <= static_cast<int>(last_day);
                  di++, dom++)
             {
                 if (dom <= 0)
                 {
-                    days.append("  ");
+                    days.emplace_back("  ");
                 }
                 else
                 {
-                    days.append(std::format("{:2d}", dom));
+                    days.emplace_back(std::format("{:2d}", dom));
                 }
             }
-            ui->out("{}\n", days);
+            ui->out("{: }\n", days);
         }
-        return true;
+        // don't lose the pretty calendar by printing the stack
+        return false;
     }
     int num_args() const final
     {
