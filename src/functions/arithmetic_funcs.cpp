@@ -56,6 +56,51 @@ bool divide_from_stack(Calculator& calc)
            });
 }
 
+bool power_from_stack(Calculator& calc)
+{
+    return two_arg_conv<ITypes<mpq>, OTypes<mpf>,
+                        LTypes<mpz, mpf, mpc, symbolic>>::
+        op(calc,
+           [](const auto& a, const auto& b, const units::unit& ua,
+              const units::unit& ub) -> std::tuple<numeric, units::unit> {
+               if (ub != units::unit())
+               {
+                   throw std::invalid_argument("cannot raise to a unit power");
+               }
+               if constexpr (same_type_v<mpc, decltype(b)>)
+               {
+                   if (ua != units::unit())
+                   {
+                       throw std::invalid_argument(
+                           "cannot raise units to a complex power");
+                   }
+                   return {util::power_direct(a, b), ua};
+               }
+               else if constexpr (same_type_v<symbolic, decltype(a)> ||
+                                  same_type_v<symbolic, decltype(b)>)
+               {
+                   return {pow_fn(symbolic{a}, symbolic{b}), ub};
+               }
+               else
+               {
+                   auto ret_unit = units::pow(ua, static_cast<mpf>(b));
+                   return {util::power_direct(a, b), ret_unit};
+               }
+           });
+}
+
+bool inverse_from_stack(Calculator& calc)
+{
+
+    return one_arg_conv<ITypes<mpz>, OTypes<mpq>,
+                        LTypes<mpq, mpf, mpc, matrix, symbolic>>::
+        op(calc,
+           [](const auto& a,
+              const units::unit& ua) -> std::tuple<numeric, units::unit> {
+               return {mpq(1, 1) / a, units::unit() / ua};
+           });
+}
+
 } // namespace util
 
 struct add : public CalcFunction
@@ -289,13 +334,7 @@ struct inverse : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return one_arg_conv<ITypes<mpz>, OTypes<mpq>,
-                            LTypes<mpq, mpf, mpc, matrix, symbolic>>::
-            op(calc,
-               [](const auto& a,
-                  const units::unit& ua) -> std::tuple<numeric, units::unit> {
-                   return {mpq(1, 1) / a, units::unit() / ua};
-               });
+        return util::inverse_from_stack(calc);
     }
     int num_args() const final
     {
@@ -380,65 +419,7 @@ struct power : public CalcFunction
     }
     virtual bool op(Calculator& calc) const final
     {
-        return two_arg_conv<ITypes<mpq>, OTypes<mpf>,
-                            LTypes<mpz, mpf, mpc, symbolic>>::
-            op(calc,
-               [](const auto& a, const auto& b, const units::unit& ua,
-                  const units::unit& ub) -> std::tuple<numeric, units::unit> {
-                   if (ub != units::unit())
-                   {
-                       throw std::invalid_argument(
-                           "cannot raise to a unit power");
-                   }
-                   if constexpr (same_type_v<decltype(a), mpz> &&
-                                 same_type_v<decltype(b), mpz>)
-                   {
-                       lg::debug("mpz pow({}, {})\n", a, b);
-                       if (b > zero)
-                       {
-                           return {powul_fn(a, static_cast<int>(b)),
-                                   units::pow(ua, static_cast<mpf>(b))};
-                       }
-                       return {mpq{one, powul_fn(a, static_cast<int>(-b))},
-                               units::pow(ua, static_cast<mpf>(b))};
-                   }
-                   else if constexpr (same_type_v<symbolic, decltype(a)> ||
-                                      same_type_v<symbolic, decltype(b)>)
-                   {
-                       return {pow_fn(symbolic{a}, symbolic{b}), ua};
-                   }
-                   else if constexpr (same_type_v<mpc, decltype(a)> ||
-                                      same_type_v<mpc, decltype(b)>)
-                   {
-                       if constexpr (same_type_v<mpc, decltype(b)>)
-                       {
-                           if (ua != units::unit())
-                           {
-                               throw std::invalid_argument(
-                                   "cannot raise units to a complex power");
-                           }
-                           return {pow_fn(static_cast<mpc>(a), b), ua};
-                       }
-                       else
-                       {
-                           return {pow_fn(a, static_cast<mpc>(b)),
-                                   units::pow(ua, static_cast<mpf>(b))};
-                       }
-                   }
-                   else if constexpr (same_type_v<mpz, decltype(a)> ||
-                                      same_type_v<mpz, decltype(b)>)
-                   {
-                       // if only one is mpz, convert both to mpf
-                       return {pow_fn(static_cast<mpf>(a), static_cast<mpf>(b)),
-                               units::pow(ua, static_cast<mpf>(b))};
-                   }
-                   else
-                   {
-                       // all that is left is mpf
-                       return {pow_fn(a, b),
-                               units::pow(ua, static_cast<mpf>(b))};
-                   }
-               });
+        return util::power_from_stack(calc);
     }
     int num_args() const final
     {

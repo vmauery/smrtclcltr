@@ -182,4 +182,12 @@ static const mpz ten{10};
 static const mpz one_million{1'000'000};
 static const mpz one_billion{1'000'000'000};
 
+namespace boost::multiprecision
+{
+static inline mpf pow(const mpq& base, const mpq& exponent)
+{
+    return pow(mpf{base}, mpf{exponent});
+}
+} // namespace boost::multiprecision
+
 #endif // (CPP || MPFR || GMP)

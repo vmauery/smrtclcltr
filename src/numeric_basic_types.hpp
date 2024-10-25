@@ -86,6 +86,7 @@ constexpr mpf exp(const mpf& exponent);
 constexpr mpc exp(const mpc& exponent);
 constexpr mpf pow(const mpf& base, const mpf& exponent);
 constexpr mpc pow(const mpc& base, const mpc& exponent);
+constexpr mpf pow(const mpq& base, const mpq& exponent);
 constexpr mpf tgamma(const mpf& v);
 constexpr mpf zeta(const mpf& v);
 constexpr mpz gcd(const mpz& l, const mpz& r);
@@ -158,6 +159,10 @@ constexpr mpf pow(const mpf& base, const mpf& exponent)
 constexpr mpc pow(const mpc& base, const mpc& exponent)
 {
     return std::pow(base, exponent);
+}
+constexpr mpf pow(const mpq& base, const mpq& exponent)
+{
+    return std::pow(mpf{base}, mpf{exponent});
 }
 constexpr mpf tgamma(const mpf& v)
 {
