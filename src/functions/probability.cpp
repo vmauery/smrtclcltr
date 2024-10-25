@@ -306,6 +306,96 @@ struct mean : public CalcFunction
     }
 };
 
+struct geometric_mean : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"gmean"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x1 x2... xn n gmean\n"
+            "           { x1 x2... xn } gmean\n"
+            "\n"
+            "    Returns the geometric mean of the bottom n items on the stack\n"
+            "    or the bottom single item that is a list\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    bool gmean_from_stack(Calculator& calc, const mpz& v) const
+    {
+        size_t count = static_cast<size_t>(v) - 1;
+        auto n = calc.stack.front();
+        calc.stack.pop_front();
+        for (; count > 0; count--)
+        {
+            // no need to check the return;
+            // it is either true or it throws an exception
+            util::multiply_from_stack(calc);
+        }
+        calc.stack.push_front(n);
+        util::inverse_from_stack(calc);
+        return util::power_from_stack(calc);
+    }
+    bool gmean_from_list(Calculator& calc, const list& lst) const
+    {
+        list::element_type prod{mpz{1}};
+        for (const auto& v : lst.values)
+        {
+            lg::debug("{} * {} = {}\n", prod, v, prod * v);
+            prod = prod * v;
+        }
+        mpq p{1, lst.size()};
+        calc.stack.pop_front();
+        std::visit(
+            [&](const auto& v) {
+                lg::debug("{} ^ {} = {}\n", v, p, util::power_direct(v, p));
+                calc.stack.emplace_front(
+                    util::power_direct(v, p), calc.config.base,
+                    calc.config.fixed_bits, calc.config.precision,
+                    calc.config.is_signed, calc.flags);
+            },
+            prod);
+        return true;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        // required entry provided by num_args
+        stack_entry& e = calc.stack.front();
+        if (e.unit() != units::unit())
+        {
+            throw units_prohibited();
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
+        if (v && (*v < static_cast<mpz>(calc.stack.size())))
+        {
+            return gmean_from_stack(calc, *v);
+        }
+        if (auto lp = std::get_if<list>(&e.value()); lp)
+        {
+            return gmean_from_list(calc, *lp);
+        }
+        throw std::invalid_argument("Invalid aruments for gmean");
+    }
+    int num_args() const final
+    {
+        return -1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
 struct median : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -561,6 +651,7 @@ struct rand_dist : public CalcFunction
 register_calc_fn(combination);
 register_calc_fn(permutation);
 register_calc_fn(mean);
+register_calc_fn(geometric_mean);
 register_calc_fn(median);
 register_calc_fn(rand);
 register_calc_fn(rand_dist);
