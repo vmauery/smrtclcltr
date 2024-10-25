@@ -233,46 +233,68 @@ struct mean : public CalcFunction
             // clang-format off
             "\n"
             "    Usage: x1 x2... xn n mean\n"
+            "           { x1 x2... xn } mean\n"
             "\n"
             "    Returns the mean of the bottom n items on the stack\n"
+            "    or the bottom single item that is a list\n"
             // clang-format on
         };
         return _help;
     }
+    bool mean_from_stack(Calculator& calc, const mpz& v) const
+    {
+        size_t count = static_cast<size_t>(v) - 1;
+        auto n = calc.stack.front();
+        calc.stack.pop_front();
+        for (; count > 0; count--)
+        {
+            // no need to check the return;
+            // it is either true or it throws an exception
+            util::add_from_stack(calc);
+        }
+        calc.stack.push_front(n);
+        return util::divide_from_stack(calc);
+    }
+    bool mean_from_list(Calculator& calc, const list& lst) const
+    {
+        list::element_type sum{mpz{0}};
+        for (const auto& v : lst.values)
+        {
+            sum = sum + v;
+        }
+        auto mean = sum / list::element_type{mpz{lst.size()}};
+        calc.stack.pop_front();
+        std::visit(
+            [&](auto&& v) {
+                calc.stack.emplace_front(
+                    numeric{v}, calc.config.base, calc.config.fixed_bits,
+                    calc.config.precision, calc.config.is_signed, calc.flags);
+            },
+            std::move(mean));
+        return true;
+    }
     virtual bool op(Calculator& calc) const final
     {
-        // first two args provided by num_args
-        stack_entry e = calc.stack.front();
+        // required entry provided by num_args
+        stack_entry& e = calc.stack.front();
         if (e.unit() != units::unit())
         {
             throw units_prohibited();
         }
         const mpz* v = std::get_if<mpz>(&e.value());
-        if (!v || (*v > 1000000000) || (*v <= mpz{0}) ||
-            (*v >= static_cast<mpz>(calc.stack.size())))
+        if (v && (*v < static_cast<mpz>(calc.stack.size())))
         {
-            throw std::invalid_argument(
-                "n must be an integer greater than 0 and less the stack depth");
+            return mean_from_stack(calc, *v);
         }
-        size_t count = static_cast<size_t>(*v);
-        if (calc.stack.size() < (count + 1))
+        if (auto lp = std::get_if<list>(&e.value()); lp)
         {
-            throw insufficient_args();
+            return mean_from_list(calc, *lp);
         }
-        calc.stack.pop_front();
-        // only go from count to 1 because each op takes two items
-        for (; count > 1; count--)
-        {
-            // add from stack always returns true or throws
-            util::add_from_stack(calc);
-        }
-        calc.stack.push_front(e);
-
-        return util::divide_from_stack(calc);
+        throw std::invalid_argument("Invalid aruments for mean");
     }
     int num_args() const final
     {
-        return -2;
+        return -1;
     }
     int num_resp() const final
     {
