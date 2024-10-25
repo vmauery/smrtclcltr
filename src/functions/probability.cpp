@@ -539,6 +539,79 @@ struct median : public CalcFunction
     }
 };
 
+struct stddev : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"stddev"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: x1 x2... xn n stddev\n"
+            "           { x1 x2... xn } stddev\n"
+            "\n"
+            "    Returns the standard deviation of the bottom n items on the stack\n"
+            "    or the bottom single item that is a list\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        // first two args provided by num_args
+        stack_entry e = calc.stack.front();
+        if (e.unit() != units::unit())
+        {
+            throw units_prohibited();
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
+        if (!v || (*v > 1000000000) || (*v <= mpz{0}) ||
+            (*v >= static_cast<mpz>(calc.stack.size())))
+        {
+            throw std::invalid_argument(
+                "n must be an integer greater than 0 and less the stack depth");
+        }
+        size_t count = static_cast<size_t>(*v);
+        if (calc.stack.size() < (count + 1))
+        {
+            throw insufficient_args();
+        }
+        // the first on-stack function built up from rpn primitives?
+
+        /*
+        "$(depth 'n' sto 'n' eval 2list dup split mean 'mu' sto split 0 swap "
+        "for i in range do 'mu' eval - sqr 'n' eval rolldn done 'n' eval mean "
+        "sqrt)"
+        */
+        calc.stack.pop_front();
+        // only go from count to 1 because each op takes two items
+        for (; count > 1; count--)
+        {
+            // add from stack always returns true or throws
+            util::add_from_stack(calc);
+        }
+        calc.stack.push_front(e);
+
+        return util::divide_from_stack(calc);
+    }
+    int num_args() const final
+    {
+        return -2;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
 struct rand : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -653,5 +726,6 @@ register_calc_fn(permutation);
 register_calc_fn(mean);
 register_calc_fn(geometric_mean);
 register_calc_fn(median);
+register_calc_fn(stddev);
 register_calc_fn(rand);
 register_calc_fn(rand_dist);
