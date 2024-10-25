@@ -319,65 +319,20 @@ struct median : public CalcFunction
             // clang-format off
             "\n"
             "    Usage: x1 x2... xn n median\n"
+            "           { x1 x2... xn } median\n"
             "\n"
             "    Returns the median of the bottom n items on the stack\n"
+            "    or the bottom single item that is a list\n"
             // clang-format on
         };
         return _help;
     }
-    virtual bool op(Calculator& calc) const final
+    bool median_of_vector(Calculator& calc, std::vector<mpr>& items,
+                          units::unit unit) const
     {
-        // first two arguments provided by num_args
-        stack_entry e = calc.stack.front();
-        if (e.unit() != units::unit())
-        {
-            throw units_prohibited();
-        }
-        const mpz* v = std::get_if<mpz>(&e.value());
-        if (!v || (*v > 1000000000) || (*v <= mpz{0}) ||
-            (*v >= static_cast<mpz>(calc.stack.size())))
-        {
-            throw std::invalid_argument(
-                "n must be an integer greater than 0 and less the stack depth");
-        }
-        units::unit first_unit = calc.stack.front().unit();
-        size_t count = static_cast<size_t>(*v);
-        if (calc.stack.size() < (count + 1))
-        {
-            throw std::invalid_argument("Insufficient arguments");
-        }
-        calc.stack.pop_front();
-        std::vector<std::variant<mpz, mpq, mpf>> items{};
-        for (; count > 0; count--)
-        {
-            stack_entry e = calc.stack.front();
-            if (e.unit() != first_unit)
-            {
-                throw units_mismatch();
-            }
-            auto& v = e.value();
-            if (auto zp = std::get_if<mpz>(&v); zp)
-            {
-                items.emplace_back(*zp);
-            }
-            else if (auto qp = std::get_if<mpq>(&v); qp)
-            {
-                items.emplace_back(*qp);
-            }
-            else if (auto fp = std::get_if<mpf>(&v); fp)
-            {
-                items.emplace_back(*fp);
-            }
-            else
-            {
-                throw std::invalid_argument(
-                    "items must all be integer, rational, or real");
-            }
-            calc.stack.pop_front();
-        }
         std::sort(items.begin(), items.end());
         auto stack_inserter = [&](auto&& v) {
-            calc.stack.emplace_front(numeric{std::move(v)}, first_unit,
+            calc.stack.emplace_front(numeric{std::move(v)}, unit,
                                      calc.config.base, calc.config.fixed_bits,
                                      calc.config.precision,
                                      calc.config.is_signed, calc.flags);
@@ -391,19 +346,98 @@ struct median : public CalcFunction
         else
         {
             auto& item1 = items[(items.size() / 2) - 1];
-            std::visit(stack_inserter, item1);
             auto& item2 = items[items.size() / 2];
-            std::visit(stack_inserter, item2);
-            calc.stack.emplace_front(
-                two, calc.config.base, calc.config.fixed_bits,
-                calc.config.precision, calc.config.is_signed, calc.flags);
-            mean mean_fn{};
-            return mean_fn.op(calc);
+            auto item = std::visit(
+                [](const auto& a, const auto& b) -> numeric {
+                    return (a + b) / mpz{2};
+                },
+                item1, item2);
+            std::visit(stack_inserter, item);
+            return true;
         }
+    }
+    void grow_vector(const auto& v, std::vector<mpr>& items) const
+    {
+        if (auto zp = std::get_if<mpz>(&v); zp)
+        {
+            items.emplace_back(*zp);
+        }
+        else if (auto qp = std::get_if<mpq>(&v); qp)
+        {
+            items.emplace_back(*qp);
+        }
+        else if (auto fp = std::get_if<mpf>(&v); fp)
+        {
+            items.emplace_back(*fp);
+        }
+        else
+        {
+            throw std::invalid_argument(
+                "items must all be integer, rational, or real");
+        }
+    }
+    bool median_from_stack(Calculator& calc, const mpz& v) const
+    {
+        if ((v > 1000000000) || (v <= mpz{0}) ||
+            (v >= static_cast<mpz>(calc.stack.size())))
+        {
+            throw std::invalid_argument(
+                "n must be an integer greater than 0 and less the stack depth");
+        }
+        units::unit first_unit = calc.stack.front().unit();
+        size_t count = static_cast<size_t>(v);
+        if (calc.stack.size() < (count + 1))
+        {
+            throw std::invalid_argument("Insufficient arguments");
+        }
+        calc.stack.pop_front();
+        std::vector<mpr> items{};
+        for (; count > 0; count--)
+        {
+            stack_entry e = calc.stack.front();
+            if (e.unit() != first_unit)
+            {
+                throw units_mismatch();
+            }
+            auto& v = e.value();
+            grow_vector(v, items);
+            calc.stack.pop_front();
+        }
+        return median_of_vector(calc, items, first_unit);
+    }
+    bool median_from_list(Calculator& calc, const list& lst) const
+    {
+        std::vector<mpr> items{};
+        for (const auto& v : lst.values)
+        {
+            grow_vector(v, items);
+        }
+        calc.stack.pop_front();
+
+        return median_of_vector(calc, items, units::unit{});
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        // required entry provided by num_args
+        stack_entry e = calc.stack.front();
+        if (e.unit() != units::unit())
+        {
+            throw units_prohibited();
+        }
+        const mpz* v = std::get_if<mpz>(&e.value());
+        if (v && (*v < static_cast<mpz>(calc.stack.size())))
+        {
+            return median_from_stack(calc, *v);
+        }
+        if (auto lp = std::get_if<list>(&e.value()); lp)
+        {
+            return median_from_list(calc, *lp);
+        }
+        throw std::invalid_argument("Invalid aruments for median");
     }
     int num_args() const final
     {
-        return -2;
+        return -1;
     }
     int num_resp() const final
     {

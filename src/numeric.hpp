@@ -166,7 +166,11 @@ std::variant<T...> reduce_numeric(const std::variant<T...>& n,
 #include <time.hpp>
 // clang-format on
 
+// mpx is any of base numeric types
 using mpx = std::variant<mpz, mpq, mpf, mpc>;
+
+// mpr is any of the numeric types that are in the real set
+using mpr = std::variant<mpz, mpq, mpf>;
 
 using time_ = basic_time<mpq>;
 using matrix = basic_matrix<mpx>;
