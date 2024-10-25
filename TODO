@@ -15,8 +15,7 @@ Ideas for future development
    * eng sci engsi
    * htonl ntohl be le
    * pow hypot fib root roots div(integer division)
-   * stddev max min mode
-   * sort
+   * max min mode
    * conj real imag
    * rsa_info
    * cidr netmask =net

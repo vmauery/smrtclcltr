@@ -108,6 +108,52 @@ struct split : public CalcFunction
     }
 };
 
+struct sort : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"sort"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: { x1 x2 .. xn } sort\n"
+            "\n"
+            "    Sorts the list at the bottom of the stack\n"
+            "    The list may only contain integer, float, and rational items\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return one_arg_limited_op<list>(
+            calc,
+            [](const auto& a,
+               const units::unit& ua) -> std::tuple<numeric, units::unit> {
+                basic_list<mpr> l{a};
+                std::sort(l.begin(), l.end());
+                list ap{l};
+                return {ap, ua};
+            });
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return -1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
 struct Matrix : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -273,5 +319,6 @@ struct List : public CalcFunction
 } // namespace smrty
 
 register_calc_fn(split);
+register_calc_fn(sort);
 register_calc_fn(Matrix);
 register_calc_fn(List);

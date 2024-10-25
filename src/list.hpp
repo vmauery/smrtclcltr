@@ -43,6 +43,57 @@ struct basic_list
         reduce();
     }
 
+    basic_list(const basic_list<T>& l) : values(l.values)
+    {
+    }
+
+    template <typename O>
+        requires(!same_type_v<O, T>)
+    basic_list(const basic_list<O>& l) : values()
+    {
+        // convert from a list of type O to a list of type T, if possible
+        values.reserve(l.size());
+        for (const auto& v : l.values)
+        {
+            if constexpr (is_variant_v<O> && is_variant_v<T>)
+            {
+                T vp{};
+                if (!::reduce(v, vp)())
+                {
+                    throw std::invalid_argument("failed to convert list");
+                }
+                values.emplace_back(std::move(vp));
+            }
+            else if constexpr (is_variant_v<O> && !is_variant_v<T>)
+            {
+                if (auto vp = std::get_if<T>(&v); vp)
+                {
+                    values.emplace_back(*vp);
+                }
+                else
+                {
+                    throw std::invalid_argument("failed to convert list");
+                }
+            }
+            else if constexpr ((!is_variant_v<O> && is_variant_v<T>) &&
+                               variant_has_member<O, T>::value)
+            {
+                values.push_back(v);
+            }
+            else /* neither element type is variant; but are different types */
+            {
+                // currently don't have a way to deal with this
+                throw std::invalid_argument("failed to convert list");
+            }
+        }
+    }
+
+    basic_list<T>& operator=(const basic_list<T>& l)
+    {
+        values = l.values;
+        return *this;
+    }
+
     iterator begin()
     {
         return values.begin();
