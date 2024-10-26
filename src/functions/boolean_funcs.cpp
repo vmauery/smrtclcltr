@@ -226,7 +226,7 @@ struct less_than : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         // mpc not supported
-        return two_arg_limited_op<bool, mpz, mpq, mpf>(
+        return two_arg_limited_op<mpz, mpq, mpf>(
             calc,
             [](const auto& a, const auto& b, const units::unit& ua,
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -275,7 +275,7 @@ struct greater_than : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         // mpc not supported
-        return two_arg_limited_op<bool, mpz, mpq, mpf>(
+        return two_arg_limited_op<mpz, mpq, mpf>(
             calc,
             [](const auto& a, const auto& b, const units::unit& ua,
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -324,7 +324,7 @@ struct less_than_or_eq : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         // mpc not supported
-        return two_arg_limited_op<bool, mpz, mpq, mpf>(
+        return two_arg_limited_op<mpz, mpq, mpf>(
             calc,
             [](const auto& a, const auto& b, const units::unit& ua,
                const units::unit& ub) -> std::tuple<numeric, units::unit> {
@@ -373,7 +373,7 @@ struct greater_than_or_eq : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         // mpc not supported
-        return two_arg_limited_op<bool, mpz, mpq, mpf>(
+        return two_arg_limited_op<mpz, mpq, mpf>(
             calc,
             [](const auto& a, const auto& b, const units::unit& ua,
                const units::unit& ub) -> std::tuple<numeric, units::unit> {

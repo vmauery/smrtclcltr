@@ -332,7 +332,11 @@ mpz powul(const mpz& base, int exponent)
             result *= b;
         }
         e = e >> 1;
-        b *= b;
+        // unchecked, b might overflow on this last unused multiply
+        if (e > 0)
+        {
+            b *= b;
+        }
     }
     return result;
 }
@@ -576,7 +580,7 @@ std::pair<mpz, mpq> divide_with_remainder(const mpq& value, const mpq& divisor)
     }
     if (value == divisor)
     {
-        return {1, 0};
+        return {1, mpq{}};
     }
     mpq f = value / divisor;
     mpz whole = helper::numerator(f) / helper::denominator(f);

@@ -54,16 +54,11 @@ numeric power_direct(const auto& a, const auto& b)
             return pow_fn(a, static_cast<mpc>(b));
         }
     }
-    else if constexpr (same_type_v<mpz, decltype(a)> ||
-                       same_type_v<mpz, decltype(b)>)
-    {
-        // if only one is mpz, convert both to mpf
-        return pow_fn(static_cast<mpf>(a), static_cast<mpf>(b));
-    }
     else
     {
-        // all that is left is mpf
-        return pow_fn(a, b);
+        // all that is left are mixes of mpz, mpq, and mpf
+        // cast to mpf and exponentiate
+        return pow_fn(static_cast<mpf>(a), static_cast<mpf>(b));
     }
 }
 

@@ -226,7 +226,7 @@ TypeOut coerce_variant(const TypeIn& in)
 {
     if constexpr (same_type_v<TypeOut, bool>)
     {
-        return static_cast<bool>(in);
+        return in != TypeIn{0};
     }
     else if constexpr (same_type_v<TypeOut, mpz>)
     {

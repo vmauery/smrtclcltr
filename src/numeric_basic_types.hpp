@@ -162,7 +162,7 @@ constexpr mpc pow(const mpc& base, const mpc& exponent)
 }
 constexpr mpf pow(const mpq& base, const mpq& exponent)
 {
-    return std::pow(mpf{base}, mpf{exponent});
+    return pow(mpf{base}, mpf{exponent});
 }
 constexpr mpf tgamma(const mpf& v)
 {
@@ -325,5 +325,97 @@ constexpr mpc atanh(const mpc& v)
     return std::atanh(v);
 }
 } // namespace smrty
+
+// native types need a few more equality operators...
+/*
+static inline bool operator==(const mpc& l, const mpf& r)
+{
+    return l == mpc{r};
+}
+static inline bool operator==(const mpf& l, const mpc& r)
+{
+    return mpc{l} == r;
+}
+static inline bool operator==(const mpc& l, const mpz& r)
+{
+    return l == mpc{r};
+}
+static inline bool operator==(const mpz& l, const mpc& r)
+{
+    return mpc{l} == r;
+}
+static inline bool operator==(const mpc& l, const mpq& r)
+{
+    return l == mpc{mpf{r}};
+}
+static inline bool operator==(const mpq& l, const mpc& r)
+{
+    return mpc{mpf{l}} == r;
+}
+*/
+static inline bool operator==(const mpc& l, const mpz& r)
+{
+    return l == mpc{r};
+}
+static inline bool operator==(const mpz& l, const mpc& r)
+{
+    return mpc{l} == r;
+}
+static inline bool operator==(const mpc& l, const bool& r)
+{
+    return bool{l != mpc{}} && r;
+}
+static inline bool operator==(const bool& l, const mpc& r)
+{
+    return l && bool{r != mpc{}};
+}
+static inline bool operator==(const mpf& l, const bool& r)
+{
+    return bool{l != mpf{}} && r;
+}
+static inline bool operator==(const mpz& l, const bool& r)
+{
+    return bool{l != mpz{}} && r;
+}
+static inline bool operator==(const mpq& l, const bool& r)
+{
+    return bool{l != mpq{}} && r;
+}
+static inline bool operator==(const bool& l, const mpq& r)
+{
+    return l && bool{r != mpq{}};
+}
+static inline std::partial_ordering operator<=>(const mpf& l, const mpq& r)
+{
+    return l <=> static_cast<mpf>(r);
+}
+static inline bool operator==(const mpf& l, const mpz& r)
+{
+    return l == static_cast<mpf>(r);
+}
+static inline std::partial_ordering operator<=>(const mpf& l, const mpz& r)
+{
+    return l <=> static_cast<mpf>(r);
+}
+static inline std::partial_ordering operator<=>(const mpq& l, const mpf& r)
+{
+    return static_cast<mpf>(l) <=> r;
+}
+static inline bool operator==(const mpf& l, const mpq& r)
+{
+    return l == static_cast<mpf>(r);
+}
+static inline std::partial_ordering operator<=>(const mpz& l, const mpf& r)
+{
+    return static_cast<mpf>(l) <=> r;
+}
+static inline std::strong_ordering operator<=>(const mpq& l, const mpz& r)
+{
+    return l <=> static_cast<mpq>(r);
+}
+static inline bool operator==(const mpq& l, const mpz& r)
+{
+    return l == static_cast<mpq>(r);
+}
 
 #endif // USE_BASIC_TYPES

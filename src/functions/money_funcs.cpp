@@ -49,7 +49,7 @@ struct future_value : public CalcFunction
                [](const mpf& p, const mpf& r, const mpf& n,
                   const mpf& d) -> numeric {
                    mpf rate = pow_fn(mpf{1.0} + r, n);
-                   return p * rate + d * (rate - 1) / r;
+                   return p * rate + d * (rate - mpf{1.0}) / r;
                });
     }
     int num_args() const final
@@ -102,7 +102,7 @@ struct present_value : public CalcFunction
                [](const mpf& p, const mpf& r, const mpf& n,
                   const mpf& d) -> numeric {
                    mpf rate = pow_fn(mpf{1.0} + r, -n);
-                   return p * rate + d * (1 - rate) / r;
+                   return p * rate + d * (mpf{1.0} - rate) / r;
                });
     }
     int num_args() const final

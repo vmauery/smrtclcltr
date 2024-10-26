@@ -122,9 +122,9 @@ struct checked_int
         checked_int<T> result{~value};
         return result;
     }
-    constexpr operator bool() const
+    explicit constexpr operator bool() const
     {
-        return value;
+        return value != 0;
     }
     constexpr checked_int<T> operator*(const checked_int<T>& r) const
     {

@@ -94,6 +94,11 @@ struct checked_float
         return checked_int<I>{static_cast<I>(value)};
     }
 
+    explicit constexpr operator bool() const
+    {
+        return value != 0;
+    }
+
     /* ops with other ints */
     constexpr checked_float<T> operator+(const checked_float<T>& r) const
     {

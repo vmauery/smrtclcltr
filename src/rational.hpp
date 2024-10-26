@@ -100,6 +100,11 @@ struct rational
         return mpc{mpf{num} / mpf{den}, mpf{0}};
     }
 
+    constexpr operator bool() const
+    {
+        return num != 0;
+    }
+
     auto operator<=>(const rational<T>& r) const
     {
         T lcm = smrty::lcm(den, r.den);

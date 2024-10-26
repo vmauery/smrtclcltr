@@ -644,7 +644,7 @@ struct std::formatter<basic_time<T>>
                     out = std::format_to(out, "{:f}d", pval / one_day);
                 }
                 const auto& [w, f] = divide_with_remainder(pval, one_day);
-                if (f == 0)
+                if (f == mpq{0})
                 {
                     return out;
                 }
@@ -663,7 +663,7 @@ struct std::formatter<basic_time<T>>
                     full += ' ';
                 }
                 const auto& [w, f] = divide_with_remainder(pval, one_hour);
-                if (f == 0)
+                if (f == mpq{0})
                 {
                     return out;
                 }
@@ -682,7 +682,7 @@ struct std::formatter<basic_time<T>>
                     full += ' ';
                 }
                 const auto& [w, f] = divide_with_remainder(pval, one_minute);
-                if (f == 0)
+                if (f == mpq{0})
                 {
                     return out;
                 }
