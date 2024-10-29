@@ -49,46 +49,6 @@ struct drop : public CalcFunction
     }
 };
 
-struct drop2 : public CalcFunction
-{
-    virtual const std::string& name() const final
-    {
-        static const std::string _name{"drop2"};
-        return _name;
-    }
-    virtual const std::string& help() const final
-    {
-        static const std::string _help{
-            // clang-format off
-            "\n"
-            "    Usage: drop2\n"
-            "\n"
-            "    Removes the bottom two items on the stack\n"
-            // clang-format on
-        };
-        return _help;
-    }
-    virtual bool op(Calculator& calc) const final
-    {
-        // two args using num_args
-        calc.stack.pop_front();
-        calc.stack.pop_front();
-        return true;
-    }
-    int num_args() const final
-    {
-        return 2;
-    }
-    int num_resp() const final
-    {
-        return 0;
-    }
-    symbolic_op symbolic_usage() const final
-    {
-        return symbolic_op::none;
-    }
-};
-
 struct dropn : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -102,11 +62,25 @@ struct dropn : public CalcFunction
             // clang-format off
             "\n"
             "    Usage: x dropn\n"
+            "           drop[1-9][0-9]*\n"
             "\n"
             "    Removes the x bottom items on the stack\n"
+            "    regex variant supports drop2 or drop18\n"
             // clang-format on
         };
         return _help;
+    }
+    bool drop(Calculator& calc, size_t count) const
+    {
+        if (calc.stack.size() < count)
+        {
+            throw insufficient_args();
+        }
+        for (size_t i = 0; i < count; i++)
+        {
+            calc.stack.pop_front();
+        }
+        return true;
     }
     virtual bool op(Calculator& calc) const final
     {
@@ -121,16 +95,29 @@ struct dropn : public CalcFunction
         {
             count = static_cast<size_t>(*np);
         }
-        else if ((count == 0) || (calc.stack.size() < (count + 1)))
+        else if (count == 0)
         {
-            throw insufficient_args();
+            throw std::invalid_argument("count cannot be zero");
         }
         calc.stack.pop_front();
-        for (size_t i = 0; i < count; i++)
+        return drop(calc, count);
+    }
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
+    {
+        std::string_view n = match[1];
+        size_t count{};
+        if (std::from_chars(n.data(), n.data() + n.size(), count).ec !=
+            std::errc{})
         {
-            calc.stack.pop_front();
+            throw std::invalid_argument("failed to parse integer from string");
         }
-        return true;
+        return drop(calc, count);
+    }
+    virtual const std::string_view regex() const final
+    {
+        static const auto _regex = "drop([1-9][0-9]*)";
+        return _regex;
     }
     int num_args() const final
     {
@@ -186,48 +173,6 @@ struct dup : public CalcFunction
     }
 };
 
-struct dup2 : public CalcFunction
-{
-    virtual const std::string& name() const final
-    {
-        static const std::string _name{"dup2"};
-        return _name;
-    }
-    virtual const std::string& help() const final
-    {
-        static const std::string _help{
-            // clang-format off
-            "\n"
-            "    Usage: x y dup2\n"
-            "\n"
-            "    Duplicates the bottom item on the stack (x y x y)\n"
-            // clang-format on
-        };
-        return _help;
-    }
-    virtual bool op(Calculator& calc) const final
-    {
-        // two args using num_args
-        stack_entry x = calc.stack[1];
-        stack_entry y = calc.stack[0];
-        calc.stack.push_front(x);
-        calc.stack.push_front(y);
-        return true;
-    }
-    int num_args() const final
-    {
-        return 2;
-    }
-    int num_resp() const final
-    {
-        return 2;
-    }
-    symbolic_op symbolic_usage() const final
-    {
-        return symbolic_op::none;
-    }
-};
-
 struct dupn : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -241,11 +186,25 @@ struct dupn : public CalcFunction
             // clang-format off
             "\n"
             "    Usage: x0 x1..xn n dupn\n"
+            "           x0 x1..xn dup[1-9][0-9]*\n"
             "\n"
             "    Duplicates the bottom n items on the stack\n"
+            "    regex variant allows for dup2 or dup18\n"
             // clang-format on
         };
         return _help;
+    }
+    bool dup(Calculator& calc, size_t count) const
+    {
+        if (calc.stack.size() < count)
+        {
+            throw insufficient_args();
+        }
+        for (size_t i = 0; i < count; i++)
+        {
+            calc.stack.push_front(calc.stack[count - 1]);
+        }
+        return true;
     }
     virtual bool op(Calculator& calc) const final
     {
@@ -256,17 +215,30 @@ struct dupn : public CalcFunction
         {
             count = static_cast<size_t>(*np);
         }
-        else if ((count == 0) || (calc.stack.size() < (count + 1)))
+        else if (count == 0)
         {
-            throw insufficient_args();
+            throw std::invalid_argument("count cannot be zero");
         }
         // remove N
         calc.stack.pop_front();
-        for (size_t i = 0; i < count; i++)
+        return dup(calc, count);
+    }
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
+    {
+        std::string_view n = match[1];
+        size_t count{};
+        if (std::from_chars(n.data(), n.data() + n.size(), count).ec !=
+            std::errc{})
         {
-            calc.stack.push_front(calc.stack[count - 1]);
+            throw std::invalid_argument("failed to parse integer from string");
         }
-        return true;
+        return dup(calc, count);
+    }
+    virtual const std::string_view regex() const final
+    {
+        static const auto _regex = "dup([1-9][0-9]*)";
+        return _regex;
     }
     int num_args() const final
     {
@@ -499,11 +471,25 @@ struct rolln : public CalcFunction
             // clang-format off
             "\n"
             "    Usage: x rolln\n"
+            "           x0 x1..xn roll[1-9][0-9]*\n"
             "\n"
             "    Rolls the bottom n stack items up\n"
+            "    regex variant supports roll2 or roll18\n"
             // clang-format on
         };
         return _help;
+    }
+    bool roll(Calculator& calc, size_t count) const
+    {
+        if (calc.stack.size() < count)
+        {
+            throw insufficient_args();
+        }
+        // pick count and push it at front, removing it from original location
+        stack_entry a = calc.stack[count - 1];
+        calc.stack.erase(calc.stack.begin() + count - 1);
+        calc.stack.push_front(a);
+        return true;
     }
     virtual bool op(Calculator& calc) const final
     {
@@ -518,17 +504,30 @@ struct rolln : public CalcFunction
         {
             count = static_cast<size_t>(*np);
         }
-        if ((count == 0) || (calc.stack.size() < (count + 1)))
+        else if (count == 0)
         {
-            throw insufficient_args();
+            throw std::invalid_argument("count cannot be zero");
         }
         // remove N
         calc.stack.pop_front();
-        // pick count and push it at front, removing it from original location
-        stack_entry a = calc.stack[count - 1];
-        calc.stack.erase(calc.stack.begin() + count - 1);
-        calc.stack.push_front(a);
-        return true;
+        return roll(calc, count);
+    }
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
+    {
+        std::string_view n = match[1];
+        size_t count{};
+        if (std::from_chars(n.data(), n.data() + n.size(), count).ec !=
+            std::errc{})
+        {
+            throw std::invalid_argument("failed to parse integer from string");
+        }
+        return roll(calc, count);
+    }
+    virtual const std::string_view regex() const final
+    {
+        static const auto _regex = "roll([1-9][0-9]*)";
+        return _regex;
     }
     int num_args() const final
     {
@@ -598,11 +597,25 @@ struct rolldn : public CalcFunction
             // clang-format off
             "\n"
             "    Usage: rolldn\n"
+            "           x0 x1..xn rolld[1-9][0-9]*\n"
             "\n"
             "    Rolls the bottom n stack items down\n"
+            "    regex variant supports rolld2 or rolld18\n"
             // clang-format on
         };
         return _help;
+    }
+    bool rolld(Calculator& calc, size_t count) const
+    {
+        if (calc.stack.size() < count)
+        {
+            throw insufficient_args();
+        }
+        // pop bottom and push it at count
+        stack_entry a = calc.stack.front();
+        calc.stack.pop_front();
+        calc.stack.insert(calc.stack.begin() + count - 1, std::move(a));
+        return true;
     }
     virtual bool op(Calculator& calc) const final
     {
@@ -613,17 +626,30 @@ struct rolldn : public CalcFunction
         {
             count = static_cast<size_t>(*np);
         }
-        if ((count == 0) || (calc.stack.size() < (count + 1)))
+        else if (count == 0)
         {
-            throw insufficient_args();
+            throw std::invalid_argument("count cannot be zero");
         }
         // remove N
         calc.stack.pop_front();
-        // pop bottom and push it at count
-        stack_entry a = calc.stack.front();
-        calc.stack.pop_front();
-        calc.stack.insert(calc.stack.begin() + count - 1, std::move(a));
-        return true;
+        return rolld(calc, count);
+    }
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
+    {
+        std::string_view n = match[1];
+        size_t count{};
+        if (std::from_chars(n.data(), n.data() + n.size(), count).ec !=
+            std::errc{})
+        {
+            throw std::invalid_argument("failed to parse integer from string");
+        }
+        return rolld(calc, count);
+    }
+    virtual const std::string_view regex() const final
+    {
+        static const auto _regex = "rolld([1-9][0-9]*)";
+        return _regex;
     }
     int num_args() const final
     {
@@ -652,11 +678,19 @@ struct pick : public CalcFunction
             // clang-format off
             "\n"
             "    Usage: x pick\n"
+            "           x0 x1..xn pick[1-9][0-9]*\n"
             "\n"
             "    Returns the item x entries up the stack\n"
+            "    regex variant supports pick2 or pick18\n"
             // clang-format on
         };
         return _help;
+    }
+    bool pickN(Calculator& calc, size_t count) const
+    {
+        // duplicate item N
+        calc.stack.push_front(calc.stack[count - 1]);
+        return true;
     }
     virtual bool op(Calculator& calc) const final
     {
@@ -667,14 +701,30 @@ struct pick : public CalcFunction
         {
             count = static_cast<size_t>(*np);
         }
-        else if ((count == 0) || (calc.stack.size() < (count + 1)))
+        else if (count == 0)
         {
-            throw insufficient_args();
+            throw std::invalid_argument("count cannot be zero");
         }
         // remove N
         calc.stack.pop_front();
-        calc.stack.push_front(calc.stack[count - 1]);
-        return true;
+        return pickN(calc, count);
+    }
+    virtual bool reop(Calculator& calc,
+                      const std::vector<std::string>& match) const final
+    {
+        std::string_view n = match[1];
+        size_t count{};
+        if (std::from_chars(n.data(), n.data() + n.size(), count).ec !=
+            std::errc{})
+        {
+            throw std::invalid_argument("failed to parse integer from string");
+        }
+        return pickN(calc, count);
+    }
+    virtual const std::string_view regex() const final
+    {
+        static const auto _regex = "pick([1-9][0-9]*)";
+        return _regex;
     }
     int num_args() const final
     {
@@ -694,10 +744,8 @@ struct pick : public CalcFunction
 } // namespace smrty
 
 register_calc_fn(drop);
-register_calc_fn(drop2);
 register_calc_fn(dropn);
 register_calc_fn(dup);
-register_calc_fn(dup2);
 register_calc_fn(dupn);
 register_calc_fn(over);
 register_calc_fn(swap);
