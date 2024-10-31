@@ -6,6 +6,7 @@ SPDX-License-Identifier: BSD-3-Clause
 
 #include <calculator.hpp>
 #include <input.hpp>
+#include <main.hpp>
 #include <numeric.hpp>
 #include <optional>
 #include <parser.hpp>
@@ -131,7 +132,7 @@ std::string_view fn_get_name(CalcFunction::ptr p)
     return "<unknown-function>";
 }
 
-// for-loops need to directly acces calculator, so need to stub it out here
+// for-loops need to directly access calculator, so need to stub it out here
 Calculator::Calculator()
 {
 }
@@ -159,9 +160,46 @@ void setup_regex_ops()
     }
 }
 
-int main(int argc, char* argv[])
+int usage(std::span<std::string_view> args)
+{
+    std::print(stderr, "Usage: {} [-v [n]]\n", args[0]);
+    return 1;
+}
+
+int cpp_main(std::span<std::string_view> args)
 {
     lg::debug_level = lg::level::debug;
+
+    size_t i = 1;
+    for (; i < args.size(); i++)
+    {
+        std::string_view arg = args[i];
+        if (arg[0] != '-')
+        {
+            break;
+        }
+        if (arg == "-v")
+        {
+            if ((i + 1) < args.size())
+            {
+                arg = args[++i];
+                int v{};
+                const auto& [ptr, ec] =
+                    std::from_chars(arg.begin(), arg.end(), v);
+                if (ec != std::error_code{} || ptr != arg.end())
+                {
+                    return usage(args);
+                }
+                lg::debug_level = static_cast<lg::level>(v);
+            }
+            else
+            {
+                lg::debug_level = static_cast<lg::level>(
+                    static_cast<int>(lg::debug_level) + 1);
+            }
+        }
+    }
+
     auto input = Input::make_shared(true, auto_complete);
     setup_regex_ops();
     smrty::parser::set_function_lists(operations, regex_operations);

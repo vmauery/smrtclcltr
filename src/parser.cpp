@@ -1191,26 +1191,31 @@ void set_function_lists(
         }
         return true;
     };
-    op_functions.parser_.initial_elements_.clear();
-    paren_op.parser_.initial_elements_.clear();
-    functions.parser_.initial_elements_.clear();
+
+    op_functions.clear_for_next_parse();
+    paren_op.clear_for_next_parse();
+    functions.clear_for_next_parse();
     for (const auto& f : fn_names)
     {
+        auto p = smrty::fn_get_fn_ptr_by_name(f);
+        if (!p)
+        {
+            continue;
+        }
         // operators might interfere with other stuff, so separate
         // them to keep them at lower priority in the parse stack
         if (all_nonalnum(f))
         {
-            op_functions(f, fn_get_fn_ptr_by_name(f));
+            op_functions.insert_for_next_parse(f, p);
         }
         else
         {
             // only allow symbolic_op ok functions (ops are part of grammar)
-            if (auto p = smrty::fn_get_fn_ptr_by_name(f);
-                p && p->symbolic_usage() != symbolic_op::none)
+            if (p->symbolic_usage() != symbolic_op::none)
             {
-                paren_op(f, fn_get_fn_ptr_by_name(f));
+                paren_op.insert_for_next_parse(f, p);
             }
-            functions(f, fn_get_fn_ptr_by_name(f));
+            functions.insert_for_next_parse(f, p);
         }
     }
     re_fn_def.parser_.parser_.set_regulars(regex_functions);
