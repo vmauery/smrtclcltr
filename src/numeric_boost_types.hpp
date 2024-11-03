@@ -167,12 +167,80 @@ static inline mpq operator%(const mpq& a, const mpq& b)
                        helper::denominator(q)};
 }
 
-// free operator for boost mpf
+// free operator for boost::multiprecision floats
 static inline mpf operator%(const mpf& a, const mpf& b)
 {
-    mpz q = static_cast<mpz>(a / b);
+    mpf q = static_cast<mpf>(static_cast<mpz>(a / b));
     return a - b * q;
 }
+
+#ifdef USE_BOOST_CPP_BACKEND
+// needed for boost cpp backend
+static inline std::partial_ordering operator<=>(const mpf& l, const mpf& r)
+{
+    if (l == r)
+    {
+        return std::partial_ordering::equivalent;
+    }
+    if (l < r)
+    {
+        return std::partial_ordering::less;
+    }
+    if (l > r)
+    {
+        return std::partial_ordering::greater;
+    }
+    return std::partial_ordering::unordered;
+}
+static inline std::partial_ordering operator<=>(const mpf& l, const mpq& r)
+{
+    return l <=> static_cast<mpf>(r);
+}
+static inline bool operator==(const mpf& l, const mpq& r)
+{
+    return l == static_cast<mpf>(r);
+}
+static inline std::strong_ordering operator<=>(const mpq& l, const mpq& r)
+{
+    if (l == r)
+    {
+        return std::strong_ordering::equal;
+    }
+    if (l < r)
+    {
+        return std::strong_ordering::less;
+    }
+    return std::strong_ordering::greater;
+}
+static inline std::strong_ordering operator<=>(const mpz& l, const mpq& r)
+{
+    return static_cast<mpq>(l) <=> r;
+}
+static inline std::partial_ordering operator<=>(const mpf& l, const mpz& r)
+{
+    return l <=> static_cast<mpf>(r);
+}
+static inline bool operator==(const mpf& l, const mpz& r)
+{
+    return l == static_cast<mpf>(r);
+}
+static inline bool operator==(const mpc& l, const mpq& r)
+{
+    return l == static_cast<mpc>(static_cast<mpf>(r));
+}
+static inline bool operator==(const mpq& l, const mpc& r)
+{
+    return static_cast<mpc>(static_cast<mpf>(l)) == r;
+}
+static inline bool operator==(const mpc& l, const mpz& r)
+{
+    return l == static_cast<mpc>(static_cast<mpf>(r));
+}
+static inline bool operator==(const mpz& l, const mpc& r)
+{
+    return static_cast<mpc>(static_cast<mpf>(l)) == r;
+}
+#endif // USE_BOOST_CPP_BACKEND
 
 // commonly used mpz values
 static const mpz zero{0};
