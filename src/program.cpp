@@ -116,6 +116,8 @@ bool program::execute(const Executor& executor, execution_flags& flags)
     // reset program counter to beginning
     next = body.begin();
 
+    bool last_show_stack = true;
+
     lg::debug("program::execute()\n");
     while (1)
     {
@@ -126,13 +128,9 @@ bool program::execute(const Executor& executor, execution_flags& flags)
             lg::debug("program::execute() - end of program\n");
             break;
         }
-        if (!executor(itm, flags))
-        {
-            lg::info("execution halted at '{}'\n", itm);
-            return false;
-        };
+        last_show_stack = executor(itm, flags);
     }
-    return true;
+    return last_show_stack;
 }
 
 void program::quit()
