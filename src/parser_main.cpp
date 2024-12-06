@@ -10,7 +10,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <numeric.hpp>
 #include <optional>
 #include <parser.hpp>
-#include <print.hpp>
+#include <print>
 #include <string_view>
 #include <vector>
 

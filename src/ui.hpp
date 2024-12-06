@@ -9,7 +9,7 @@ SPDX-License-Identifier: BSD-3-Clause
 #include <sys/ioctl.h>
 
 #include <memory>
-#include <print.hpp>
+#include <print>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -62,13 +62,13 @@ struct ui : public std::enable_shared_from_this<ui>
 
     std::shared_ptr<ui> err(const std::string& m)
     {
-        std::print(stderr, m);
+        fputs(m.c_str(), stderr);
         return shared_from_this();
     }
 
     std::shared_ptr<ui> out(const std::string& m)
     {
-        std::print(stdout, m);
+        fputs(m.c_str(), stdout);
         return shared_from_this();
     }
 
