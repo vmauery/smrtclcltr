@@ -590,10 +590,47 @@ struct std::formatter<basic_list<T>>
 template <typename T>
 struct std::formatter<basic_time<T>>
 {
+    enum class time_format
+    {
+        gmt,
+        local
+    };
+    time_format rqfmt = time_format::gmt;
+
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin())
     {
-        return ctx.begin();
+        // format:
+        // {[name]:[zgl]}
+        // z|g is for zulu (gmt-based dates instead of local) (default)
+        // l is for local (adds tz offset, e.g. +-07:30)
+        auto begin = ctx.begin();
+        auto end = ctx.end();
+        if (begin == end)
+        {
+            return begin;
+        }
+        switch (*begin)
+        {
+            case 'l': // local times
+                rqfmt = time_format::local;
+                ++begin;
+                break;
+            case 'g': // gmt times
+                [[fallthrough]];
+            case 'z': // zulu times
+                rqfmt = time_format::gmt;
+                ++begin;
+                break;
+            default:
+                // throw something
+                break;
+        }
+        if (begin == end)
+        {
+            return begin;
+        }
+        return begin;
     }
 
     template <typename FormatContext>
@@ -617,9 +654,19 @@ struct std::formatter<basic_time<T>>
 #endif // USE_BASIC_TYPES
        // lg::debug("value={}, nanos={}\n", t.value, nanos);
             std::chrono::time_point<std::chrono::system_clock> tp(d);
-            return std::format_to(out, "{:%FT%T}", tp);
-            // const std::time_t t_c = std::chrono::system_clock::to_time_t(tp);
-            // return std::strftime(std::localtime(&t_c), "%FT%T");
+            if (rqfmt == time_format::gmt)
+            {
+                return std::format_to(out, "{:%FT%T}", tp);
+            }
+            else
+            {
+                auto local_time_zone = std::chrono::current_zone();
+
+                // Convert the time point to the local time zone
+                auto local_time = std::chrono::zoned_time{local_time_zone, tp};
+
+                return std::format_to(out, "{:%FT%T%Oz}", local_time);
+            }
         }
 
         // duration

@@ -1226,6 +1226,43 @@ struct Help : public CalcFunction
     }
 };
 
+struct tz : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"tz"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: tz\n"
+            "\n"
+            "    Toggles printing absolute times as local or GMT"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        return calc.tz_mode();
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
 } // namespace function
 } // namespace smrty
 
@@ -1258,3 +1295,4 @@ register_calc_fn(ij);
 register_calc_fn(polar);
 register_calc_fn(rectangular);
 register_calc_fn(Help);
+register_calc_fn(tz);

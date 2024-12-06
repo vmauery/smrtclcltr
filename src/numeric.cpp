@@ -473,8 +473,8 @@ time_ parse_time(const smrty::time_parts& num)
             }
             int tzsign = tzh < 0 ? -1 : 1;
             tzh *= tzsign;
-            int tzo = tzsign * (60 * tzh + tzm);
-            tm.tm_min += tzo;
+            int tzo = tzsign * 60 * (60 * tzh + tzm);
+            tm.tm_gmtoff = tzo;
         }
         auto tp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
         // std::mktime may adjust tm based on invalid values in fields

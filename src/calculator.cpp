@@ -656,6 +656,12 @@ bool Calculator::precision(unsigned int p)
     return false;
 }
 
+bool Calculator::tz_mode()
+{
+    config.local_time ^= true;
+    return true;
+}
+
 std::string Calculator::format_stack_entry(const stack_entry& e,
                                            size_t first_col)
 {
@@ -731,7 +737,14 @@ std::string Calculator::format_stack_entry(const stack_entry& e,
     }
     if (auto tm = std::get_if<time_>(&v); tm)
     {
-        return std::format("{}", *tm);
+        if (config.local_time)
+        {
+            return std::format("{:l}", *tm);
+        }
+        else
+        {
+            return std::format("{:g}", *tm);
+        }
     }
     return std::visit([&u](const auto& a) { return std::format("{}{}", a, u); },
                       v);

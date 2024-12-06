@@ -56,6 +56,7 @@ class Calculator
         e_mpq_mode mpq_mode = e_mpq_mode::floating;
         e_mpc_mode mpc_mode = e_mpc_mode::rectangular;
         bool save_stack = true;
+        bool local_time = true;
     };
     using Stack = std::deque<stack_entry>;
 
@@ -104,6 +105,7 @@ class Calculator
     bool fixed_bits(unsigned int);
     bool precision(unsigned int);
     bool signed_mode(bool);
+    bool tz_mode();
     bool angle_mode(e_angle_mode);
     bool mpq_mode(e_mpq_mode);
     bool mpc_mode(e_mpc_mode);
