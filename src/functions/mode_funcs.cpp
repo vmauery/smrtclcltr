@@ -276,6 +276,158 @@ struct base : public CalcFunction
     }
 };
 
+struct base2 : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"bin"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: bin\n"
+            "\n"
+            "    Sets the numeric base to two (2) or binary\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        calc.base(2);
+        return false;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
+struct base8 : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"oct"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: oct\n"
+            "\n"
+            "    Sets the numeric base to eight (8) or octal\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        calc.base(8);
+        return false;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
+struct base10 : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"dec"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: dec\n"
+            "\n"
+            "    Sets the numeric base to ten (10) or decimal\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        calc.base(10);
+        return false;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
+struct base16 : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"hex"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: hex\n"
+            "\n"
+            "    Sets the numeric base to sixteen (16) or hexadecimal\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        calc.base(16);
+        return false;
+    }
+    int num_args() const final
+    {
+        return 0;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
 struct cbase : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -298,6 +450,166 @@ struct cbase : public CalcFunction
     virtual bool op(Calculator& calc) const final
     {
         return calc.cbase();
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
+struct tobin : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"2bin"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: 2bin\n"
+            "\n"
+            "    Changes the numeric base of the bottom item to be\n"
+            "    base two (2) or binary\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry& e = calc.stack.front();
+        e.base = 2;
+        return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
+struct tooct : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"2oct"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: 2oct\n"
+            "\n"
+            "    Changes the numeric base of the bottom item to be\n"
+            "    base eight (8) or octal\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry& e = calc.stack.front();
+        e.base = 8;
+        return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
+struct todec : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"2dec"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: 2dec\n"
+            "\n"
+            "    Changes the numeric base of the bottom item to be\n"
+            "    base ten (10) or decimal\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry& e = calc.stack.front();
+        e.base = 10;
+        return true;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 1;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
+struct tohex : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"2hex"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: 2hex\n"
+            "\n"
+            "    Changes the numeric base of the bottom item to be\n"
+            "    base sixteen (16) or hexadecimal\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry& e = calc.stack.front();
+        e.base = 16;
+        return true;
     }
     int num_args() const final
     {
@@ -923,7 +1235,15 @@ register_calc_fn(debug);
 register_calc_fn(verbose);
 register_calc_fn(undo);
 register_calc_fn(base);
+register_calc_fn(base2);
+register_calc_fn(base8);
+register_calc_fn(base10);
+register_calc_fn(base16);
 register_calc_fn(cbase);
+register_calc_fn(tobin);
+register_calc_fn(tooct);
+register_calc_fn(todec);
+register_calc_fn(tohex);
 register_calc_fn(fixed_bits);
 register_calc_fn(precision);
 register_calc_fn(quotient);
