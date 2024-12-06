@@ -11,25 +11,26 @@ SPDX-License-Identifier: BSD-3-Clause
 namespace smrty
 {
 
-// 6/7+3*8*-x^(y+2)*sin(5*z)
-//           sym('+')
-//          /        \
-//   sym('/')      sym('*')
-//     /   \        /     \
-//  num(6) num(7) num(3) sym('*')
-//                       /    \
-//                    num(8)  sym('*')
-//                             /    \
-//                        num(-1)  sym('*')
-//                                 /     \
-//                           sym(exp)   sym(sin)(style=paren)
-//                            /     \         \
-//                       var(x)  sym()(paren) sym('*')
-//                                /           /     \
-//                           sym('+')      num(5)  var(z)
-//                            /     \
-//                         var(y)  num(2)
-//
+/*
+ 6/7+3*8*-x^(y+2)*sin(5*z)
+           sym('+')
+          /        \
+   sym('/')      sym('*')
+     /   \        /     \
+  num(6) num(7) num(3) sym('*')
+                       /    \
+                    num(8)  sym('*')
+                             /    \
+                        num(-1)  sym('*')
+                                 /     \
+                           sym(exp)   sym(sin)(style=paren)
+                            /     \         \
+                       var(x)  sym()(paren) sym('*')
+                                /           /     \
+                           sym('+')      num(5)  var(z)
+                            /     \
+                         var(y)  num(2)
+*/
 
 symbolic::symbolic() : ptr(std::make_shared<symbolic_actual>(*this))
 {
