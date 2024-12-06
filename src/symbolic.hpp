@@ -202,8 +202,8 @@ struct std::formatter<smrty::symbolic_actual>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::symbolic_actual& sym,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::symbolic_actual& sym, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         // mpx or symbolic single operand
@@ -302,8 +302,8 @@ struct std::formatter<smrty::symbolic>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::symbolic& b,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::symbolic& b, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         // only quote the outer-most symbolic
         static bool quotes = true;

@@ -471,8 +471,8 @@ struct std::formatter<basic_matrix<T>>
     }
 
     template <typename FormatContext>
-    auto format(const basic_matrix<T>& m,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const basic_matrix<T>& m, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         int pad = 1 + spec._M_get_width(ctx);
@@ -567,8 +567,8 @@ struct std::formatter<basic_list<T>>
     }
 
     template <typename FormatContext>
-    auto format(const basic_list<T>& lst,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const basic_list<T>& lst, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         [[maybe_unused]] int width = spec._M_get_precision(ctx);
@@ -597,8 +597,8 @@ struct std::formatter<basic_time<T>>
     }
 
     template <typename FormatContext>
-    auto format(const basic_time<T>& t,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const basic_time<T>& t, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         // lg::debug("str(): value={:q}\n", t.value);

@@ -135,8 +135,8 @@ struct std::formatter<smrty::while_statement>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::while_statement& s,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::while_statement& s, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "while {} do {} done", s.cond, s.body);
@@ -156,8 +156,8 @@ struct std::formatter<smrty::for_statement>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::for_statement& s,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::for_statement& s, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "for {} in {} do {} done", s.var_name,
@@ -178,8 +178,8 @@ struct std::formatter<smrty::statement::ptr>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::statement::ptr& s,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::statement::ptr& s, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         // all known subclasses of statement

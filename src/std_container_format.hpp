@@ -157,8 +157,8 @@ struct std::formatter<std::monostate>
     }
 
     template <typename FormatContext>
-    auto format(const std::monostate&,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const std::monostate&, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         constexpr std::string_view name{"monostate"};
@@ -178,8 +178,8 @@ struct std::formatter<std::filesystem::path>
     }
 
     template <typename FormatContext>
-    auto format(const std::filesystem::path& p,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const std::filesystem::path& p, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         auto ps = p.string();
@@ -199,8 +199,8 @@ struct std::formatter<std::error_code>
     }
 
     template <typename FormatContext>
-    auto format(const std::error_code& e,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const std::error_code& e, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "{}:{}", e.category().name(), e.value());
@@ -239,8 +239,8 @@ struct std::formatter<std::variant<Types...>>
     }
 
     template <typename FormatContext>
-    auto format(const std::variant<Types...>& t,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const std::variant<Types...>& t, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         // check for empty variant
         auto idx = t.index();
@@ -312,8 +312,8 @@ struct std::formatter<std::tuple<Types...>>
     }
 
     template <typename FormatContext>
-    auto format(const std::tuple<Types...>& t,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const std::tuple<Types...>& t, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         *out++ = '(';
@@ -341,8 +341,8 @@ struct std::formatter<std::match_results<T...>>
     }
 
     template <typename FormatContext>
-    auto format(const std::match_results<T...>& m,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const std::match_results<T...>& m, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         if (!m.ready())

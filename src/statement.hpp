@@ -69,8 +69,8 @@ struct std::formatter<smrty::keyword>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::keyword& k,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::keyword& k, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "{}", k.word);

@@ -109,8 +109,8 @@ struct std::formatter<smrty::function_parts>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::function_parts& fn,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::function_parts& fn, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "{}", fn_get_name(fn.fn_ptr));
@@ -134,8 +134,8 @@ struct std::formatter<smrty::single_number_parts>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::single_number_parts& n,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::single_number_parts& n, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "{}{}", (n.mantissa_sign < 0 ? "-" : ""),
@@ -161,8 +161,8 @@ struct std::formatter<smrty::two_number_parts>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::two_number_parts& n,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::two_number_parts& n, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         if (n.number_type == smrty::two_number_parts::type::cmplx)
@@ -190,8 +190,8 @@ struct std::formatter<smrty::time_parts>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::time_parts& t,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::time_parts& t, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         if (t.absolute)

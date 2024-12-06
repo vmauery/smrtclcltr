@@ -81,8 +81,8 @@ struct std::formatter<smrty::CalcFunction::ptr>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::CalcFunction::ptr& b,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::CalcFunction::ptr& b, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "CalcFunction({})", fn_get_name(b));

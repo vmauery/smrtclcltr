@@ -78,8 +78,8 @@ struct std::formatter<smrty::program>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::program& pgm,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::program& pgm, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         if (pgm.standalone)
@@ -108,8 +108,8 @@ struct std::formatter<smrty::simple_program>
     }
 
     template <typename FormatContext>
-    auto format(const smrty::simple_program& pgm,
-                FormatContext& ctx) const -> decltype(ctx.out())
+    auto format(const smrty::simple_program& pgm, FormatContext& ctx) const
+        -> decltype(ctx.out())
     {
         auto out = ctx.out();
         out = std::format_to(out, "{: }", pgm.body);
