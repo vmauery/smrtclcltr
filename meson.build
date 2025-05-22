@@ -25,7 +25,6 @@ timestamp_iso8601 = ts_cmd.stdout().strip()
 add_project_arguments(['-D__TIMESTAMP_ISO8601__="'+timestamp_iso8601+'"'], language: 'cpp')
 
 cxx = meson.get_compiler('cpp')
-add_project_arguments(['-Wno-unused-parameter'], language: 'cpp')
 
 if (cxx.get_id() == 'gcc')
   add_project_arguments(['-fpermissive'], language: 'cpp')
@@ -69,7 +68,20 @@ add_project_arguments(
     '-Wnon-virtual-dtor',
     # '-Wnull-dereference', # gcc gives false positives
     '-Woverloaded-virtual',
-    '-Wunused',
+    # boost has a deprecated thing
+    '-Wno-deprecated-literal-operator',
+    # '-Wunused', # boost has an unused variable... boo!
+    '-Wunused-but-set-parameter',
+    '-Wunused-but-set-variable',
+    '-Wunused-const-variable ',
+    '-Wunused-function',
+    '-Wunused-label',
+    '-Wunused-local-typedefs',
+    '-Wunused-macros',
+    '-Wno-unused-result',
+    '-Wunused-value',
+    '-Wno-unused-variable',
+    '-Wno-unused-parameter',
     # needed for new clang for boost warnings
     '-Wno-double-promotion',
     # end boost list
