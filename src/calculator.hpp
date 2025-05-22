@@ -55,7 +55,7 @@ class Calculator
         e_angle_mode angle_mode = e_angle_mode::radians;
         e_mpq_mode mpq_mode = e_mpq_mode::floating;
         e_mpc_mode mpc_mode = e_mpc_mode::rectangular;
-        bool save_stack = true;
+        bool save_stack = false;
         bool local_time = true;
     };
     using Stack = std::deque<stack_entry>;

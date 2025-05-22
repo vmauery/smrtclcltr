@@ -64,6 +64,51 @@ struct Exit : public CalcFunction
     }
 };
 
+struct save_stack : public CalcFunction
+{
+    virtual const std::string& name() const final
+    {
+        static const std::string _name{"save_stack"};
+        return _name;
+    }
+    virtual const std::string& help() const final
+    {
+        static const std::string _help{
+            // clang-format off
+            "\n"
+            "    Usage: <true|false> save_stack\n"
+            "\n"
+            "    Sets save_stack in config\n"
+            // clang-format on
+        };
+        return _help;
+    }
+    virtual bool op(Calculator& calc) const final
+    {
+        stack_entry e = calc.stack.front();
+        const bool* v = std::get_if<bool>(&e.value());
+        if (v)
+        {
+            calc.config.save_stack = *v;
+            calc.stack.pop_front();
+            return true;
+        }
+        return false;
+    }
+    int num_args() const final
+    {
+        return 1;
+    }
+    int num_resp() const final
+    {
+        return 0;
+    }
+    symbolic_op symbolic_usage() const final
+    {
+        return symbolic_op::none;
+    }
+};
+
 struct version : public CalcFunction
 {
     virtual const std::string& name() const final
@@ -1268,6 +1313,7 @@ struct tz : public CalcFunction
 
 register_calc_fn(Exit);
 register_calc_fn(version);
+register_calc_fn(save_stack);
 register_calc_fn(debug);
 register_calc_fn(verbose);
 register_calc_fn(undo);

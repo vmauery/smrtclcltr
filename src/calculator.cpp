@@ -125,6 +125,7 @@ void Calculator::save_state(const std::filesystem::path& filename)
 
     // settings
     std::print(cfgout, "\n# settings\n");
+    std::print(cfgout, "{} save_stack\n", config.save_stack);
     std::print(cfgout, "{} base\n", config.base);
     std::print(cfgout, "{}{}\n", (config.is_signed ? 's' : 'u'),
                config.fixed_bits);
